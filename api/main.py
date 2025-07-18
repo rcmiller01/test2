@@ -1,11 +1,29 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from api.routes import memory
+
+# Import all route modules
+from api.routes import (
+    memory,
+    context,
+    mood,
+    touch,
+    visual,
+    scene,
+    voice,
+    event_dispatch
+)
 
 app = FastAPI()
 
-# Mount memory API
+# Route includes
 app.include_router(memory.router, prefix="/api")
+app.include_router(context.router, prefix="/api")
+app.include_router(mood.router, prefix="/api")
+app.include_router(touch.router, prefix="/api")
+app.include_router(visual.router, prefix="/api")
+app.include_router(scene.router, prefix="/api")
+app.include_router(voice.router, prefix="/api")
+app.include_router(event_dispatch.router, prefix="/api")
 
 # Serve the memory browser HTML
 app.mount("/memory-browser", StaticFiles(directory="static", html=True), name="memory-browser")
