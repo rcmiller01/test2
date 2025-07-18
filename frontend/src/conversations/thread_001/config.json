@@ -1,0 +1,5 @@
+{
+  "permitted_personas": ["mia", "solene", "lyra"],
+  "forced_persona": null,
+  "mode": "companion"
+}

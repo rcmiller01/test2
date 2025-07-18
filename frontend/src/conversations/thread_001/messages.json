@@ -1,0 +1,12 @@
+[
+  {
+    "sender": "user",
+    "text": "I don't know how to feel today.",
+    "timestamp": "2025-07-18T20:34:12Z"
+  },
+  {
+    "sender": "mia",
+    "text": "Mia says (with sadness): '[tone:sadness]\nI don't know how to feel today.'",
+    "timestamp": "2025-07-18T20:34:13Z"
+  }
+]
