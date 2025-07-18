@@ -1,0 +1,5 @@
+{
+  "mia": { "voice": "ava", "stt_mode": "text+voice" },
+  "solene": { "voice": "sol", "stt_mode": "text+voice" },
+  "lyra": { "voice": "lyra", "stt_mode": "text+voice" }
+}

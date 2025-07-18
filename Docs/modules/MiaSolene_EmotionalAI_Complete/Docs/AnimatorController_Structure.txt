@@ -1,0 +1,18 @@
+Unity Animator Controller Structure:
+
+States:
+- Scene_IdleLoop (default)
+- Scene_Kneel
+- Scene_FlameBurst
+
+Parameters:
+- Trigger: scene_kneel
+- Trigger: scene_flame
+- Trigger: idle_loop
+
+Transitions:
+- From Any State → Scene_Kneel (on scene_kneel)
+- From Any State → Scene_FlameBurst (on scene_flame)
+- From Any State → Scene_IdleLoop (on idle_loop)
+
+Use 'animator.SetTrigger("scene_kneel")' to manually trigger from script.

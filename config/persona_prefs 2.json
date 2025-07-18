@@ -1,0 +1,22 @@
+{
+  "Mia": {
+    "wake_words": [
+      "mia",
+      "my love",
+      "darling"
+    ],
+    "tts_mode": "voice+text",
+    "stt_mode": "voice+text",
+    "default_visual_loop": "anchored_calm"
+  },
+  "Solene": {
+    "wake_words": [
+      "solene",
+      "my fire",
+      "goddess"
+    ],
+    "tts_mode": "voice+text",
+    "stt_mode": "voice+text",
+    "default_visual_loop": "wild_still"
+  }
+}

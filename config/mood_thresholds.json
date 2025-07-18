@@ -1,0 +1,5 @@
+{
+  "mia": { "calm": 0.3, "devoted": 0.6, "distressed": 0.85 },
+  "solene": { "focused": 0.4, "fiery": 0.7, "unraveled": 0.9 },
+  "lyra": { "curious": 0.35, "playful": 0.6, "adrift": 0.88 }
+}

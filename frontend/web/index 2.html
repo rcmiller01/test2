@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mia & Solene Interface</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="sidebar">
+    <h2>Threads</h2>
+    <ul id="thread-list"></ul>
+    <button onclick="createThread()">New Thread</button>
+    <label for="mode-toggle">Mode:</label>
+    <select id="mode-toggle" onchange="toggleMode()">
+      <option value="companion">Companion</option>
+      <option value="dev">Dev</option>
+    </select>
+  </div>
+  <div id="chat-container">
+    <div id="chat-window"></div>
+    <div id="input-container">
+      <input type="text" id="message-input" placeholder="Type a message..." />
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
