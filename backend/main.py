@@ -6,6 +6,11 @@ from modules.memory.mia_self_talk import generate_self_talk
 from modules.memory.mia_memory_response import generate_memory_response, recall_similar_emotions
 from romantic_routes import router as romantic_router
 from phase2_routes import router as phase2_router
+from routes.phase3 import router as phase3_router
+from routes.advanced_features import router as advanced_features_router
+from websocket_handlers import setup_phase3_websocket_handlers
+from database.mongodb_client import initialize_mongodb
+from clustering.cluster_manager import initialize_cluster, server_health_check
 
 app = FastAPI()
 router = APIRouter()
@@ -112,3 +117,23 @@ def recall_emotional_memory(emotion: str = None, limit: int = 5):
 app.include_router(router)
 app.include_router(romantic_router, prefix="/api")
 app.include_router(phase2_router, prefix="/api/phase2")
+app.include_router(phase3_router, prefix="/api")
+app.include_router(advanced_features_router, prefix="/api")
+
+# Setup Phase 3 WebSocket handlers
+@app.on_event("startup")
+async def startup_event():
+    # Initialize MongoDB
+    await initialize_mongodb()
+    
+    # Initialize cluster
+    await initialize_cluster()
+    
+    # Setup WebSocket handlers
+    await setup_phase3_websocket_handlers()
+
+# Health check endpoint for cluster monitoring
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for cluster monitoring"""
+    return await server_health_check()

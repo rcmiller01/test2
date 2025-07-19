@@ -1,233 +1,264 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/png" href="/static/favicon.png" />
-		<link rel="icon" type="image/png" href="/static/favicon-96x96.png" sizes="96x96" />
-		<link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
-		<link rel="shortcut icon" href="/static/favicon.ico" />
-		<link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png" />
-		<meta name="apple-mobile-web-app-title" content="Open WebUI" />
-
-		<link rel="manifest" href="/manifest.json" crossorigin="use-credentials" />
-		<meta
-			name="viewport"
-			content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
-		/>
-		<meta name="theme-color" content="#171717" />
-		<meta name="robots" content="noindex,nofollow" />
-		<meta name="description" content="Open WebUI" />
-		<link
-			rel="search"
-			type="application/opensearchdescription+xml"
-			title="Open WebUI"
-			href="/opensearch.xml"
-		/>
-		<script src="/static/loader.js" defer></script>
-		<link rel="stylesheet" href="/static/custom.css" />
-
-		<script>
-			function resizeIframe(obj) {
-				obj.style.height = obj.contentWindow.document.documentElement.scrollHeight + 'px';
+<head>
+	<meta charset="utf-8" />
+	<link rel="icon" href="%sveltekit.assets%/favicon.png" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+	<meta name="theme-color" content="#FF6B9D" />
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+	<meta name="apple-mobile-web-app-title" content="EmotionalAI" />
+	<meta name="mobile-web-app-capable" content="yes" />
+	<meta name="msapplication-TileColor" content="#FF6B9D" />
+	<meta name="msapplication-config" content="/browserconfig.xml" />
+	
+	<!-- PWA Manifest -->
+	<link rel="manifest" href="/manifest.json" />
+	
+	<!-- Apple Touch Icons -->
+	<link rel="apple-touch-icon" href="/icons/icon-152x152.png" />
+	<link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png" />
+	<link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180x180.png" />
+	<link rel="apple-touch-icon" sizes="167x167" href="/icons/icon-167x167.png" />
+	
+	<!-- Splash Screen Images for iOS -->
+	<link rel="apple-touch-startup-image" href="/splash/apple-splash-2048-2732.png" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)" />
+	<link rel="apple-touch-startup-image" href="/splash/apple-splash-1668-2388.png" media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)" />
+	<link rel="apple-touch-startup-image" href="/splash/apple-splash-1536-2048.png" media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)" />
+	<link rel="apple-touch-startup-image" href="/splash/apple-splash-1125-2436.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" />
+	<link rel="apple-touch-startup-image" href="/splash/apple-splash-1242-2688.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)" />
+	<link rel="apple-touch-startup-image" href="/splash/apple-splash-828-1792.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)" />
+	<link rel="apple-touch-startup-image" href="/splash/apple-splash-750-1334.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)" />
+	<link rel="apple-touch-startup-image" href="/splash/apple-splash-640-1136.png" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)" />
+	
+	<!-- Preconnect to external domains for performance -->
+	<link rel="preconnect" href="https://fonts.googleapis.com" />
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+	
+	<!-- DNS Prefetch for API endpoints -->
+	<link rel="dns-prefetch" href="//api.emotionalai.com" />
+	
+	<!-- Security Headers -->
+	<meta http-equiv="X-Content-Type-Options" content="nosniff" />
+	<meta http-equiv="X-Frame-Options" content="DENY" />
+	<meta http-equiv="X-XSS-Protection" content="1; mode=block" />
+	<meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+	
+	<!-- Open Graph Meta Tags -->
+	<meta property="og:type" content="website" />
+	<meta property="og:title" content="EmotionalAI - Multi-Persona Companion" />
+	<meta property="og:description" content="Advanced AI companion system with multiple personas including Mia, Solene, Lyra, and Doc" />
+	<meta property="og:image" content="/images/og-image.png" />
+	<meta property="og:url" content="https://emotionalai.com" />
+	<meta property="og:site_name" content="EmotionalAI" />
+	
+	<!-- Twitter Card Meta Tags -->
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:title" content="EmotionalAI - Multi-Persona Companion" />
+	<meta name="twitter:description" content="Advanced AI companion system with multiple personas" />
+	<meta name="twitter:image" content="/images/twitter-card.png" />
+	
+	<!-- Structured Data -->
+	<script type="application/ld+json">
+	{
+		"@context": "https://schema.org",
+		"@type": "WebApplication",
+		"name": "EmotionalAI",
+		"description": "Advanced AI companion system with multiple personas",
+		"url": "https://emotionalai.com",
+		"applicationCategory": "LifestyleApplication",
+		"operatingSystem": "Web Browser",
+		"offers": {
+			"@type": "Offer",
+			"price": "0",
+			"priceCurrency": "USD"
+		},
+		"author": {
+			"@type": "Person",
+			"name": "EmotionalAI Team"
+		}
+	}
+	</script>
+	
+	<!-- Service Worker Registration -->
+	<script>
+		if ('serviceWorker' in navigator) {
+			window.addEventListener('load', function() {
+				navigator.serviceWorker.register('/sw.js')
+					.then(function(registration) {
+						console.log('SW registered: ', registration);
+						
+						// Check for updates
+						registration.addEventListener('updatefound', () => {
+							const newWorker = registration.installing;
+							newWorker.addEventListener('statechange', () => {
+								if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+									// New content is available, show update prompt
+									if (confirm('New version available! Reload to update?')) {
+										window.location.reload();
+									}
+								}
+							});
+						});
+					})
+					.catch(function(registrationError) {
+						console.log('SW registration failed: ', registrationError);
+					});
+			});
+		}
+		
+		// PWA Install Prompt
+		let deferredPrompt;
+		window.addEventListener('beforeinstallprompt', (e) => {
+			e.preventDefault();
+			deferredPrompt = e;
+			
+			// Show install button if not already installed
+			if (!window.matchMedia('(display-mode: standalone)').matches) {
+				// Trigger custom install prompt
+				window.dispatchEvent(new CustomEvent('showInstallPrompt'));
 			}
-		</script>
-
-		<script>
-			// On page load or when changing themes, best to add inline in `head` to avoid FOUC
-			(() => {
-				const metaThemeColorTag = document.querySelector('meta[name="theme-color"]');
-				const prefersDarkTheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-				if (!localStorage?.theme) {
-					localStorage.theme = 'system';
+		});
+		
+		// Handle app installed
+		window.addEventListener('appinstalled', (evt) => {
+			console.log('App was installed');
+			deferredPrompt = null;
+		});
+		
+		// Mobile-specific optimizations
+		if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+			// Prevent zoom on input focus
+			document.addEventListener('touchstart', function() {}, {passive: true});
+			
+			// Fix for iOS Safari 100vh issue
+			const setVH = () => {
+				const vh = window.innerHeight * 0.01;
+				document.documentElement.style.setProperty('--vh', `${vh}px`);
+			};
+			setVH();
+			window.addEventListener('resize', setVH);
+			window.addEventListener('orientationchange', setVH);
+		}
+		
+		// Voice API support detection
+		window.voiceAPISupported = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+		window.speechSynthesisSupported = !!window.speechSynthesis;
+		
+		// Notify main app about voice support
+		window.addEventListener('DOMContentLoaded', () => {
+			window.dispatchEvent(new CustomEvent('voiceSupportDetected', {
+				detail: {
+					recognition: window.voiceAPISupported,
+					synthesis: window.speechSynthesisSupported
 				}
-
-				if (localStorage.theme === 'system') {
-					document.documentElement.classList.add(prefersDarkTheme ? 'dark' : 'light');
-					metaThemeColorTag.setAttribute('content', prefersDarkTheme ? '#171717' : '#ffffff');
-				} else if (localStorage.theme === 'oled-dark') {
-					document.documentElement.style.setProperty('--color-gray-800', '#101010');
-					document.documentElement.style.setProperty('--color-gray-850', '#050505');
-					document.documentElement.style.setProperty('--color-gray-900', '#000000');
-					document.documentElement.style.setProperty('--color-gray-950', '#000000');
-					document.documentElement.classList.add('dark');
-					metaThemeColorTag.setAttribute('content', '#000000');
-				} else if (localStorage.theme === 'light') {
-					document.documentElement.classList.add('light');
-					metaThemeColorTag.setAttribute('content', '#ffffff');
-				} else if (localStorage.theme === 'her') {
-					document.documentElement.classList.add('dark');
-					document.documentElement.classList.add('her');
-					metaThemeColorTag.setAttribute('content', '#983724');
-				} else {
-					document.documentElement.classList.add('dark');
-					metaThemeColorTag.setAttribute('content', '#171717');
-				}
-
-				window.matchMedia('(prefers-color-scheme: dark)').addListener((e) => {
-					if (localStorage.theme === 'system') {
-						if (e.matches) {
-							document.documentElement.classList.add('dark');
-							document.documentElement.classList.remove('light');
-							metaThemeColorTag.setAttribute('content', '#171717');
-						} else {
-							document.documentElement.classList.add('light');
-							document.documentElement.classList.remove('dark');
-							metaThemeColorTag.setAttribute('content', '#ffffff');
-						}
-					}
-				});
-				const isDarkMode = document.documentElement.classList.contains('dark');
-
-				const logo = document.createElement('img');
-				logo.id = 'logo';
-				logo.style =
-					'position: absolute; width: auto; height: 6rem; top: 44%; left: 50%; transform: translateX(-50%); display:block;';
-				logo.src = isDarkMode ? '/static/splash-dark.png' : '/static/splash.png';
-
-				document.addEventListener('DOMContentLoaded', function () {
-					const splash = document.getElementById('splash-screen');
-					if (splash) splash.prepend(logo);
-				});
-			})();
-		</script>
-
-		<title>Open WebUI</title>
-
-		%sveltekit.head%
-	</head>
-
-	<body data-sveltekit-preload-data="hover">
-		<div style="display: contents">%sveltekit.body%</div>
-
-		<div
-			id="splash-screen"
-			style="position: fixed; z-index: 100; top: 0; left: 0; width: 100%; height: 100%"
-		>
-			<style type="text/css" nonce="">
-				html {
-					overflow-y: scroll !important;
-				}
-			</style>
-
-			<div
-				style="
-					position: absolute;
-					top: 33%;
-					left: 50%;
-
-					width: 24rem;
-					transform: translateX(-50%);
-
-					display: flex;
-					flex-direction: column;
-					align-items: center;
-				"
-			>
-				<img
-					id="logo-her"
-					style="width: auto; height: 13rem"
-					src="/static/splash.png"
-					class="animate-pulse-fast"
-				/>
-
-				<div style="position: relative; width: 24rem; margin-top: 0.5rem">
-					<div
-						id="progress-background"
-						style="
-							position: absolute;
-							width: 100%;
-							height: 0.75rem;
-
-							border-radius: 9999px;
-							background-color: #fafafa9a;
-						"
-					></div>
-
-					<div
-						id="progress-bar"
-						style="
-							position: absolute;
-							width: 0%;
-							height: 0.75rem;
-							border-radius: 9999px;
-							background-color: #fff;
-						"
-						class="bg-white"
-					></div>
-				</div>
+			}));
+		});
+	</script>
+	
+	<!-- Critical CSS for mobile performance -->
+	<style>
+		/* Prevent flash of unstyled content */
+		html { visibility: hidden; }
+		html.loaded { visibility: visible; }
+		
+		/* iOS Safari viewport fixes */
+		@supports (-webkit-touch-callout: none) {
+			.viewport-fix {
+				min-height: -webkit-fill-available;
+			}
+		}
+		
+		/* Custom CSS variables for viewport height */
+		:root {
+			--vh: 1vh;
+		}
+		
+		/* Mobile tap highlight removal */
+		* {
+			-webkit-tap-highlight-color: transparent;
+		}
+		
+		/* Prevent text selection on buttons */
+		button, .button {
+			-webkit-user-select: none;
+			user-select: none;
+		}
+		
+		/* Smooth scrolling for iOS */
+		html {
+			scroll-behavior: smooth;
+			-webkit-overflow-scrolling: touch;
+		}
+		
+		/* Loading spinner */
+		.loading-spinner {
+			position: fixed;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			width: 40px;
+			height: 40px;
+			border: 4px solid #f3f3f3;
+			border-top: 4px solid #FF6B9D;
+			border-radius: 50%;
+			animation: spin 1s linear infinite;
+			z-index: 9999;
+		}
+		
+		@keyframes spin {
+			0% { transform: translate(-50%, -50%) rotate(0deg); }
+			100% { transform: translate(-50%, -50%) rotate(360deg); }
+		}
+		
+		/* Hide loading spinner when app is ready */
+		.app-ready .loading-spinner {
+			display: none;
+		}
+	</style>
+	
+	%sveltekit.head%
+</head>
+<body data-sveltekit-preload-data="hover">
+	<div class="loading-spinner"></div>
+	<div style="display: contents">%sveltekit.body%</div>
+	
+	<!-- PWA Install Prompt (hidden by default) -->
+	<div id="install-prompt" style="display: none; position: fixed; bottom: 20px; left: 20px; right: 20px; background: white; border: 1px solid #ddd; border-radius: 12px; padding: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000;">
+		<div style="display: flex; align-items: center; gap: 12px;">
+			<div style="flex: 1;">
+				<h3 style="margin: 0 0 4px 0; font-size: 16px;">Install EmotionalAI</h3>
+				<p style="margin: 0; font-size: 14px; color: #666;">Add to home screen for the best experience</p>
 			</div>
-
-			<!-- <span style="position: absolute; bottom: 32px; left: 50%; margin: -36px 0 0 -36px">
-				Footer content
-			</span> -->
+			<button id="install-btn" style="background: #FF6B9D; color: white; border: none; border-radius: 8px; padding: 8px 16px; font-size: 14px; cursor: pointer;">Install</button>
+			<button id="dismiss-btn" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #999;">×</button>
 		</div>
-	</body>
+	</div>
+	
+	<script>
+		// Handle install prompt
+		window.addEventListener('showInstallPrompt', () => {
+			const prompt = document.getElementById('install-prompt');
+			const installBtn = document.getElementById('install-btn');
+			const dismissBtn = document.getElementById('dismiss-btn');
+			
+			prompt.style.display = 'block';
+			
+			installBtn.addEventListener('click', () => {
+				deferredPrompt.prompt();
+				prompt.style.display = 'none';
+			});
+			
+			dismissBtn.addEventListener('click', () => {
+				prompt.style.display = 'none';
+			});
+		});
+		
+		// Mark app as ready when loaded
+		window.addEventListener('load', () => {
+			document.documentElement.classList.add('loaded');
+			document.body.classList.add('app-ready');
+		});
+	</script>
+</body>
 </html>
-
-<style type="text/css" nonce="">
-	html {
-		overflow-y: hidden !important;
-	}
-
-	#splash-screen {
-		background: #fff;
-	}
-
-	html.dark #splash-screen {
-		background: #000;
-	}
-
-	html.her #splash-screen {
-		background: #983724;
-	}
-
-	#logo-her {
-		display: none;
-	}
-
-	#progress-background {
-		display: none;
-	}
-
-	#progress-bar {
-		display: none;
-	}
-
-	html.her #logo {
-		display: none;
-	}
-
-	html.her #logo-her {
-		display: block;
-		filter: invert(1);
-	}
-
-	html.her #progress-background {
-		display: block;
-	}
-
-	html.her #progress-bar {
-		display: block;
-	}
-
-	@media (max-width: 24rem) {
-		html.her #progress-background {
-			display: none;
-		}
-
-		html.her #progress-bar {
-			display: none;
-		}
-	}
-
-	@keyframes pulse {
-		50% {
-			opacity: 0.65;
-		}
-	}
-
-	.animate-pulse-fast {
-		animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-	}
-</style>

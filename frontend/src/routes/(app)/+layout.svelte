@@ -46,6 +46,7 @@
 	import AccountPending from '$lib/components/layout/Overlay/AccountPending.svelte';
 	import UpdateInfoToast from '$lib/components/layout/UpdateInfoToast.svelte';
 	import Spinner from '$lib/components/common/Spinner.svelte';
+	import RealtimeNotifications from '$lib/components/RealtimeNotifications.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -342,6 +343,11 @@
 						<Spinner className="size-5" />
 					</div>
 				{/if}
+
+				<!-- Real-time Notifications -->
+				<div class="fixed top-4 right-4 z-50">
+					<RealtimeNotifications />
+				</div>
 			{/if}
 		</div>
 	</div>
