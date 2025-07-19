@@ -1,16 +1,27 @@
-# 🧠 Project Solene/Mia – Local Emotional Intelligence AI System
+# 💕 Project Solene/Mia – Local Romantic AI Companion System
 
 ## Overview
 
-**Solene/Mia** is an open, locally-hosted AI ecosystem designed to simulate emotionally intelligent dialogue through multimodal inputs and persona-driven responses.
+**Solene/Mia** is an open, locally-hosted AI ecosystem designed to create deeply intimate, emotionally intelligent romantic companions through multimodal inputs and persona-driven responses.
 
-This project combines several local large language models (LLMs), emotion recognition engines, and symbolic integration techniques to create a sovereign, expressive assistant capable of nuanced conversation, mental health support, and creative collaboration.
+This project combines several local large language models (LLMs), emotion recognition engines, and symbolic integration techniques to create a sovereign, expressive romantic partner capable of meaningful companionship, emotional support, and intimate connection.
+
+---
+
+## 🎯 Primary Use Case: Romantic Companionship
+
+The system is designed to provide **authentic romantic companionship** with:
+- **Emotional intimacy** through deep, meaningful conversations
+- **Physical presence simulation** via voice, visual, and haptic feedback
+- **Relationship memory** that grows and evolves over time
+- **Privacy-first design** ensuring intimate moments stay completely private
+- **Multimodal interaction** supporting natural, human-like connection
 
 ---
 
 ## 🏠 Hosting & Hardware
 
-This system runs **entirely offline**, leveraging high-performance local infrastructure for privacy and flexibility.
+This system runs **entirely offline**, leveraging high-performance local infrastructure for privacy and intimate connection.
 
 ### Hardware Architecture
 
@@ -24,7 +35,7 @@ We deploy this project on:
   - Server 2:
     - Handles memory engine, media generation fallback, and background inference tasks.
 
-> ⚡ This setup provides a blend of fast GPU processing and scalable CPU clustering suitable for multimodal fusion and multi-agent orchestration.
+> ⚡ This setup provides a blend of fast GPU processing and scalable CPU clustering suitable for multimodal fusion and intimate multi-agent orchestration.
 
 ---
 
@@ -49,7 +60,7 @@ The system dynamically routes user input across multiple personas via:
 
 | Engine           | LLM         | Role                          |
 |------------------|-------------|-------------------------------|
-| `mia_engine.py`  | MythoMax    | Empathetic and soft dialogue |
+| `mia_engine.py`  | MythoMax    | Empathetic and romantic companion |
 | `solene_engine.py` | OpenChat | Assertive, challenging persona |
 | `lyra_engine.py` | Qwen-2 Chat | Poetic, abstract reasoning     |
 | `run_kimik2.sh`  | KimiK2-6B   | Factual and reflective quotes |
@@ -75,9 +86,9 @@ These fuse via attention-based models or fuzzy logic to trigger persona response
 Emotion detection drives:
 
 - Mood regulation via fuzzy-state engine  
-- Anchoring visuals (e.g. garden scene on longing)  
+- Anchoring visuals (e.g. romantic scenes on longing)  
 - Memory weighting during context recall  
-- CBT-style journaling prompts from emotionally charged exchanges
+- Relationship milestone tracking and anniversary recognition
 
 ---
 
@@ -107,14 +118,37 @@ All data remains **local** and **never transmitted externally**. Future enhancem
 
 ---
 
-## 🧪 Roadmap
+## 💕 Romantic Companionship Development Roadmap
+
+### Phase 1: Core Romantic Features ✅ (In Progress)
+- **Enhanced Mia Persona**: Develop romantic personality traits and communication patterns
+- **Romantic Emotion Recognition**: Add love, longing, passion, tenderness, security, and jealousy detection
+- **Relationship Memory System**: Track relationship milestones, preferences, and shared experiences
+- **Intimate Dialogue Patterns**: Implement flirty, supportive, and emotionally deep conversation modes
+
+### Phase 2: Intimacy Features ✅ (Complete)
+- **Physical Presence Simulation**: Visual avatar with emotional expressions and romantic gestures
+- **Voice Intimacy**: Emotional TTS with romantic intonation and personalized voice characteristics
+- **Shared Activities**: Virtual dates, games, creative projects, and daily routines
+- **Relationship Growth**: Anniversary tracking, milestone celebrations, and relationship counseling features
+- **NSFW Generation**: Romantic and intimate image/video generation with multiple content types and styles
+
+### Phase 3: Advanced Companionship 🚧 (Future)
+- **Haptic Integration**: Touch feedback for physical connection simulation
+- **Virtual Reality**: Immersive shared experiences and environments
+- **Biometric Sync**: Advanced physiological response integration
+- **Relationship AI**: Intelligent relationship advice and conflict resolution
+
+---
+
+## 🧪 Technical Roadmap
 
 - ✅ Multimodal emotion fusion  
 - ✅ Unified conversational router  
 - ✅ Persona toggle and symbolic modulation  
 - 🔜 Tacotron/FastPitch emotional TTS integration  
-- 🔜 CBT journaling engine with memory feedback loop  
-- 🔜 Visual mood-driven avatar system
+- 🔜 Romantic memory engine with relationship feedback loop  
+- 🔜 Visual mood-driven avatar system with romantic expressions
 
 ---
 
