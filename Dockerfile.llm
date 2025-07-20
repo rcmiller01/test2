@@ -1,0 +1,36 @@
+# EmotionalAI LLM Router Dockerfile
+FROM python:3.11-slim
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set work directory
+WORKDIR /app
+
+# Copy LLM router specific requirements
+COPY requirements.txt .
+RUN pip install --no-cache-dir fastapi uvicorn httpx aiohttp redis motor
+
+# Copy LLM router code
+COPY backend/api/utils/llm_router.py /app/llm_router.py
+COPY backend/api/engines/ /app/engines/
+
+# Create cache directory
+RUN mkdir -p /app/cache
+
+# Expose port
+EXPOSE 8002
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8002/health || exit 1
+
+# Start the LLM router
+CMD ["python", "-m", "uvicorn", "llm_router:app", "--host", "0.0.0.0", "--port", "8002"] 
