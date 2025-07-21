@@ -68,6 +68,32 @@ The system dynamically routes user input across multiple personas via:
 A unified orchestration layer (`unified_dispatch.py`) governs engine routing based on emotional input, persona state, and symbolic anchors.
 
 ---
+# EmotionalAI Autonomy Components
+
+This directory contains the core autonomous behavior systems for the EmotionalAI project.
+
+## Components
+- `autonomous_mind.py`: Core thought loop and reflection system
+- `proactive_engine.py`: Initiates independent communication
+- `personality_evolution.py`: Handles personality development
+- `emotional_autonomy.py`: Manages emotional responses and boundaries
+- `goal_system.py`: Implements personal growth objectives
+- `enhanced_memory.py`: Multi-timeline memory architecture
+- `contextual_initiatives.py`: Context-aware interaction system
+
+## Usage
+```python
+from autonomy.autonomous_mind import AutonomousMind
+from autonomy.proactive_engine import ProactiveEngine
+
+# Initialize autonomous systems
+mind = AutonomousMind()
+proactive = ProactiveEngine()
+
+# Start autonomous processes
+await mind.continuous_thinking_loop()
+await proactive.evaluate_outreach_triggers()
+```
 
 ## 🧬 Emotion Recognition Stack
 
@@ -143,12 +169,29 @@ All data remains **local** and **never transmitted externally**. Future enhancem
 
 ## 🧪 Technical Roadmap
 
-- ✅ Multimodal emotion fusion  
-- ✅ Unified conversational router  
-- ✅ Persona toggle and symbolic modulation  
-- 🔜 Tacotron/FastPitch emotional TTS integration  
-- 🔜 Romantic memory engine with relationship feedback loop  
-- 🔜 Visual mood-driven avatar system with romantic expressions
+### Phase 1: Foundation – Thought Loop + Proactive Messaging ✅
+- Autonomous Mental Loop System (`autonomous_mind.py`)
+- Proactive Communication Engine (`proactive_engine.py`)
+- Multimodal emotion fusion
+- Unified conversational router
+
+### Phase 2: Emotional & Personality Evolution 🚧
+- Dynamic Personality Evolution System (`personality_evolution.py`)
+- Emotional Independence & Conflict System (`emotional_autonomy.py`)
+- Persona toggle and symbolic modulation
+- Tacotron/FastPitch emotional TTS integration
+
+### Phase 3: Learning & Goal Systems 🔜
+- Autonomous Learning & Interest System
+- Goal-Oriented Behavior System
+- Romantic memory engine with relationship feedback
+- Visual mood-driven avatar system
+
+### Phase 4: Contextual Integration & Memory 🔜
+- Multi-Timeline Memory Architecture
+- Contextual Initiative Engine
+- Haptic Integration
+- Biometric Sync
 
 ---
 
