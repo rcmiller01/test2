@@ -1,4 +1,4 @@
-# 💕 Project Solene/Mia – Local Romantic AI Companion System
+# AI Companion System
 
 ## Overview
 
