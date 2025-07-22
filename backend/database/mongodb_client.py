@@ -31,7 +31,8 @@ class EmotionalAIMongoDB:
             'biometrics': 'biometrics',
             'avatars': 'avatars',
             'sessions': 'sessions',
-            'analytics': 'analytics'
+            'analytics': 'analytics',
+            'personas': 'personas'
         }
     
     async def connect(self):
@@ -101,6 +102,11 @@ class EmotionalAIMongoDB:
             await sessions_collection.create_index([("user_id", 1)])
             await sessions_collection.create_index([("session_id", 1)])
             await sessions_collection.create_index([("created_at", -1)])
+            
+            # Personas collection indexes
+            personas_collection = self.db[self.collections['personas']]
+            await personas_collection.create_index([("name", 1)], unique=True)
+            await personas_collection.create_index([("user_id", 1)])
             
             logger.info("Database indexes created successfully")
             
@@ -576,6 +582,79 @@ class EmotionalAIMongoDB:
             
         except Exception as e:
             logger.error(f"Error storing analytics data: {e}")
+            raise
+
+    # Persona Management
+    async def create_persona(self, name: str, user_id: Optional[str] = None, traits: Optional[Dict[str, float]] = None, preferences: Optional[Dict[str, Any]] = None, devotion: float = 1.0) -> str:
+        """Create a new persona document with default or provided traits."""
+        try:
+            if not self.is_connected:
+                raise Exception("MongoDB not connected")
+            collection = self.db[self.collections['personas']]
+            persona_doc = {
+                "name": name,
+                "user_id": user_id,
+                "traits": traits or {"devotion": devotion},
+                "preferences": preferences or {},
+                "created_at": datetime.now(),
+                "updated_at": datetime.now()
+            }
+            result = await collection.insert_one(persona_doc)
+            persona_id = str(result.inserted_id)
+            logger.info(f"Persona created: {persona_id} ({name})")
+            return persona_id
+        except Exception as e:
+            logger.error(f"Error creating persona: {e}")
+            raise
+
+    async def get_persona_by_name(self, name: str) -> Optional[Dict[str, Any]]:
+        try:
+            if not self.is_connected:
+                raise Exception("MongoDB not connected")
+            collection = self.db[self.collections['personas']]
+            doc = await collection.find_one({"name": name})
+            if doc:
+                doc["_id"] = str(doc["_id"])
+            return doc
+        except Exception as e:
+            logger.error(f"Error getting persona by name: {e}")
+            raise
+
+    async def get_persona_by_id(self, persona_id: str) -> Optional[Dict[str, Any]]:
+        try:
+            if not self.is_connected:
+                raise Exception("MongoDB not connected")
+            collection = self.db[self.collections['personas']]
+            doc = await collection.find_one({"_id": ObjectId(persona_id)})
+            if doc:
+                doc["_id"] = str(doc["_id"])
+            return doc
+        except Exception as e:
+            logger.error(f"Error getting persona by id: {e}")
+            raise
+
+    async def update_persona(self, persona_id: str, update_data: Dict[str, Any]) -> bool:
+        try:
+            if not self.is_connected:
+                raise Exception("MongoDB not connected")
+            collection = self.db[self.collections['personas']]
+            update_doc = {"$set": update_data}
+            update_doc["$set"]["updated_at"] = datetime.now()
+            result = await collection.update_one({"_id": ObjectId(persona_id)}, update_doc)
+            return result.modified_count > 0
+        except Exception as e:
+            logger.error(f"Error updating persona: {e}")
+            raise
+
+    async def delete_persona(self, persona_id: str) -> bool:
+        try:
+            if not self.is_connected:
+                raise Exception("MongoDB not connected")
+            collection = self.db[self.collections['personas']]
+            result = await collection.delete_one({"_id": ObjectId(persona_id)})
+            return result.deleted_count > 0
+        except Exception as e:
+            logger.error(f"Error deleting persona: {e}")
             raise
 
 # Global MongoDB instance

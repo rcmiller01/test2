@@ -8,6 +8,7 @@ and private memory blooms for personas.
 import json
 from datetime import datetime
 from typing import List, Optional, Dict
+from pathlib import Path
 
 JOURNAL_PATH = "memory/journal/"
 Path(JOURNAL_PATH).mkdir(parents=True, exist_ok=True)
