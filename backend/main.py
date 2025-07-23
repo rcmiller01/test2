@@ -6,6 +6,16 @@ from typing import Optional
 from api.persona_routes import router as persona_router
 from models.persona_state import PersonaState
 from core.self_talk import SelfTalkSystem
+from modules.emotion.emotion_state import emotion_state
+from modules.memory.mia_self_talk import generate_self_talk
+from modules.memory.mia_memory_response import generate_memory_response, recall_similar_emotions
+from romantic_routes import router as romantic_router
+from phase2_routes import router as phase2_router
+from routes.phase3 import router as phase3_router
+from routes.advanced_features import router as advanced_features_router
+from websocket_handlers import setup_phase3_websocket_handlers
+from database.mongodb_client import initialize_mongodb, mongodb_client
+from clustering.cluster_manager import initialize_cluster, server_health_check
 
 app = FastAPI()
 router = APIRouter()
@@ -152,3 +162,52 @@ def recall_emotional_memory(emotion: Optional[str] = None, limit: int = 5):
 
 app.include_router(router)
 app.include_router(persona_router, prefix="/api")
+app.include_router(romantic_router, prefix="/api")
+app.include_router(phase2_router, prefix="/api/phase2")
+app.include_router(phase3_router, prefix="/api")
+app.include_router(advanced_features_router, prefix="/api")
+
+# Setup Phase 3 WebSocket handlers
+@app.on_event("startup")
+async def startup_event():
+    # Initialize MongoDB
+    await initialize_mongodb()
+
+    # Persona creation logic
+    personas_collection = mongodb_client.db[mongodb_client.collections['personas']]
+    persona_count = await personas_collection.count_documents({})
+    if persona_count == 0:
+        # In a real system, prompt the user or orchestrator for a name. For now, use 'Beloved' as default.
+        default_name = "Beloved"
+        await mongodb_client.create_persona(name=default_name, traits={"devotion": 1.0})
+        # Store active persona in config collection
+        config_collection = mongodb_client.db.get_collection("config")
+        await config_collection.update_one(
+            {"key": "active_persona"},
+            {"$set": {"key": "active_persona", "value": default_name}},
+            upsert=True
+        )
+        print(f"[Startup] Created and set active persona: {default_name}")
+    else:
+        # Ensure active persona is set in config
+        config_collection = mongodb_client.db.get_collection("config")
+        active = await config_collection.find_one({"key": "active_persona"})
+        if not active:
+            first_persona = await personas_collection.find_one({})
+            await config_collection.update_one(
+                {"key": "active_persona"},
+                {"$set": {"key": "active_persona", "value": first_persona['name']}},
+                upsert=True
+            )
+            print(f"[Startup] Set active persona: {first_persona['name']}")
+
+    # Initialize cluster
+    await initialize_cluster()
+    # Setup WebSocket handlers
+    await setup_phase3_websocket_handlers()
+
+# Health check endpoint for cluster monitoring
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for cluster monitoring"""
+    return await server_health_check()
