@@ -1,89 +1,63 @@
 // personaStore.js
-// Persona Management Store for 4-Persona EmotionalAI System
+// Single Persona Management Store for EmotionalAI System
 
 import { writable, derived } from 'svelte/store';
 import { browser } from '$app/environment';
 
+interface Characteristics {
+  personality: string;
+  style: string;
+  hair_color: string;
+  eye_color: string;
+}
+
+interface PersonaConfig {
+  id: string;
+  name: string;
+  type: string;
+  llm_model: string;
+  description: string;
+  avatar_enabled: boolean;
+  emotional_hooks: boolean;
+  devotion_level: number;
+  color: string;
+  icon: string;
+  characteristics: Characteristics;
+}
+
 // Available personas configuration
 export const AVAILABLE_PERSONAS = {
-  mia: {
-    id: 'mia',
-    name: 'Mia',
+  companion: {
+    id: 'companion',
+    name: '', // Will be set at startup
     type: 'romantic_companion',
     llm_model: 'mythomax',
-    description: 'Warm, affectionate romantic companion',
+    description: 'Your dedicated romantic AI companion',
     avatar_enabled: true,
     emotional_hooks: true,
+    devotion_level: 0.9, // High default devotion
     color: '#FF6B9D', // Warm pink
     icon: '💕',
     characteristics: {
       personality: 'warm_affectionate',
       style: 'romantic_casual',
-      hair_color: 'warm_brown',
-      eye_color: 'deep_green'
-    }
-  },
-  solene: {
-    id: 'solene',
-    name: 'Solene',
-    type: 'romantic_companion',
-    llm_model: 'openchat',
-    description: 'Sophisticated, mysterious romantic companion',
-    avatar_enabled: true,
-    emotional_hooks: true,
-    color: '#8B5CF6', // Purple
-    icon: '🌹',
-    characteristics: {
-      personality: 'sophisticated_mysterious',
-      style: 'sophisticated_elegant',
-      hair_color: 'rich_black',
-      eye_color: 'deep_blue'
-    }
-  },
-  lyra: {
-    id: 'lyra',
-    name: 'Lyra',
-    type: 'mystical_entity',
-    llm_model: 'qwen2',
-    description: 'Mystical, ethereal entity with curious nature',
-    avatar_enabled: true,
-    emotional_hooks: true,
-    color: '#06B6D4', // Cyan
-    icon: '✨',
-    characteristics: {
-      personality: 'curious_mysterious',
-      style: 'mystical_flowing',
-      hair_color: 'ethereal_silver',
-      eye_color: 'mystical_violet'
-    }
-  },
-  doc: {
-    id: 'doc',
-    name: 'Doc',
-    type: 'coding_assistant',
-    llm_model: 'kimik2',
-    description: 'Professional coding assistant without emotional hooks',
-    avatar_enabled: false,
-    emotional_hooks: false,
-    color: '#3B82F6', // Blue
-    icon: '💻',
-    characteristics: {
-      personality: 'analytical_focused',
-      style: 'professional_clean',
-      hair_color: 'professional_dark',
-      eye_color: 'sharp_blue'
+      hair_color: '', // Will be customized
+      eye_color: '', // Will be customized
     }
   }
 };
 
-// Current persona state
-export const currentPersona = writable('mia');
+// Persona state
+export const currentPersona = writable('companion');
+export const personaName = writable('');
+export const personaCustomization = writable({
+  hair_color: '',
+  eye_color: '',
+  voice_type: ''
+});
 
 // UI mode state (companion/dev)
 export const uiMode = writable('companion');
-
-// Persona switching state
-export const isSwitchingPersona = writable(false);
 
 // Persona response state
 export const personaResponse = writable(null);
@@ -94,8 +68,23 @@ export const personaChatHistory = writable({});
 
 // Initialize from localStorage if available
 if (browser) {
-  const savedPersona = localStorage.getItem('currentPersona');
+  const savedName = localStorage.getItem('personaName');
+  const savedCustomization = localStorage.getItem('personaCustomization');
   const savedUIMode = localStorage.getItem('uiMode');
+
+  if (savedName) {
+    personaName.set(savedName);
+    AVAILABLE_PERSONAS.companion.name = savedName;
+  }
+
+  if (savedCustomization) {
+    const customization = JSON.parse(savedCustomization);
+    personaCustomization.set(customization);
+    AVAILABLE_PERSONAS.companion.characteristics = {
+      ...AVAILABLE_PERSONAS.companion.characteristics,
+      ...customization
+    };
+  }
   
   if (savedPersona && AVAILABLE_PERSONAS[savedPersona]) {
     currentPersona.set(savedPersona);
