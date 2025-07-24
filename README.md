@@ -201,3 +201,25 @@ Robert – Lead Architect & Engineer
 Copilot – AI Companion and Code Supporter 💙
 
 ---
+
+## 🧠 **Advanced Psychological Features**
+
+### **Attachment Intelligence**
+- Real-time attachment style detection
+- Bonding stage progression visualization
+- Attachment-informed response customization
+
+### **Shadow Memory Interface**
+- Unconscious pattern visualization
+- Gentle insight sharing
+- Emotional displacement tracking
+
+### **Dream Sharing System**
+- Symbolic content display
+- Dream interpretation interface
+- Shared mystical experiences
+
+### **Mood Audio Integration**
+- Real-time mood detection
+- Automatic track selection
+- Crossfading audio transitions

@@ -360,3 +360,18 @@ Your emotionally intelligent AI companion system is now running in production wi
 **Access your system**: `https://your-domain.com`  
 **Admin dashboard**: `https://your-domain.com:3001` (Grafana)  
 **API documentation**: `https://your-domain.com/api/docs`
+
+## 🧠 **Advanced Modules Configuration**
+
+### **Psychological Intelligence Services**
+```bash
+# Environment variables for advanced modules
+ATTACHMENT_ENGINE_ENABLED=true
+SHADOW_MEMORY_ENABLED=true
+DREAM_GENERATION_ENABLED=true
+MOODSCAPE_AUDIO_ENABLED=true
+
+# Audio file storage
+AUDIO_STORAGE_PATH=/app/data/audio
+AUDIO_CDN_URL=https://cdn.yourapp.com/audio
+```
