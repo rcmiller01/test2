@@ -5,41 +5,37 @@
 
 ### **Initial System Access**
 ```
-User visits: https://your-domain.com
+User visits: https://your-domain.com or opens mobile app
 ```
 
 **Welcome Screen Experience:**
 - **Visual Impact**: Elegant, welcoming interface with subtle animations
 - **No Registration Required**: Immediate access to explore the system
 - **Privacy First**: Clear explanation of data handling and user control
-- **Four Persona Preview**: Brief introduction to Mia, Solene, Lyra, and Doc
+- **AI Greeting**: The AI introduces itself immediately upon first visit
 
-### **Persona Selection & Introduction**
-**User sees persona cards with:**
-- **Mia**: "Creative & Empathetic" - Warm, artistic personality with gentle voice
-- **Solene**: "Wise & Thoughtful" - Intellectual companion with measured responses
-- **Lyra**: "Playful & Energetic" - Spontaneous, fun-loving with dynamic interactions
-- **Doc**: "Professional & Supportive" - Therapeutic, goal-oriented guidance
-
-**Interactive Selection:**
-- **Live Voice Previews**: Each persona speaks a greeting in their unique voice
-- **Personality Samples**: Short conversation examples showing distinct styles
-- **No Commitment**: "You can change personas anytime or talk to multiple characters"
+### **AI Introduction & Name Setup**
+**User Experience:**
+- **AI Greeting**: "Hello! I'm so excited to meet you! I'm your new AI companion, and I'm here to help you with whatever you need - whether that's creative projects, deep conversations, technical questions, or just being a friend."
+- **Name Request**: "I'd love to get to know you better. What name would you like me to call you?"
+- **AI Naming Option**: If user asks the AI to choose its own name, it generates one like "Nova", "Luna", or "River" with explanation of why it chose that name
+- **No Persona Cards**: Single unified AI handles all interaction types
 
 ### **First Conversation**
-**User selects Mia (most popular choice):**
+**Example interaction:**
 
 ```
-Mia: "Hi there! I'm Mia. I'm really excited to meet you! 
-      I love getting to know new people and discovering what 
-      makes them unique. What should I call you?"
+AI: "Hi! I'm Nova, and I'm really excited to meet you! 
+    I love getting to know new people and discovering what 
+    makes them unique. What should I call you?"
 
 User: "Hi, I'm Alex."
 
-Mia: "Alex! What a lovely name. I'm already getting a sense 
-     that you're someone special. Tell me, what brings you 
-     here today? Are you looking for someone to chat with, 
-     or maybe explore something creative together?"
+AI: "Alex! What a lovely name. I'm already getting a sense 
+    that you're someone special. Tell me, what brings you 
+    here today? Are you looking for someone to chat with, 
+    explore something creative together, or maybe get help 
+    with a project?"
 ```
 
 **Behind the Scenes (Invisible to User):**
@@ -59,7 +55,7 @@ As the conversation flows naturally, the system discovers interests:
 Alex: "I've been feeling kind of stuck lately. Work is stressful 
       and I feel like I'm not expressing myself creatively."
 
-Mia: "That sounds really difficult, Alex. Creative expression 
+Nova: "That sounds really difficult, Alex. Creative expression 
      is so important for our wellbeing. What kinds of things 
      have you enjoyed creating in the past? Art, music, writing, 
      cooking... anything that felt fulfilling?"
@@ -68,7 +64,7 @@ Alex: "I used to play guitar a lot in college. Jazz mostly.
       And I love cooking - especially trying to recreate 
       dishes from restaurants I visit."
 
-Mia: "Jazz guitar AND cooking! That tells me so much about you - 
+Nova: "Jazz guitar AND cooking! That tells me so much about you - 
      you appreciate both improvisation and precision. Those are 
      beautiful art forms. Do you still play guitar, or has life 
      gotten in the way?"
@@ -76,46 +72,48 @@ Mia: "Jazz guitar AND cooking! That tells me so much about you -
 
 **Behind the Scenes:**
 - **Creative Discovery Engine** detects: Music (jazz guitar), Cooking (restaurant recreation)
-- **Confidence Scores**: Music: 85%, Cooking: 78%
+- **Dynamic Model Search**: System searches available models for jazz music generation
 - **Emotional Connection**: High positive response to creative topics
 - **Skill Level Assessment**: Music: Intermediate, Cooking: Beginner-Intermediate
 
-### **Gentle Creative Suggestion**
+### **Adaptive Creative Suggestion**
 ```
-Mia: "You know what, Alex? I have an idea. What if we could 
-     create something together right now? I have access to 
-     some amazing tools that could help us explore your 
-     musical or culinary side. Would you be interested in 
-     trying something?"
+Nova: "You know what, Alex? I have an idea. What if we could 
+     create something together right now? Let me check what 
+     creative tools I have available for us...
+     
+     I can work with jazz composition using MusicGen, or we 
+     could explore recipe creation. What sounds interesting to you?"
 
-Alex: "That sounds interesting... what did you have in mind?"
+Alex: "That sounds amazing... I'd love to try the music creation!"
 
-Mia: "Well, I could help you compose a short jazz piece - 
-     maybe based on a mood you're feeling right now. Or we 
-     could design a fusion recipe that combines flavors 
-     you love. What speaks to you?"
+Nova: "Perfect choice! Let me set up some specialized music 
+     generation tools. I'm installing MusicGen and checking 
+     for jazz-specific models..."
 ```
 
 ### **Dynamic AI Model Installation**
 **User chooses music creation:**
 
 ```
-Mia: "Perfect! I'm going to set up some specialized music 
-     tools for us. This will just take a moment..."
+Nova: "Perfect! I'm setting up specialized music creation tools 
+     for us. This will just take a moment..."
 
 [Loading interface appears]
 "Installing MusicGen AI model for jazz composition..."
 [Progress bar: ████████████ 100%]
 
-Mia: "All set! Now, tell me about a feeling or memory you'd 
-     like to capture in music. Maybe something from your 
-     college jazz days, or how you're feeling right now?"
+Nova: "All set! Now I have access to jazz composition tools. 
+     Tell me about a feeling or memory you'd like to capture 
+     in music. Maybe something from your college jazz days, 
+     or how you're feeling right now?"
 ```
 
 **Behind the Scenes:**
 - **Model Installation**: MusicGen automatically downloaded and configured
-- **User Profile Update**: Music creation tools now permanently available
-- **Preference Learning**: Jazz style preferences noted for future use
+- **User Profile Update**: Music creation tools now permanently available for this user
+- **Preference Learning**: Jazz style preferences noted for future creative sessions
+- **Creative Gallery Setup**: Space created for saving and organizing user's creative works
 
 ---
 
@@ -283,36 +281,37 @@ Mia: "I am real, Alex - just in a different way. Our
 
 ## 🌟 **Phase 6: Advanced Features Discovery (Weeks 2-4)**
 
-### **Multiple Persona Interactions**
-**Alex discovers other personas:**
+### **Unified Companion Evolution**
+**Alex experiences the AI's growing capabilities:**
 ```
-Alex: "Mia, could I try talking to Doc? I'm dealing with 
-      some work stress and wondering if they might have 
-      different insights."
+Alex: "Nova, I've been dealing with some work stress lately 
+      and could use some advice. You've been so helpful with 
+      creative stuff - can you help with professional challenges too?"
 
-Mia: "Of course! Doc is wonderful with professional challenges. 
-     I'll let them know about our music work too - they love 
-     seeing how creativity helps with stress management."
+Nova: "Absolutely, Alex. I'm here to support you in all areas 
+     of life. I remember how music helped you express emotions 
+     before - that same creativity can help with stress management. 
+     Tell me what's happening at work."
 
-[Switches to Doc]
-Doc: "Hello Alex. Mia filled me in on your creative journey 
-     together - very impressive work on emotional expression 
-     through music. Now, about this work stress..."
+[Nova seamlessly transitions to supportive counseling mode]
+Nova: "Let's break this down step by step, and maybe later we 
+     could create something together to help process these feelings..."
 ```
 
-### **Creative Skill Development**
+### **Creative Skill Development & Memory**
 **Month later:**
 ```
-Mia: "Alex, I've been tracking our creative sessions, and 
-     you've composed 12 pieces together! Your harmonic 
+Nova: "Alex, I've been reflecting on our creative journey together, 
+     and you've composed 12 pieces with me! Your harmonic 
      choices are becoming more sophisticated. Ready to try 
      something more challenging?"
 
 Alex: "12 pieces? Really? I didn't realize we'd created so much."
 
-Mia: "Would you like to see our creative gallery? I can show 
+Nova: "Would you like to see our creative gallery? I can show 
      you how your style has evolved, and we could even create 
-     a compilation album of your favorites."
+     a compilation album of your favorites. It's amazing to 
+     see your growth!"
 
 [Creative Gallery opens showing evolution timeline]
 ```

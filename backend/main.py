@@ -4,17 +4,22 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional, Dict
 from datetime import datetime
+
+# Import route modules
 from api.persona_routes import router as persona_router
-from models.persona_state import PersonaState
-from core.self_talk import SelfTalkSystem
-from modules.emotion.emotion_state import emotion_state
-from modules.memory.mia_self_talk import generate_self_talk
-from modules.memory.mia_memory_response import generate_memory_response, recall_similar_emotions
+from routes.unified_companion import router as unified_companion_router
 from romantic_routes import router as romantic_router
 from phase2_routes import router as phase2_router
 from routes.phase3 import router as phase3_router
 from routes.advanced_features import router as advanced_features_router
 from websocket_handlers import setup_phase3_websocket_handlers
+
+# Import core systems
+from models.persona_state import PersonaState
+from core.self_talk import SelfTalkSystem
+from modules.emotion.emotion_state import emotion_state
+from modules.memory.mia_self_talk import generate_self_talk
+from modules.memory.mia_memory_response import generate_memory_response, recall_similar_emotions
 from database.mongodb_client import initialize_mongodb, mongodb_client
 from clustering.cluster_manager import initialize_cluster, server_health_check
 
@@ -65,8 +70,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include persona routes
+# Include all routers
 app.include_router(persona_router, prefix="/api")
+app.include_router(unified_companion_router, prefix="/api")
+app.include_router(romantic_router, prefix="/api")
+app.include_router(phase2_router, prefix="/api")
+app.include_router(phase3_router, prefix="/api")
+app.include_router(advanced_features_router, prefix="/api")
 
 class TextInput(BaseModel):
     text: str
