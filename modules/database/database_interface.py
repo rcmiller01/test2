@@ -514,10 +514,14 @@ def create_database_interface(connection_string: Optional[str] = None, database_
     if database_type == "inmemory" or not connection_string:
         return InMemoryDatabase()
     elif database_type == "mongodb":
-        # This would be implemented when MongoDB is available
-        # from .mongodb_database import MongoDatabase
-        # return MongoDatabase(connection_string)
-        logging.warning("MongoDB not available, using in-memory database")
-        return InMemoryDatabase()
+        try:
+            from .mongodb_database import MongoDatabase
+            return MongoDatabase(connection_string)
+        except ImportError as e:
+            logging.warning(f"MongoDB dependencies not available ({e}), using in-memory database")
+            return InMemoryDatabase()
+        except Exception as e:
+            logging.error(f"Error creating MongoDB interface ({e}), using in-memory database")
+            return InMemoryDatabase()
     else:
         raise ValueError(f"Unsupported database type: {database_type}")
