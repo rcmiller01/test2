@@ -48,6 +48,9 @@ class GuidancePackage:
     
     # Mode-specific configuration
     mode_specifics: Dict[str, Any] = field(default_factory=dict)
+
+    # Inflection guidance
+    inflection_profile: Dict[str, str] = field(default_factory=dict)
     
     # Execution directives
     utility_actions: List[Dict] = field(default_factory=list)
