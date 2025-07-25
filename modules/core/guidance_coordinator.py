@@ -41,6 +41,7 @@ class GuidancePackage:
     # Utility guidance
     utility_recommendations: List[str] = field(default_factory=list)
     creative_guidance: str = ""
+    symbolic_resurrection_line: str = ""
     
     # Safety and intervention
     crisis_level: int = 0
