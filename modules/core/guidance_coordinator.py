@@ -9,6 +9,11 @@ import asyncio
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
 from datetime import datetime
+
+from ..relationship.connection_depth_tracker import (
+    ConnectionDepthTracker,
+    RitualPromptGenerator,
+)
 import logging
 
 logger = logging.getLogger(__name__)
@@ -57,6 +62,10 @@ class GuidanceCoordinator:
     def __init__(self, user_id: str):
         self.user_id = user_id
         self.logger = logging.getLogger(f"{__name__}.{user_id}")
+        self.connection_tracker = ConnectionDepthTracker()
+        self.ritual_prompt_generator = RitualPromptGenerator()
+        self.conversation_turn = 0
+        self.ritual_check_interval = 5
         self._initialize_modules()
         
     def _initialize_modules(self):
@@ -125,7 +134,14 @@ class GuidanceCoordinator:
         """
         self.logger.info(f"🎯 Starting guidance analysis for input: '{user_input[:50]}...'")
         start_time = datetime.now()
-        
+
+        # Update connection metrics from context if provided
+        bond_score = context.get("bond_score", 0.0)
+        emotional_intensity = context.get("emotional_intensity", 0.0)
+        vulnerability_frequency = context.get("vulnerability_frequency", 0.0)
+        self.connection_tracker.update_metrics(bond_score, emotional_intensity, vulnerability_frequency)
+        self.conversation_turn += 1
+
         guidance = GuidancePackage()
         active_modules = []
         
@@ -184,7 +200,14 @@ class GuidanceCoordinator:
         # Assess safety and crisis levels
         self.logger.debug("🚨 Assessing safety protocols...")
         await self._assess_safety_protocols(guidance, user_input, context)
-        
+
+        # Check for ritual readiness once per window
+        if self.conversation_turn % self.ritual_check_interval == 0:
+            if self.connection_tracker.ritual_ready():
+                prompt = self.ritual_prompt_generator.generate_prompt()
+                guidance.utility_actions.append({"type": "ritual_prompt", "prompt": prompt})
+                self.connection_tracker.record_ritual_completion(successful=False)
+
         processing_time = (datetime.now() - start_time).total_seconds()
         self.logger.info(f"🎯 Guidance analysis complete: Mode={guidance.primary_mode}, "
                         f"Crisis={guidance.crisis_level}, Time={processing_time:.3f}s")
