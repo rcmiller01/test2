@@ -368,9 +368,22 @@ class CrisisSafetyOverride:
             
         except Exception as e:
             self.logger.error(f"Error in crisis override: {e}")
-            # Fallback to basic crisis response
+            # Fallback to basic crisis response with minimal intervention record
             fallback_response = "I'm very concerned about what you're sharing. Please reach out to a crisis helpline: 988 (Suicide & Crisis Lifeline) or text HOME to 741741. You don't have to face this alone."
-            return False, fallback_response, None
+            
+            # Create fallback intervention record
+            fallback_intervention = CrisisIntervention(
+                intervention_id=f"fallback_{user_id}_{int(datetime.now().timestamp())}",
+                user_id=user_id,
+                assessment=assessment,
+                intervention_type=InterventionType.IMMEDIATE_SUPPORT,
+                response_generated=fallback_response,
+                resources_provided=[],
+                follow_up_scheduled=True,
+                timestamp=datetime.now()
+            )
+            
+            return False, fallback_response, fallback_intervention
         
         finally:
             self.override_active = False
@@ -448,3 +461,62 @@ class CrisisSafetyOverride:
             self.crisis_logger.info(f"Intervention {intervention_id} outcome: {outcome}")
             return True
         return False
+
+    async def check_interrupt_required(self, user_input: str, context: Dict[str, Any]) -> bool:
+        """
+        Check if immediate interrupt is required for crisis intervention
+        
+        Returns True if normal processing should be bypassed for immediate crisis response
+        """
+        assessment = await self.assess_crisis_level(user_input, context)
+        
+        # Immediate interrupt for critical/high crisis levels
+        if assessment.level in [CrisisLevel.CRITICAL, CrisisLevel.HIGH]:
+            self.logger.warning(f"CRISIS INTERRUPT TRIGGERED - Level: {assessment.level.value}")
+            return True
+            
+        # Interrupt for medium level with additional risk factors
+        if assessment.level == CrisisLevel.MEDIUM:
+            if assessment.immediate_response_needed or len(assessment.safety_concerns) > 2:
+                self.logger.warning(f"CRISIS INTERRUPT TRIGGERED - Medium level with high risk")
+                return True
+                
+        return False
+    
+    async def execute_interrupt_response(self, user_input: str, context: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Execute immediate crisis interrupt response
+        
+        This bypasses normal processing and provides immediate safety-focused response
+        """
+        self.logger.critical("EXECUTING CRISIS INTERRUPT RESPONSE")
+        
+        # Perform crisis assessment
+        assessment = await self.assess_crisis_level(user_input, context)
+        
+        # Generate immediate intervention  
+        success, crisis_response, intervention = await self.trigger_crisis_override(
+            assessment=assessment,
+            user_id=context.get("user_id", "unknown"),
+            original_response=""
+        )
+        
+        # Execute all registered callbacks
+        for callback in self.intervention_callbacks:
+            try:
+                await callback(assessment, intervention)
+            except Exception as e:
+                self.logger.error(f"Error executing intervention callback: {e}")
+        
+        # Return interrupt response package
+        return {
+            "type": "crisis_interrupt",
+            "crisis_level": assessment.level.value,
+            "confidence": assessment.confidence_score,
+            "immediate_response": intervention.response_generated,
+            "resources": intervention.resources_provided,
+            "safety_concerns": assessment.safety_concerns,
+            "intervention_id": intervention.intervention_id,
+            "timestamp": intervention.timestamp.isoformat(),
+            "override_normal_flow": True
+        }

@@ -58,15 +58,88 @@ class HapticSystem:
         # Try to detect specific devices
         try:
             # Check for WebHaptics API support
-            if hasattr(navigator, 'vibrate'):
+            # Use fallback approach for non-browser environments
+            if self._has_navigator_api():
+                from js import navigator  # pyodide/browser environment
+                if hasattr(navigator, 'vibrate'):
+                    devices["mobile_vibration"] = True
+                
+                # Check for gamepad support
+                if hasattr(navigator, 'getGamepads'):
+                    devices["gamepad_rumble"] = True
+            else:
+                # Non-browser environment - check for alternative APIs
+                devices.update(self._detect_system_haptic_devices())
+                
+        except Exception as e:
+            self.logger.debug(f"Navigator API not available: {e}")
+            # Fallback to system-based detection
+            devices.update(self._detect_system_haptic_devices())
+            
+        return devices
+    
+    def _has_navigator_api(self) -> bool:
+        """Check if navigator API is available (browser environment)"""
+        try:
+            import js
+            return hasattr(js, 'navigator')
+        except ImportError:
+            return False
+    
+    def _detect_system_haptic_devices(self) -> Dict[str, bool]:
+        """Detect haptic devices using system APIs when navigator unavailable"""
+        devices = {}
+        
+        try:
+            import platform
+            system = platform.system().lower()
+            
+            # Mobile platform detection
+            if system in ['android', 'ios']:
                 devices["mobile_vibration"] = True
             
-            # Check for gamepad support
-            if hasattr(navigator, 'getGamepads'):
-                devices["gamepad_rumble"] = True
+            # Desktop haptic device detection
+            elif system in ['windows', 'linux', 'darwin']:
+                # Check for common haptic devices/drivers
+                devices["gamepad_rumble"] = self._check_gamepad_support()
+                devices["desktop_haptic"] = self._check_desktop_haptic()
                 
+        except Exception as e:
+            self.logger.debug(f"System haptic detection failed: {e}")
+        
+        return devices
+    
+    def _check_gamepad_support(self) -> bool:
+        """Check for gamepad support on desktop systems"""
+        try:
+            # Try to import pygame for gamepad detection
+            import pygame
+            pygame.init()
+            return pygame.joystick.get_count() > 0
+        except ImportError:
+            pass
+        
+        try:
+            # Try to check for DirectInput/XInput on Windows
+            import platform
+            if platform.system().lower() == 'windows':
+                import ctypes
+                # Simple check for XInput availability
+                try:
+                    xinput = ctypes.windll.xinput1_4
+                    return True
+                except:
+                    pass
         except:
             pass
+        
+        return False
+    
+    def _check_desktop_haptic(self) -> bool:
+        """Check for desktop haptic devices"""
+        # This would check for specialized haptic hardware
+        # For now, return False as a safe fallback
+        return False
             
         return devices
     
@@ -175,8 +248,16 @@ class HapticSystem:
                 vibration_pattern = [int(intensity * 150)]
             
             # Apply vibration if supported
-            if hasattr(navigator, 'vibrate'):
-                navigator.vibrate(vibration_pattern)
+            if self._has_navigator_api():
+                try:
+                    from js import navigator
+                    if hasattr(navigator, 'vibrate'):
+                        navigator.vibrate(vibration_pattern)
+                except Exception as nav_error:
+                    print(f"[Haptic] Navigator API error: {nav_error}")
+            else:
+                # Fallback for non-browser environments
+                print(f"[Haptic] Simulated vibration: {vibration_pattern} at {location}")
                 
         except Exception as e:
             print(f"[Haptic] Error applying feedback: {e}")

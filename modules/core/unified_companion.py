@@ -661,8 +661,50 @@ class UnifiedCompanion:
         if session_id is None:
             session_id = f"session_{int(datetime.now().timestamp())}"
         self.enhanced_logger.start_interaction_trace(interaction_id, user_id, session_id)
-        
+
         try:
+            # PRIORITY CHECK: Crisis Interrupt Assessment
+            # This happens BEFORE any other processing to ensure immediate safety response
+            context_for_assessment = session_context or {}
+            context_for_assessment.update({"user_id": user_id, "interaction_id": interaction_id})
+            
+            if await self.crisis_override.check_interrupt_required(user_input, context_for_assessment):
+                self.enhanced_logger.log_decision(
+                    DecisionCategory.CRISIS_ASSESSMENT,
+                    "CRISIS INTERRUPT ACTIVATED - Bypassing normal processing",
+                    {"trigger": "immediate_safety_required"},
+                    "Immediate crisis response bypassing all other systems",
+                    "INTERRUPT_EXECUTED",
+                    1.0
+                )
+                
+                # Execute immediate crisis interrupt
+                interrupt_response = await self.crisis_override.execute_interrupt_response(
+                    user_input, context_for_assessment
+                )
+                
+                # Log interrupt to database
+                if self.database:
+                    # Create a minimal interaction record for the crisis interrupt
+                    interrupt_record = InteractionRecord(
+                        interaction_id=interaction_id,
+                        user_id=user_id,
+                        session_id=session_id,
+                        timestamp=datetime.now(),
+                        user_input=user_input,
+                        companion_response=interrupt_response["immediate_response"],
+                        interaction_type=InteractionType.CRISIS_SUPPORT,
+                        context_analysis={"crisis_interrupt": True},
+                        emotional_state={},
+                        technical_context={},
+                        creative_context={},
+                        guidance_used={"crisis_override": True},
+                        response_metrics={"crisis_level": interrupt_response["crisis_level"]}
+                    )
+                    await self.database.save_interaction(interrupt_record)
+                
+                return interrupt_response
+
             # STEP 1: Crisis Assessment with Override Capability
             self.enhanced_logger.log_decision(
                 DecisionCategory.CRISIS_ASSESSMENT,

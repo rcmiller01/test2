@@ -78,19 +78,102 @@ class VRIntegration:
     def _detect_vr_devices(self):
         """Detect available VR devices and capabilities"""
         try:
-            # Check for WebXR support
-            if hasattr(navigator, 'xr'):
-                self.device_support["webxr"] = True
-            
-            # Check for WebVR support (legacy)
-            if hasattr(navigator, 'getVRDisplays'):
-                self.device_support["webvr"] = True
+            # Check for WebXR support with navigator API fallback
+            if self._has_navigator_api():
+                from js import navigator
+                if hasattr(navigator, 'xr'):
+                    self.device_support["webxr"] = True
                 
-        except:
-            pass
+                # Check for WebVR support (legacy)
+                if hasattr(navigator, 'getVRDisplays'):
+                    self.device_support["webvr"] = True
+            else:
+                # Non-browser environment - check for VR runtime APIs
+                self.device_support.update(self._detect_system_vr())
+                
+        except Exception as e:
+            print(f"[VR] VR device detection failed: {e}")
+            # Continue with fallback support
         
         # Simulate VR support for development
         self.device_support["desktop_vr"] = True
+    
+    def _has_navigator_api(self) -> bool:
+        """Check if navigator API is available (browser environment)"""
+        try:
+            import js
+            return hasattr(js, 'navigator')
+        except ImportError:
+            return False
+    
+    def _detect_system_vr(self) -> Dict[str, bool]:
+        """Detect VR devices using system APIs when navigator unavailable"""
+        vr_support = {}
+        
+        try:
+            import platform
+            system = platform.system().lower()
+            
+            # Check for VR runtime on different platforms
+            if system == 'windows':
+                vr_support.update(self._check_windows_vr())
+            elif system == 'linux':
+                vr_support.update(self._check_linux_vr())
+            elif system == 'darwin':
+                vr_support.update(self._check_macos_vr())
+                
+        except Exception as e:
+            print(f"[VR] System VR detection failed: {e}")
+        
+        return vr_support
+    
+    def _check_windows_vr(self) -> Dict[str, bool]:
+        """Check for VR support on Windows"""
+        support = {}
+        
+        try:
+            # Check for SteamVR
+            import os
+            steam_vr_path = os.path.expandvars(r"%PROGRAMFILES(x86)%\Steam\steamapps\common\SteamVR")
+            support["steamvr"] = os.path.exists(steam_vr_path)
+            
+            # Check for Oculus runtime
+            oculus_path = os.path.expandvars(r"%PROGRAMFILES%\Oculus")
+            support["oculus"] = os.path.exists(oculus_path)
+            
+        except Exception:
+            pass
+        
+        return support
+    
+    def _check_linux_vr(self) -> Dict[str, bool]:
+        """Check for VR support on Linux"""
+        support = {}
+        
+        try:
+            import subprocess
+            import os
+            
+            # Check for SteamVR on Linux
+            steam_vr_linux = os.path.expanduser("~/.steam/steam/steamapps/common/SteamVR")
+            support["steamvr"] = os.path.exists(steam_vr_linux)
+            
+            # Check for OpenXR runtime
+            try:
+                result = subprocess.run(['which', 'openxr'], capture_output=True, text=True)
+                support["openxr"] = result.returncode == 0
+            except:
+                pass
+                
+        except Exception:
+            pass
+        
+        return support
+    
+    def _check_macos_vr(self) -> Dict[str, bool]:
+        """Check for VR support on macOS"""
+        # Limited VR support on macOS
+        return {"desktop_vr": False}
     
     def _load_scene_definitions(self) -> Dict[VRSceneType, VRScene]:
         """Load VR scene definitions"""

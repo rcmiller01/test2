@@ -56,47 +56,61 @@ class GuidanceCoordinator:
     
     def __init__(self, user_id: str):
         self.user_id = user_id
+        self.logger = logging.getLogger(f"{__name__}.{user_id}")
         self._initialize_modules()
         
     def _initialize_modules(self):
         """Initialize all psychological and utility modules"""
+        self.logger.info(f"🔧 Initializing GuidanceCoordinator modules for user {self.user_id}")
+        module_count = 0
+        
         try:
             # Import and initialize psychological modules
             from ...modules.emotion.attachment_regulation import AttachmentRegulationEngine
             self.attachment_engine = AttachmentRegulationEngine(self.user_id)
-        except ImportError:
-            logger.warning("Attachment regulation module not available")
+            module_count += 1
+            self.logger.debug("✅ Attachment regulation module loaded")
+        except ImportError as e:
+            self.logger.warning(f"⚠️ Attachment regulation module not available: {e}")
             self.attachment_engine = None
             
         try:
             from ...modules.memory.shadow_memory import ShadowMemoryLayer
             self.shadow_memory = ShadowMemoryLayer(self.user_id)
-        except ImportError:
-            logger.warning("Shadow memory module not available")
+            module_count += 1
+            self.logger.debug("✅ Shadow memory module loaded")
+        except ImportError as e:
+            self.logger.warning(f"⚠️ Shadow memory module not available: {e}")
             self.shadow_memory = None
             
         try:
             from ...modules.symbolic.dream_engine import DreamEngine
             self.dream_engine = DreamEngine(self.user_id)
-        except ImportError:
-            logger.warning("Dream engine module not available")
+            module_count += 1
+            self.logger.debug("✅ Dream engine module loaded")
+        except ImportError as e:
+            self.logger.warning(f"⚠️ Dream engine module not available: {e}")
             self.dream_engine = None
             
         try:
             from ...modules.emotion.moodscape_audio import MoodscapeAudioLayer
             self.audio_layer = MoodscapeAudioLayer(self.user_id)
-        except ImportError:
-            logger.warning("Audio moodscape module not available")
+            module_count += 1
+            self.logger.debug("✅ Audio moodscape module loaded")
+        except ImportError as e:
+            self.logger.warning(f"⚠️ Audio moodscape module not available: {e}")
             self.audio_layer = None
             
         try:
             from ...backend.modules.creative.emotional_creativity import EmotionalCreativity
             self.creative_module = EmotionalCreativity(self.user_id)
-        except ImportError:
-            logger.warning("Creative module not available")
+            module_count += 1
+            self.logger.debug("✅ Creative module loaded")
+        except ImportError as e:
+            self.logger.warning(f"⚠️ Creative module not available: {e}")
             self.creative_module = None
             
-        logger.info(f"Guidance coordinator initialized for user {self.user_id}")
+        self.logger.info(f"🎯 GuidanceCoordinator initialized: {module_count}/5 modules active")
     
     async def analyze_and_guide(self, user_input: str, context: Dict) -> GuidancePackage:
         """
@@ -109,41 +123,75 @@ class GuidanceCoordinator:
         Returns:
             GuidancePackage with comprehensive directive guidance
         """
+        self.logger.info(f"🎯 Starting guidance analysis for input: '{user_input[:50]}...'")
+        start_time = datetime.now()
+        
         guidance = GuidancePackage()
+        active_modules = []
         
         # Run all analysis in parallel for efficiency
         tasks = []
         
         if self.attachment_engine:
             tasks.append(self._get_attachment_guidance(user_input, context))
+            active_modules.append("attachment")
         
         if self.shadow_memory:
             tasks.append(self._get_shadow_insights(user_input, context))
+            active_modules.append("shadow_memory")
             
         if self.dream_engine:
             tasks.append(self._get_dream_guidance(user_input, context))
+            active_modules.append("dream_engine")
             
         if self.audio_layer:
             tasks.append(self._get_audio_guidance(user_input, context))
+            active_modules.append("audio")
             
         if self.creative_module:
             tasks.append(self._get_creative_guidance(user_input, context))
+            active_modules.append("creative")
+        
+        self.logger.debug(f"📋 Active modules for analysis: {', '.join(active_modules)}")
         
         # Execute all guidance gathering in parallel
         if tasks:
+            self.logger.debug(f"⚡ Running {len(tasks)} analysis tasks in parallel")
             results = await asyncio.gather(*tasks, return_exceptions=True)
             
             # Process results and update guidance package
+            successful_results = 0
+            for i, result in enumerate(results):
+                if isinstance(result, Exception):
+                    self.logger.error(f"❌ {active_modules[i]} module failed: {result}")
+                else:
+                    successful_results += 1
+                    self.logger.debug(f"✅ {active_modules[i]} module completed successfully")
+            
+            self.logger.info(f"📊 Module Results: {successful_results}/{len(tasks)} successful")
             self._integrate_guidance_results(guidance, results)
+        else:
+            self.logger.warning("⚠️ No modules available for guidance analysis - using fallback")
         
         # Perform therapeutic analysis
+        self.logger.debug("🧠 Performing therapeutic analysis...")
         await self._assess_therapeutic_needs(guidance, user_input, context)
         
         # Determine environmental recommendations
+        self.logger.debug("🌍 Generating environmental guidance...")
         await self._generate_environmental_guidance(guidance, user_input, context)
         
         # Assess safety and crisis levels
+        self.logger.debug("🚨 Assessing safety protocols...")
         await self._assess_safety_protocols(guidance, user_input, context)
+        
+        processing_time = (datetime.now() - start_time).total_seconds()
+        self.logger.info(f"🎯 Guidance analysis complete: Mode={guidance.primary_mode}, "
+                        f"Crisis={guidance.crisis_level}, Time={processing_time:.3f}s")
+        
+        # Log final guidance summary
+        if guidance.crisis_level > 0:
+            self.logger.warning(f"🚨 Crisis level {guidance.crisis_level} detected - safety protocols activated")
         
         return guidance
     

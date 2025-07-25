@@ -510,12 +510,20 @@ class InMemoryDatabase:
 def create_database_interface(connection_string: Optional[str] = None, database_type: str = "inmemory") -> DatabaseInterface:
     """
     Factory function to create appropriate database interface
+    Auto-detects MongoDB when connection string is provided
     """
+    # Auto-detect MongoDB when connection string is provided but type is default
+    if connection_string and database_type == "inmemory":
+        database_type = "mongodb"
+        logging.info("Auto-detected MongoDB from connection string")
+    
     if database_type == "inmemory" or not connection_string:
+        logging.info("Using in-memory database")
         return InMemoryDatabase()
     elif database_type == "mongodb":
         try:
             from .mongodb_database import MongoDatabase
+            logging.info(f"Initializing MongoDB with connection: {connection_string[:20]}...")
             return MongoDatabase(connection_string)
         except ImportError as e:
             logging.warning(f"MongoDB dependencies not available ({e}), using in-memory database")
