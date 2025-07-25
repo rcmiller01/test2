@@ -44,7 +44,7 @@ class TestPhase2UnitTests(unittest.TestCase):
             self.assertEqual(state.current_gesture, "affection")
             self.assertGreaterEqual(state.gesture_intensity, 0.7)
             
-            print("✅ Avatar state management tests passed")
+            # All assertions passed - no need for print statement
             
         except ImportError:
             # Mock implementation if module not available
@@ -74,7 +74,7 @@ class TestPhase2UnitTests(unittest.TestCase):
             intense_params = synthesizer.get_voice_parameters("passionate", intensity=0.9)
             self.assertGreater(intense_params["intensity"], 0.8)
             
-            print("✅ Voice synthesis parameter tests passed")
+            # All voice synthesis tests passed
             
         except ImportError:
             # Mock implementation
@@ -121,7 +121,7 @@ class TestPhase2UnitTests(unittest.TestCase):
                 self.assertLessEqual(suggestion["duration_minutes"], 60)
                 self.assertGreaterEqual(suggestion["romantic_intensity"], 0.6)
             
-            print("✅ Activity filtering system tests passed")
+            # All activity filtering tests passed
             
         except ImportError:
             # Mock implementation
@@ -158,7 +158,7 @@ class TestPhase2UnitTests(unittest.TestCase):
             })
             self.assertGreater(custom_scene.get("intimacy_score", 0), 0.7)
             
-            print("✅ Scene generation logic tests passed")
+            # All scene generation tests passed
             
         except ImportError:
             # Mock scene generation
@@ -196,7 +196,7 @@ class TestPhase2UnitTests(unittest.TestCase):
         self.assertTrue(config["voice"]["intimate_phrases"])
         self.assertTrue(config["activities"]["romantic_filter"])
         
-        print("✅ Phase 2 integration consistency tests passed")
+        # All integration consistency tests passed
     
     def test_emotional_state_tracking(self):
         """Test emotional state tracking for romantic interactions"""
@@ -221,7 +221,7 @@ class TestPhase2UnitTests(unittest.TestCase):
             self.assertIsInstance(history, list)
             self.assertGreater(len(history), 0)
             
-            print("✅ Emotional state tracking tests passed")
+            # All emotional state tracking tests passed
             
         except ImportError:
             # Mock emotional tracking
@@ -281,7 +281,7 @@ class TestPhase2AsyncComponents(unittest.TestCase):
         
         result = self.loop.run_until_complete(voice_test())
         self.assertTrue(result)
-        print("✅ Async voice processing tests completed")
+        # All async voice processing tests completed
 
 
 if __name__ == "__main__":
@@ -304,15 +304,8 @@ if __name__ == "__main__":
     total_failures = len(sync_result.failures) + len(async_result.failures)
     total_errors = len(sync_result.errors) + len(async_result.errors)
     
-    print("=" * 50)
-    print("📊 Phase 2 Unit Test Results:")
-    print(f"✅ Tests run: {total_tests}")
-    print(f"❌ Failures: {total_failures}")
-    print(f"💥 Errors: {total_errors}")
-    
+    # Use proper exit codes for CI/CD integration
     if total_failures == 0 and total_errors == 0:
-        print("🎉 All Phase 2 unit tests passed!")
         exit(0)
     else:
-        print("🔧 Some tests failed. Review and fix issues.")
         exit(1)

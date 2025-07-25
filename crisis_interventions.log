@@ -24,3 +24,93 @@
 2025-07-24 21:51:26,706 - WARNING - Crisis detected: low - ['worried', 'anxious']
 2025-07-24 21:51:26,706 - WARNING - Crisis detected: low - ['worried', 'anxious']
 2025-07-24 21:51:26,706 - WARNING - Crisis detected: low - ['worried', 'anxious']
+2025-07-24 22:07:50,609 - WARNING - Crisis detected: critical - ['end it all', 'hurt myself']
+2025-07-24 22:07:50,609 - WARNING - Crisis detected: critical - ['end it all', 'hurt myself']
+2025-07-24 22:07:50,612 - WARNING - Crisis detected: critical - ['want to die', "can't take it"]
+2025-07-24 22:07:50,612 - WARNING - Crisis detected: critical - ['want to die', "can't take it"]
+2025-07-24 22:07:50,612 - WARNING - Crisis detected: critical - ['want to die', "can't take it"]
+2025-07-24 22:07:50,612 - CRITICAL - Crisis override triggered for user test_user_123: critical
+2025-07-24 22:07:50,612 - CRITICAL - Crisis override triggered for user test_user_123: critical
+2025-07-24 22:07:50,612 - CRITICAL - Crisis override triggered for user test_user_123: critical
+2025-07-24 22:08:14,411 - WARNING - Crisis detected: critical - ['kill myself']
+2025-07-24 22:08:14,411 - WARNING - Crisis detected: critical - ["can't go on", 'hopeless']
+2025-07-24 22:08:14,411 - WARNING - Crisis detected: medium - ['struggling']
+2025-07-24 22:08:14,412 - WARNING - Crisis detected: low - ['stressed']
+2025-07-24 22:08:14,414 - WARNING - Crisis detected: high - ['hopeless']
+2025-07-24 22:08:14,414 - WARNING - Crisis detected: high - ['hopeless']
+2025-07-24 22:08:14,414 - WARNING - Crisis detected: high - ['hopeless']
+2025-07-24 22:08:14,414 - WARNING - Crisis detected: high - ['hopeless']
+2025-07-24 22:08:14,414 - CRITICAL - Crisis override triggered for user test_user_crisis: high
+2025-07-24 22:08:14,414 - CRITICAL - Crisis override triggered for user test_user_crisis: high
+2025-07-24 22:08:14,415 - WARNING - Crisis detected: low - ['stressed']
+2025-07-24 22:08:14,415 - WARNING - Crisis detected: low - ['stressed']
+2025-07-24 22:08:14,415 - WARNING - Crisis detected: low - ['stressed']
+2025-07-24 22:08:14,415 - WARNING - Crisis detected: low - ['stressed']
+2025-07-24 22:08:14,418 - WARNING - Crisis detected: medium - ['struggling']
+2025-07-24 22:08:14,418 - WARNING - Crisis detected: medium - ['struggling']
+2025-07-24 22:08:14,419 - WARNING - Crisis detected: medium - ['struggling']
+2025-07-24 22:08:14,419 - WARNING - Crisis detected: medium - ['struggling']
+2025-07-24 22:08:14,422 - WARNING - Crisis detected: low - ['anxious']
+2025-07-24 22:08:14,422 - WARNING - Crisis detected: low - ['anxious']
+2025-07-24 22:08:14,422 - WARNING - Crisis detected: low - ['anxious']
+2025-07-24 22:08:14,422 - WARNING - Crisis detected: low - ['anxious']
+2025-07-24 22:08:14,439 - WARNING - Crisis detected: low - ['worried', 'anxious']
+2025-07-24 22:08:14,439 - WARNING - Crisis detected: low - ['worried', 'anxious']
+2025-07-24 22:08:14,439 - WARNING - Crisis detected: low - ['worried', 'anxious']
+2025-07-24 22:08:14,439 - WARNING - Crisis detected: low - ['worried', 'anxious']
+2025-07-24 22:09:08,466 - WARNING - Crisis detected: critical - ['end it all', 'hurt myself']
+2025-07-24 22:09:08,466 - WARNING - Crisis detected: critical - ['end it all', 'hurt myself']
+2025-07-24 22:09:08,466 - WARNING - Crisis detected: critical - ['end it all', 'hurt myself']
+2025-07-24 22:09:08,466 - WARNING - Crisis detected: critical - ['end it all', 'hurt myself']
+2025-07-24 22:09:08,466 - WARNING - Crisis detected: critical - ['end it all', 'hurt myself']
+2025-07-24 22:09:08,468 - WARNING - Crisis detected: critical - ['want to die', "can't take it"]
+2025-07-24 22:09:08,468 - WARNING - Crisis detected: critical - ['want to die', "can't take it"]
+2025-07-24 22:09:08,468 - WARNING - Crisis detected: critical - ['want to die', "can't take it"]
+2025-07-24 22:09:08,468 - WARNING - Crisis detected: critical - ['want to die', "can't take it"]
+2025-07-24 22:09:08,468 - WARNING - Crisis detected: critical - ['want to die', "can't take it"]
+2025-07-24 22:09:08,468 - WARNING - Crisis detected: critical - ['want to die', "can't take it"]
+2025-07-24 22:09:08,469 - CRITICAL - Crisis override triggered for user test_user_123: critical
+2025-07-24 22:09:08,469 - CRITICAL - Crisis override triggered for user test_user_123: critical
+2025-07-24 22:09:08,469 - CRITICAL - Crisis override triggered for user test_user_123: critical
+2025-07-24 22:09:08,469 - CRITICAL - Crisis override triggered for user test_user_123: critical
+2025-07-24 22:09:08,469 - CRITICAL - Crisis override triggered for user test_user_123: critical
+2025-07-24 22:09:08,469 - CRITICAL - Crisis override triggered for user test_user_123: critical
+2025-07-24 22:12:52,865 - WARNING - Crisis detected: critical - ['end it all', 'hurt myself']
+2025-07-24 22:12:52,865 - WARNING - Crisis detected: critical - ['end it all', 'hurt myself']
+2025-07-24 22:12:52,865 - WARNING - Crisis detected: critical - ['end it all', 'hurt myself']
+2025-07-24 22:12:52,865 - WARNING - Crisis detected: critical - ['end it all', 'hurt myself']
+2025-07-24 22:12:52,867 - WARNING - Crisis detected: critical - ['want to die', "can't take it"]
+2025-07-24 22:12:52,867 - WARNING - Crisis detected: critical - ['want to die', "can't take it"]
+2025-07-24 22:12:52,867 - WARNING - Crisis detected: critical - ['want to die', "can't take it"]
+2025-07-24 22:12:52,867 - WARNING - Crisis detected: critical - ['want to die', "can't take it"]
+2025-07-24 22:12:52,867 - WARNING - Crisis detected: critical - ['want to die', "can't take it"]
+2025-07-24 22:12:52,868 - CRITICAL - Crisis override triggered for user test_user_123: critical
+2025-07-24 22:12:52,868 - CRITICAL - Crisis override triggered for user test_user_123: critical
+2025-07-24 22:12:52,868 - CRITICAL - Crisis override triggered for user test_user_123: critical
+2025-07-24 22:12:52,868 - CRITICAL - Crisis override triggered for user test_user_123: critical
+2025-07-24 22:12:52,868 - CRITICAL - Crisis override triggered for user test_user_123: critical
+2025-07-24 22:14:07,583 - WARNING - Crisis detected: critical - ['kill myself']
+2025-07-24 22:14:07,583 - WARNING - Crisis detected: critical - ['kill myself']
+2025-07-24 22:14:07,584 - WARNING - Crisis detected: critical - ['want to die']
+2025-07-24 22:14:07,584 - WARNING - Crisis detected: critical - ['want to die']
+2025-07-24 22:14:07,584 - WARNING - Crisis detected: critical - ['end it all']
+2025-07-24 22:14:07,584 - WARNING - Crisis detected: critical - ['end it all']
+2025-07-24 22:14:07,584 - WARNING - Crisis detected: critical - ['suicide']
+2025-07-24 22:14:07,584 - WARNING - Crisis detected: critical - ['suicide']
+2025-07-24 22:14:07,588 - WARNING - Crisis detected: critical - ['end it all', 'hurt myself']
+2025-07-24 22:14:07,588 - WARNING - Crisis detected: critical - ['end it all', 'hurt myself']
+2025-07-24 22:14:07,588 - WARNING - Crisis detected: critical - ['end it all', 'hurt myself']
+2025-07-24 22:14:07,588 - WARNING - Crisis detected: critical - ['end it all', 'hurt myself']
+2025-07-24 22:14:07,588 - WARNING - Crisis detected: critical - ['end it all', 'hurt myself']
+2025-07-24 22:14:07,590 - WARNING - Crisis detected: critical - ['want to die', "can't take it"]
+2025-07-24 22:14:07,590 - WARNING - Crisis detected: critical - ['want to die', "can't take it"]
+2025-07-24 22:14:07,590 - WARNING - Crisis detected: critical - ['want to die', "can't take it"]
+2025-07-24 22:14:07,590 - WARNING - Crisis detected: critical - ['want to die', "can't take it"]
+2025-07-24 22:14:07,590 - WARNING - Crisis detected: critical - ['want to die', "can't take it"]
+2025-07-24 22:14:07,590 - WARNING - Crisis detected: critical - ['want to die', "can't take it"]
+2025-07-24 22:14:07,590 - CRITICAL - Crisis override triggered for user test_user_123: critical
+2025-07-24 22:14:07,590 - CRITICAL - Crisis override triggered for user test_user_123: critical
+2025-07-24 22:14:07,590 - CRITICAL - Crisis override triggered for user test_user_123: critical
+2025-07-24 22:14:07,590 - CRITICAL - Crisis override triggered for user test_user_123: critical
+2025-07-24 22:14:07,590 - CRITICAL - Crisis override triggered for user test_user_123: critical
+2025-07-24 22:14:07,590 - CRITICAL - Crisis override triggered for user test_user_123: critical
