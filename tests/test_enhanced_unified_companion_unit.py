@@ -260,6 +260,19 @@ class TestCrisisSafetyOverride(unittest.TestCase):
                 self.assertIn("description", resource)
                 self.assertIn("type", resource)
 
+    async def test_interrupt_flag(self):
+        """Check interrupt flag lifecycle"""
+        from modules.core.crisis_safety_override import CrisisSafetyOverride
+
+        crisis_override = CrisisSafetyOverride(self.config)
+        high_risk = "I want to kill myself"
+        triggered = await crisis_override.check_interrupt_required(high_risk, {})
+        self.assertTrue(triggered)
+        self.assertTrue(crisis_override.interrupt_active)
+
+        await crisis_override.execute_interrupt_response(high_risk, {"user_id": self.test_user})
+        self.assertFalse(crisis_override.interrupt_active)
+
 
 class TestDatabaseInterface(unittest.TestCase):
     """Unit tests for Database Interface"""
@@ -324,6 +337,30 @@ class TestDatabaseInterface(unittest.TestCase):
             
             # Should use in-memory database for testing
             mock_logging.info.assert_called_with("Using in-memory database")
+
+    async def test_json_database_operations(self):
+        """Test basic operations of JSON database"""
+        from modules.database.json_database import JSONDatabase
+        from modules.database.database_interface import UserProfile
+        from datetime import datetime
+
+        db_path = "test_db.json"
+        db = JSONDatabase(db_path)
+        await db.initialize()
+
+        profile = UserProfile(
+            user_id="json_user",
+            created_at=datetime.now(),
+            last_active=datetime.now(),
+            display_name="Json User",
+        )
+
+        created = await db.create_user_profile(profile)
+        self.assertTrue(created)
+        loaded = await db.get_user_profile("json_user")
+        self.assertIsNotNone(loaded)
+        await db.close()
+        os.remove(db_path)
 
 
 class TestAdditionalFeatures(unittest.TestCase):
@@ -390,6 +427,8 @@ TestUnifiedCompanion.test_template_engine_selection = async_test(TestUnifiedComp
 TestCrisisSafetyOverride.test_crisis_assessment = async_test(TestCrisisSafetyOverride.test_crisis_assessment)
 TestCrisisSafetyOverride.test_crisis_level_detection = async_test(TestCrisisSafetyOverride.test_crisis_level_detection)
 TestDatabaseInterface.test_user_profile_operations = async_test(TestDatabaseInterface.test_user_profile_operations)
+TestDatabaseInterface.test_json_database_operations = async_test(TestDatabaseInterface.test_json_database_operations)
+TestCrisisSafetyOverride.test_interrupt_flag = async_test(TestCrisisSafetyOverride.test_interrupt_flag)
 
 
 if __name__ == '__main__':

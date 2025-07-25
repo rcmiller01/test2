@@ -511,6 +511,7 @@ def create_database_interface(connection_string: Optional[str] = None, database_
     """
     Factory function to create appropriate database interface
     Auto-detects MongoDB when connection string is provided
+    Supports local JSON persistence when `database_type` is ``jsonfile``.
     """
     import os
     
@@ -530,6 +531,23 @@ def create_database_interface(connection_string: Optional[str] = None, database_
     if database_type == "inmemory":
         logging.info("Using in-memory database")
         return InMemoryDatabase()
+    elif database_type == "jsonfile":
+        json_path = connection_string or os.getenv('JSON_DB_PATH', 'companion_db.json')
+        logging.info(f"Using JSON database file: {json_path}")
+        from .json_database import JSONDatabase
+        db = JSONDatabase(json_path)
+        awaitable = getattr(db, 'initialize', None)
+        if awaitable:
+            try:
+                import asyncio
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    loop.create_task(db.initialize())
+                else:
+                    loop.run_until_complete(db.initialize())
+            except RuntimeError:
+                asyncio.run(db.initialize())
+        return db
     elif database_type == "mongodb":
         if not connection_string:
             raise ValueError("MongoDB connection string required but not provided")
@@ -550,4 +568,6 @@ def create_database_interface(connection_string: Optional[str] = None, database_
             logging.error(error_msg)
             raise RuntimeError(error_msg)
     else:
-        raise ValueError(f"Unsupported database type: {database_type}. Supported types: 'auto', 'inmemory', 'mongodb'")
+        raise ValueError(
+            f"Unsupported database type: {database_type}. Supported types: 'auto', 'inmemory', 'mongodb', 'jsonfile'"
+        )
