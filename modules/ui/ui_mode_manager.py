@@ -54,10 +54,7 @@ class UIModeManager:
                     "voice_controls": "visible"
                 },
                 "personas": {
-                    "mia": {"type": "romantic_companion", "avatar_enabled": True, "emotional_hooks": True},
-                    "solene": {"type": "romantic_companion", "avatar_enabled": True, "emotional_hooks": True},
-                    "lyra": {"type": "mystical_entity", "avatar_enabled": True, "emotional_hooks": True},
-                    "doc": {"type": "coding_assistant", "avatar_enabled": False, "emotional_hooks": False}
+                    "unified_ai": {"type": "adaptive_companion", "avatar_enabled": True, "emotional_hooks": True}
                 }
             },
             UIMode.DEV: {
@@ -81,10 +78,7 @@ class UIModeManager:
                     "voice_controls": "hidden"
                 },
                 "personas": {
-                    "mia": {"type": "romantic_companion", "avatar_enabled": False, "emotional_hooks": False},
-                    "solene": {"type": "romantic_companion", "avatar_enabled": False, "emotional_hooks": False},
-                    "lyra": {"type": "mystical_entity", "avatar_enabled": False, "emotional_hooks": False},
-                    "doc": {"type": "coding_assistant", "avatar_enabled": False, "emotional_hooks": False}
+                    "unified_ai": {"type": "adaptive_companion", "avatar_enabled": False, "emotional_hooks": False}
                 }
             }
         }
@@ -194,29 +188,11 @@ class UIModeManager:
     def get_available_personas(self) -> Dict:
         """Get all available personas and their configurations"""
         return {
-            "mia": {
-                "name": "Mia",
-                "type": "romantic_companion",
+            "unified_ai": {
+                "name": "Companion",
+                "type": "adaptive_companion",
                 "llm_model": "mythomax",
-                "description": "Warm, affectionate romantic companion"
-            },
-            "solene": {
-                "name": "Solene", 
-                "type": "romantic_companion",
-                "llm_model": "openchat",
-                "description": "Sophisticated, mysterious romantic companion"
-            },
-            "lyra": {
-                "name": "Lyra",
-                "type": "mystical_entity", 
-                "llm_model": "qwen2",
-                "description": "Mystical, ethereal entity with curious nature"
-            },
-            "doc": {
-                "name": "Doc",
-                "type": "coding_assistant",
-                "llm_model": "kimik2", 
-                "description": "Professional coding assistant without emotional hooks"
+                "description": "Adaptive AI companion with contextual personality adaptation"
             }
         }
     

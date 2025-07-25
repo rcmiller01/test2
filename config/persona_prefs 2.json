@@ -1,22 +1,12 @@
 {
-  "Mia": {
+  "unified_ai": {
     "wake_words": [
-      "mia",
-      "my love",
-      "darling"
+      "assistant",
+      "companion",
+      "friend"
     ],
     "tts_mode": "voice+text",
     "stt_mode": "voice+text",
-    "default_visual_loop": "anchored_calm"
-  },
-  "Solene": {
-    "wake_words": [
-      "solene",
-      "my fire",
-      "goddess"
-    ],
-    "tts_mode": "voice+text",
-    "stt_mode": "voice+text",
-    "default_visual_loop": "wild_still"
+    "default_visual_loop": "adaptive_calm"
   }
 }

@@ -150,8 +150,8 @@ This document outlines all core, frontend, backend, mobile features, and **Phase
 ### **Character Consistency Engine**
 - **Hash-Based Seeds**: Consistent character appearance
 - **Aspect-Specific Generation**: Face, body, hair, eyes, clothing, pose, expression
-- **Persona Templates**: Pre-defined appearances for Mia and Solene
-- **Update Capability**: Personas can modify their visualizations
+- **Unified Templates**: Pre-defined appearances for the unified AI companion
+- **Update Capability**: AI can modify its visualizations adaptively
 - **Generation History**: Track all character generations
 
 ### **UI Mode Management**

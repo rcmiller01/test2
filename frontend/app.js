@@ -23,7 +23,7 @@ sendBtn.onclick = async () => {
     body: JSON.stringify({ event_type: "text", value: userText })
   });
   const data = await res.json();
-  appendMessage("Mia", `Responded to: ${data.value}`);
+  appendMessage("Companion", `Responded to: ${data.value}`);
 };
 
 // STT Integration

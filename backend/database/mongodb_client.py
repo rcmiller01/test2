@@ -7,7 +7,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from typing import Dict, List, Optional, Any
 from datetime import datetime
 import os
-from models.persona_state import PersonaState
+# from backend.models.persona_state import PersonaState  # Commented out to avoid circular import
 
 class MongoDBClient:
     def __init__(self):

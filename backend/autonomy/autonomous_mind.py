@@ -69,7 +69,7 @@ class AutonomousMind:
         }
 
         self.current_mood = "neutral"  # e.g., "happy", "melancholy", "curious"
-        self.current_persona = "Mia"   # e.g., "Mia", "Solene", "Lyra"
+        self.current_persona = "unified_ai"   # unified AI personality
     
     async def continuous_thinking_loop(self):
         """

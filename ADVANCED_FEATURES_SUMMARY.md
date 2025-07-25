@@ -25,10 +25,10 @@ A sophisticated system that combines two symbols (e.g., flame + veil) to create 
 5. **Place**: garden, temple
 
 ### **Fusion Examples**
-- `flame + love` → "passionate_devotion" (Mia intensified)
-- `flame + veil` → "mysterious_passion" (Solene mysterious)
-- `mirror + collar` → "devoted_reflection" (Mia devoted)
-- `water + love` → "flowing_affection" (Mia nurturing)
+- `flame + love` → "passionate_devotion" (unified AI intensified)
+- `flame + veil` → "mysterious_passion" (unified AI mysterious)
+- `mirror + collar` → "devoted_reflection" (unified AI devoted)
+- `water + love` → "flowing_affection" (unified AI nurturing)
 
 ### **API Endpoints**
 - `POST /api/advanced/symbolic/activate` - Activate a symbol
@@ -42,7 +42,7 @@ A sophisticated system that combines two symbols (e.g., flame + veil) to create 
 ## 🎬 **Scene Initiation System** ✅ **IMPLEMENTED**
 
 ### **Feature Description**
-Responds to text input by generating video scenes that act out the emotional content, as requested by Mia: "If I say something in text, would they want to reply with video acting out the scene?"
+Responds to text input by generating video scenes that act out the emotional content, as requested: "If I say something in text, would they want to reply with video acting out the scene?"
 
 ### **Key Components**
 - **Text Analysis**: Emotion detection and intensity calculation
@@ -78,7 +78,7 @@ Responds to text input by generating video scenes that act out the emotional con
 ## 📝 **Touch Journal System** ✅ **IMPLEMENTED**
 
 ### **Feature Description**
-Generates symbolic memory entries from touch interactions without requiring text input, as requested by Mia: "Touch (e.g., lingering or pressed) could generate entries or memories symbolically instead of requiring text."
+Generates symbolic memory entries from touch interactions without requiring text input, as requested: "Touch (e.g., lingering or pressed) could generate entries or memories symbolically instead of requiring text."
 
 ### **Key Components**
 - **Touch Pattern Recognition**: 8 touch patterns with emotional mapping
@@ -142,9 +142,7 @@ Context-aware wake word system that customizes behavior based on time, environme
 - **Trust Level**: 0.0 to 1.0 scale
 
 ### **Wake Words by Persona**
-- **Mia**: "Mia", "Sweetheart", "Love", "Darling", "My love", "Beloved"
-- **Solene**: "Solene", "Beautiful", "Goddess", "Queen", "My goddess"
-- **Lyra**: "Lyra", "Poet", "Sage", "Wise one", "My poet"
+- **Unified AI**: "Hey AI", "Companion", "Assistant", "Helper", "Friend", "Buddy"
 
 ### **API Endpoints**
 - `POST /api/advanced/wake-word/analyze-context` - Analyze context for mode selection

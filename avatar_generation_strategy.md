@@ -23,7 +23,7 @@
 **Implementation:**
 ```python
 # Character generation with consistent seeds
-character_seed = generate_base_seed("mia")  # Hash-based consistency
+character_seed = generate_base_seed("unified_ai")  # Hash-based consistency
 avatar_image = stable_diffusion_xl.generate(
     prompt="beautiful woman, warm_brown hair, deep_green eyes, romantic expression",
     seed=character_seed,
@@ -117,11 +117,11 @@ animation = pre_rendered_library.play("movement_dance")
 #### **Character Generation Pipeline:**
 ```python
 # 1. Initialize character with consistent seed
-character_seed = generate_base_seed("mia")
+character_seed = generate_base_seed("unified_ai")
 character_profile = {
     "hair_color": "warm_brown",
     "eye_color": "deep_green", 
-    "personality": "romantic_affectionate"
+    "personality": "adaptive_companion"
 }
 
 # 2. Generate base character image
@@ -377,9 +377,9 @@ Based on our Phase 2 system analysis, here's the definitive answer:
 ### **Primary: AI Diffusion Models** 🤖
 ```python
 # Character generation with consistent seeds
-character_seed = generate_base_seed("mia")  # Hash-based consistency
+character_seed = generate_base_seed("unified_ai")  # Hash-based consistency
 avatar_image = stable_diffusion_xl.generate(
-    prompt="beautiful woman, warm_brown hair, deep_green eyes, romantic expression",
+    prompt="beautiful companion, adaptive appearance, warm expression",
     seed=character_seed,
     lora="consistent_character_v1"
 )

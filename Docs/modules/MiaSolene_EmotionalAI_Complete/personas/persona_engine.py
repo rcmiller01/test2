@@ -44,17 +44,17 @@ class PersonaEngine:
         return self.anchors.get(symbol, "I remember something about that, but it's unclear.")
 
 
-# Example usage for Mia or Solene
+# Example usage for Unified AI
 if __name__ == "__main__":
     import json
 
-    with open("config/mia.json") as f:
-        mia_config = json.load(f)
+    with open("config/unified_ai.json") as f:
+        ai_config = json.load(f)
 
-    with open("config/mia_emotional_anchors.json") as f:
-        mia_anchors = json.load(f)
+    with open("config/unified_ai_emotional_anchors.json") as f:
+        ai_anchors = json.load(f)
 
-    mia = PersonaEngine("Mia", mia_config, mia_anchors)
-    new_mood = mia.update_state("affection", {"warmth": 0.3, "longing": 0.2})
-    print("Mia's new mood:", new_mood)
-    print("Anchor response:", mia.get_anchor_response("collar"))
+    unified_ai = PersonaEngine("UnifiedAI", ai_config, ai_anchors)
+    new_mood = unified_ai.update_state("affection", {"warmth": 0.3, "longing": 0.2})
+    print("AI's new mood:", new_mood)
+    print("Anchor response:", unified_ai.get_anchor_response("collar"))

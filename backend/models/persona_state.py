@@ -7,7 +7,6 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime
 from pydantic import BaseModel
 import json
-import os
 
 class EmotionalState(BaseModel):
     mood: str = "neutral"
@@ -52,11 +51,36 @@ class EmotionalState(BaseModel):
         # Update intensity based on overall arousal and valence
         self.intensity = min(1.0, (abs(self.valence) + self.arousal) / 2)
         self.last_updated = datetime.now()
+    
+    def update_mood(self, emotion: str, intensity: float, source: str) -> None:
+        """Update mood with emotion, intensity and source tracking"""
+        self.mood = emotion
+        self.intensity = min(1.0, max(0.0, intensity))
+        
+        # Adjust valence based on emotion
+        if emotion in ["happy", "joy", "excited", "content", "love", "romantic"]:
+            self.valence = min(1.0, self.valence + 0.3)
+        elif emotion in ["sad", "anxious", "stressed", "tired", "jealous"]:
+            self.valence = max(-1.0, self.valence - 0.3)
+        
+        # Adjust arousal based on emotion
+        if emotion in ["excited", "anxious", "passionate"]:
+            self.arousal = min(1.0, self.arousal + 0.2)
+        elif emotion in ["calm", "tired", "content"]:
+            self.arousal = max(0.0, self.arousal - 0.2)
+        
+        self.last_updated = datetime.now()
+    
+    @property
+    def current_mood(self) -> str:
+        """Get current mood as a readable string"""
+        return f"{self.mood} (intensity: {self.intensity:.1f})"
 
 class RelationshipMetrics(BaseModel):
     intimacy: float = 0.3
     trust: float = 0.5
     devotion: float = 0.9  # High default for romantic companion
+    understanding: float = 0.5  # Mutual understanding level
     conversation_count: int = 0
     emotional_synchronization: float = 0.0
     last_interaction: datetime = datetime.now()
@@ -84,6 +108,15 @@ class PersonaState(BaseModel):
     conversation_history: List[Dict] = []
     memory_context: Dict[str, Any] = {}
     last_updated: datetime = datetime.now()
+    
+    # Compatibility aliases for existing code
+    @property
+    def relationship(self) -> RelationshipMetrics:
+        return self.relationship_metrics
+    
+    @property
+    def personality(self) -> PersonalityTraits:
+        return self.personality_traits
     
     def update_from_biometrics(self, biometric_data: Dict[str, Any]) -> None:
         """Update persona state from biometric data"""

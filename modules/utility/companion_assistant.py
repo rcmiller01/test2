@@ -101,7 +101,7 @@ class CompanionAssistant:
     Integrates emotional awareness with practical functionality.
     """
     
-    def __init__(self, user_id: str, primary_persona: str = "mia"):
+    def __init__(self, user_id: str, primary_persona: str = "unified_ai"):
         self.user_id = user_id
         self.primary_persona = primary_persona
         self.storage_path = f"storage/utility/{user_id}_companion_assistant.json"

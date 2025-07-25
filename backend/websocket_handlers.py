@@ -79,7 +79,7 @@ class Phase3WebSocketHandlers:
     async def handle_join_persona_room(self, sid, data):
         """Handle user joining a persona-specific room"""
         try:
-            persona = data.get('persona', 'mia')
+            persona = data.get('persona', 'unified_ai')
             user = SESSION_POOL.get(sid)
             
             if not user:
@@ -117,7 +117,7 @@ class Phase3WebSocketHandlers:
     async def handle_leave_persona_room(self, sid, data):
         """Handle user leaving a persona-specific room"""
         try:
-            persona = data.get('persona', 'mia')
+            persona = data.get('persona', 'unified_ai')
             room_name = f"persona:{persona}"
             
             # Leave room
@@ -150,7 +150,7 @@ class Phase3WebSocketHandlers:
             
             # Broadcast to persona room
             session_state = SESSION_STATES.get(sid, {})
-            persona = session_state.get('persona', 'mia')
+            persona = session_state.get('persona', 'unified_ai')
             room_name = f"persona:{persona}"
             
             await sio.emit('avatar:update', {
@@ -179,7 +179,7 @@ class Phase3WebSocketHandlers:
             
             # Broadcast to persona room
             session_state = SESSION_STATES.get(sid, {})
-            persona = session_state.get('persona', 'mia')
+            persona = session_state.get('persona', 'unified_ai')
             room_name = f"persona:{persona}"
             
             await sio.emit('avatar:animation:start', {
@@ -211,7 +211,7 @@ class Phase3WebSocketHandlers:
             
             # Broadcast to persona room
             session_state = SESSION_STATES.get(sid, {})
-            persona = session_state.get('persona', 'mia')
+            persona = session_state.get('persona', 'unified_ai')
             room_name = f"persona:{persona}"
             
             await sio.emit('avatar:update', {
@@ -242,7 +242,7 @@ class Phase3WebSocketHandlers:
             
             # Broadcast to persona room
             session_state = SESSION_STATES.get(sid, {})
-            persona = session_state.get('persona', 'mia')
+            persona = session_state.get('persona', 'unified_ai')
             room_name = f"persona:{persona}"
             
             await sio.emit('haptic:trigger', {
@@ -271,7 +271,7 @@ class Phase3WebSocketHandlers:
             
             # Broadcast to persona room
             session_state = SESSION_STATES.get(sid, {})
-            persona = session_state.get('persona', 'mia')
+            persona = session_state.get('persona', 'unified_ai')
             room_name = f"persona:{persona}"
             
             await sio.emit('haptic:stop', {
@@ -300,7 +300,7 @@ class Phase3WebSocketHandlers:
             
             # Broadcast to persona room
             session_state = SESSION_STATES.get(sid, {})
-            persona = session_state.get('persona', 'mia')
+            persona = session_state.get('persona', 'unified_ai')
             room_name = f"persona:{persona}"
             
             await sio.emit('vr:scene:start', {
@@ -331,7 +331,7 @@ class Phase3WebSocketHandlers:
             
             # Broadcast to persona room
             session_state = SESSION_STATES.get(sid, {})
-            persona = session_state.get('persona', 'mia')
+            persona = session_state.get('persona', 'unified_ai')
             room_name = f"persona:{persona}"
             
             await sio.emit('vr:scene:end', {
@@ -360,7 +360,7 @@ class Phase3WebSocketHandlers:
             
             # Start voice synthesis
             session_state = SESSION_STATES.get(sid, {})
-            persona = session_state.get('persona', 'mia')
+            persona = session_state.get('persona', 'unified_ai')
             room_name = f"persona:{persona}"
             
             await sio.emit('voice:speak:start', {
@@ -394,7 +394,7 @@ class Phase3WebSocketHandlers:
                 return
             
             session_state = SESSION_STATES.get(sid, {})
-            persona = session_state.get('persona', 'mia')
+            persona = session_state.get('persona', 'unified_ai')
             room_name = f"persona:{persona}"
             
             await sio.emit('voice:speak:end', {
@@ -415,7 +415,7 @@ class Phase3WebSocketHandlers:
                 return
             
             session_state = SESSION_STATES.get(sid, {})
-            persona = session_state.get('persona', 'mia')
+            persona = session_state.get('persona', 'unified_ai')
             room_name = f"persona:{persona}"
             
             await sio.emit('voice:listen:start', {
@@ -436,7 +436,7 @@ class Phase3WebSocketHandlers:
                 return
             
             session_state = SESSION_STATES.get(sid, {})
-            persona = session_state.get('persona', 'mia')
+            persona = session_state.get('persona', 'unified_ai')
             room_name = f"persona:{persona}"
             
             await sio.emit('voice:listen:end', {
@@ -467,7 +467,7 @@ class Phase3WebSocketHandlers:
             
             # Broadcast memory notification
             session_state = SESSION_STATES.get(sid, {})
-            persona = session_state.get('persona', 'mia')
+            persona = session_state.get('persona', 'unified_ai')
             room_name = f"persona:{persona}"
             
             await sio.emit('memory:notification', {
@@ -499,7 +499,7 @@ class Phase3WebSocketHandlers:
             
             # Broadcast memory notification
             session_state = SESSION_STATES.get(sid, {})
-            persona = session_state.get('persona', 'mia')
+            persona = session_state.get('persona', 'unified_ai')
             room_name = f"persona:{persona}"
             
             await sio.emit('memory:notification', {
@@ -530,7 +530,7 @@ class Phase3WebSocketHandlers:
             
             # Broadcast relationship insight
             session_state = SESSION_STATES.get(sid, {})
-            persona = session_state.get('persona', 'mia')
+            persona = session_state.get('persona', 'unified_ai')
             room_name = f"persona:{persona}"
             
             await sio.emit('relationship:insight', {

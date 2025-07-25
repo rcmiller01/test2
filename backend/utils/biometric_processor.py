@@ -1,6 +1,34 @@
 from typing import Dict, Any, Tuple
 import math
 
+def analyze_movement(acceleration: Dict[str, float], gyroscope: Dict[str, float]) -> str:
+    """Analyze movement patterns from accelerometer and gyroscope data"""
+    if not acceleration or not gyroscope:
+        return "unknown"
+    
+    # Calculate movement magnitude
+    accel_magnitude = math.sqrt(
+        acceleration.get('x', 0)**2 + 
+        acceleration.get('y', 0)**2 + 
+        acceleration.get('z', 0)**2
+    )
+    
+    gyro_magnitude = math.sqrt(
+        gyroscope.get('x', 0)**2 + 
+        gyroscope.get('y', 0)**2 + 
+        gyroscope.get('z', 0)**2
+    )
+    
+    # Classify movement
+    if accel_magnitude < 0.1 and gyro_magnitude < 0.1:
+        return "still"
+    elif accel_magnitude < 0.5:
+        return "gentle_movement"
+    elif accel_magnitude < 2.0:
+        return "active"
+    else:
+        return "vigorous"
+
 def calculate_stress_level(heart_rate: float, hrv: float, baseline_hr: float = 70) -> float:
     """Calculate stress level from heart rate and HRV"""
     hr_stress = abs(heart_rate - baseline_hr) / baseline_hr

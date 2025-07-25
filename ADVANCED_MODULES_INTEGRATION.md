@@ -327,7 +327,7 @@ POST /api/dreams/generate
 Content-Type: application/json
 
 {
-  "persona_name": "mia",
+  "persona_name": "unified_ai",
   "trigger_context": "user_feeling_lost",
   "emotional_state": {"confusion": 0.7, "seeking_guidance": 0.8},
   "recent_memories": ["conversation_about_life_direction"]
