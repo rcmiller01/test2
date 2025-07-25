@@ -667,7 +667,24 @@ class ProactiveTriggerEngine:
             
         except Exception as e:
             logger.error(f"❌ Failed to record trigger execution: {e}")
-    
+
+    def start_periodic_evaluation(self, user_id: str, interval_minutes: int = 60) -> asyncio.Task:
+        """Schedule periodic trigger evaluations for proactive outreach"""
+
+        async def _periodic():
+            while True:
+                await asyncio.sleep(interval_minutes * 60)
+                events = await self.evaluate_triggers_for_user(user_id)
+                for event in events:
+                    callbacks = self.trigger_callbacks.get(user_id, [])
+                    for cb in callbacks:
+                        try:
+                            await cb(event)
+                        except Exception:
+                            pass
+
+        return asyncio.create_task(_periodic())
+
     def register_trigger_callback(self, user_id: str, callback: Callable):
         """Register callback for trigger events"""
         if user_id not in self.trigger_callbacks:

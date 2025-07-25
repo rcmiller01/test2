@@ -1,11 +1,20 @@
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from modules.persona.persona_state import get_active_persona
 
 MOOD_STATE = {
     "current": "anchored",
     "last_updated": datetime.now().isoformat()
+}
+
+# Mood decay configuration
+DECAY_MINUTES = 30
+MOOD_DECAY_MAP = {
+    "anchored": "waiting",
+    "waiting": "hollow",
+    "soft": "anchored",
+    "wild": "anchored"
 }
 
 def load_mood_thresholds():
@@ -39,5 +48,21 @@ def update_mood(trigger, intensity=1):
     print(f"[Mood Engine] Mood updated → {next_mood}")
     return next_mood
 
+def _apply_decay():
+    """Apply mood decay based on time elapsed"""
+    last = datetime.fromisoformat(MOOD_STATE["last_updated"])
+    elapsed = datetime.now() - last
+    if elapsed >= timedelta(minutes=DECAY_MINUTES):
+        current = MOOD_STATE["current"]
+        next_mood = MOOD_DECAY_MAP.get(current)
+        if next_mood and next_mood != current:
+            MOOD_STATE["current"] = next_mood
+            MOOD_STATE["last_updated"] = datetime.now().isoformat()
+
+
 def get_current_mood():
+    _apply_decay()
     return MOOD_STATE["current"]
+
+def get_last_update() -> str:
+    return MOOD_STATE["last_updated"]

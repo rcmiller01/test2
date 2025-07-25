@@ -278,6 +278,13 @@ class SymbolicContextManager:
             self.symbolic_memories[user_id] = []
             self.emotional_contexts[user_id] = {}
             self.thematic_patterns[user_id] = {}
+
+        # Tag recurring symbols/phrases
+        try:
+            from modules.nlp.simple_tagger import tag_text
+            tag_text(interaction_data.get("user_input", ""))
+        except Exception:
+            pass
         
         # Extract symbolic elements
         symbolic_elements = self._extract_symbolic_elements(interaction_data)

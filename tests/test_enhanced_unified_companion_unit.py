@@ -9,6 +9,7 @@ import asyncio
 import json
 import sys
 import os
+from datetime import datetime, timedelta
 from typing import Dict, Any
 from unittest.mock import Mock, patch, AsyncMock
 
@@ -323,6 +324,48 @@ class TestDatabaseInterface(unittest.TestCase):
             
             # Should use in-memory database for testing
             mock_logging.info.assert_called_with("Using in-memory database")
+
+
+class TestAdditionalFeatures(unittest.TestCase):
+    def test_crisis_memory_record(self):
+        from modules.core.crisis_memory import record_crisis_event, get_recent_crisis_events
+
+        record_crisis_event("user1", "high", {"note": "test"})
+        events = get_recent_crisis_events("user1", days=1)
+        self.assertTrue(any(e["level"] == "high" for e in events))
+
+    def test_symbol_tagging(self):
+        from modules.nlp.simple_tagger import tag_text, get_tag_history
+
+        tags = tag_text("the collar is a special collar that means a lot")
+        self.assertIn("collar", tags)
+        history = get_tag_history(1)
+        self.assertIn("collar", history[-1]["tags"])
+
+    def test_mood_decay(self):
+        from modules.emotion import mood_engine
+
+        mood_engine.MOOD_STATE["current"] = "anchored"
+        mood_engine.MOOD_STATE["last_updated"] = (datetime.now() - timedelta(minutes=40)).isoformat()
+        decayed = mood_engine.get_current_mood()
+        self.assertEqual(decayed, "waiting")
+
+    def test_periodic_trigger_scheduler(self):
+        try:
+            from backend.modules.agency.proactive_triggers import ProactiveTriggerEngine
+        except Exception:
+            self.skipTest("agency module unavailable")
+            return
+
+        engine = ProactiveTriggerEngine()
+
+        async def dummy_cb(event):
+            return True
+
+        engine.register_trigger_callback("u", dummy_cb)
+        task = engine.start_periodic_evaluation("u", interval_minutes=0.001)
+        self.assertFalse(task.done())
+        task.cancel()
 
 
 # Test runner for async tests

@@ -11,6 +11,7 @@ from typing import Dict, List, Any, Optional, Callable
 from datetime import datetime
 from dataclasses import dataclass
 from enum import Enum
+from .crisis_memory import record_crisis_event
 
 class CrisisLevel(Enum):
     NONE = "none"
@@ -353,6 +354,14 @@ class CrisisSafetyOverride:
             
             # Store active intervention
             self.active_interventions[intervention_id] = intervention
+
+            # Record crisis event for memory
+            try:
+                record_crisis_event(user_id, assessment.level.value, {
+                    'indicators': assessment.detected_indicators
+                })
+            except Exception:
+                pass
             
             # Log critical intervention
             self.crisis_logger.critical(f"Crisis override triggered for user {user_id}: {assessment.level.value}")
@@ -382,7 +391,14 @@ class CrisisSafetyOverride:
                 follow_up_scheduled=True,
                 timestamp=datetime.now()
             )
-            
+
+            try:
+                record_crisis_event(user_id, assessment.level.value, {
+                    'indicators': assessment.detected_indicators
+                })
+            except Exception:
+                pass
+
             return False, fallback_response, fallback_intervention
         
         finally:
