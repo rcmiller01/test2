@@ -43,6 +43,9 @@ class GuidancePackage:
     
     # Mode-specific configuration
     mode_specifics: Dict[str, Any] = field(default_factory=dict)
+
+    # Inflection guidance
+    inflection_profile: Dict[str, str] = field(default_factory=dict)
     
     # Execution directives
     utility_actions: List[Dict] = field(default_factory=list)
@@ -57,6 +60,8 @@ class GuidanceCoordinator:
     def __init__(self, user_id: str):
         self.user_id = user_id
         self.logger = logging.getLogger(f"{__name__}.{user_id}")
+        from ..emotion.mood_inflection import MoodInflection
+        self.mood_inflection = MoodInflection()
         self._initialize_modules()
         
     def _initialize_modules(self):
@@ -184,15 +189,21 @@ class GuidanceCoordinator:
         # Assess safety and crisis levels
         self.logger.debug("🚨 Assessing safety protocols...")
         await self._assess_safety_protocols(guidance, user_input, context)
-        
+
         processing_time = (datetime.now() - start_time).total_seconds()
         self.logger.info(f"🎯 Guidance analysis complete: Mode={guidance.primary_mode}, "
                         f"Crisis={guidance.crisis_level}, Time={processing_time:.3f}s")
-        
+
+        # Determine inflection profile based on mood and mode
+        mood = context.get("current_emotional_state", {}).get("mood", "neutral")
+        profile = self.mood_inflection.get_profile(guidance.primary_mode)
+        profile["mood"] = mood
+        guidance.inflection_profile = profile
+
         # Log final guidance summary
         if guidance.crisis_level > 0:
             self.logger.warning(f"🚨 Crisis level {guidance.crisis_level} detected - safety protocols activated")
-        
+
         return guidance
     
     async def _get_attachment_guidance(self, user_input: str, context: Dict) -> Dict:

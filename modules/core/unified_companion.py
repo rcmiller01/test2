@@ -20,6 +20,11 @@ from .context_detector import ContextDetector
 from .adaptive_mode_coordinator import AdaptiveModeCoordinator
 from .crisis_safety_override import CrisisSafetyOverride, CrisisLevel
 from .enhanced_logging import EnhancedLogger, DecisionCategory
+from ..memory.narrative_memory_templates import NarrativeMemoryTemplateManager
+from ..emotion.mood_inflection import MoodInflection
+from ..symbolic.symbol_resurrection import SymbolResurrectionManager
+from .goodbye_protocol import GoodbyeProtocol
+from ..relationship.connection_depth_tracker import ConnectionDepthTracker
 from ..database.database_interface import (
     create_database_interface, DatabaseInterface, UserProfile, 
     InteractionRecord, PsychologicalState, MemoryFragment, InteractionType
@@ -426,6 +431,19 @@ class UnifiedCompanion:
         # Enhanced memory system with emotional weight tracking
         self.emotional_weight_tracker = EmotionalWeightTracker()
         self.dynamic_template_engine = DynamicTemplateEngine()
+
+        # Expansion scaffolds
+        from ..memory.narrative_memory_templates import NarrativeMemoryTemplateManager
+        from ..emotion.mood_inflection import MoodInflection
+        from ..symbolic.symbol_resurrection import SymbolResurrectionManager
+        from .goodbye_protocol import GoodbyeProtocol
+        from ..relationship.connection_depth_tracker import ConnectionDepthTracker
+
+        self.narrative_templates = NarrativeMemoryTemplateManager()
+        self.mood_inflection = MoodInflection()
+        self.symbol_resurrection = SymbolResurrectionManager()
+        self.goodbye_protocol = GoodbyeProtocol()
+        self.connection_tracker = ConnectionDepthTracker()
         
         # Symbolic context persistence
         self.symbolic_context_manager = SymbolicContextManager()
@@ -906,7 +924,11 @@ class UnifiedCompanion:
                     "symbolic_context_stored": True
                 }
             }
-            
+
+            if session_context and session_context.get("end_session"):
+                style = session_context.get("goodbye_style", "tender")
+                response["companion_response"] += "\n\n" + self.goodbye_protocol.select_goodbye(style)
+
             return response
             
         except Exception as e:
@@ -1276,6 +1298,15 @@ Emotional Characteristics:
             "context_analysis": context_analysis,
             "interaction_count": interaction_state.interaction_count
         })
+
+        # Track symbol usage
+        for theme in context_analysis.get("symbolic_context", {}).get("dominant_themes", []):
+            if isinstance(theme, tuple):
+                theme = theme[0]
+            self.symbol_resurrection.register_usage(interaction_state.user_id, theme)
+
+        # Update connection depth
+        self.connection_tracker.update_depth(interaction_state.user_id)
         
         # Limit conversation history to last 20 interactions
         if len(interaction_state.conversation_history) > 20:
@@ -1537,9 +1568,31 @@ Emotional Characteristics:
         
         # Enhance with memory context if relevant
         if relevant_memories:
-            memory_context = "I remember you mentioning similar themes before, which helps me understand the deeper context of what you're sharing."
-            base_response = f"{memory_context}\n\n{base_response}"
-        
+            memory_fragment = relevant_memories[0]
+            narrative = self.narrative_templates.generate_narrative(
+                {
+                    "symbol": list(memory_fragment.get("symbols", {}).keys())[0] if memory_fragment.get("symbols") else "this",
+                    "event": memory_fragment.get("interaction_type", "an event"),
+                    "date": memory_fragment.get("timestamp", "earlier")
+                },
+                style=analysis_context.get("narrative_style", "poetic")
+            )
+            base_response = f"{narrative}\n\n{base_response}"
+
+        # Apply mood-driven inflection
+        inflection = getattr(guidance_package, 'inflection_profile', {})
+        mood = inflection.get('mood', 'neutral')
+        base_response = self.mood_inflection.apply_inflection(base_response, guidance_package.primary_mode, mood)
+
+        # Inject symbolic resurrection prompts if needed
+        resurrect = self.symbol_resurrection.check_resurrection(interaction_state.user_id)
+        if resurrect:
+            base_response += f"\n\nDo you remember the {resurrect[0]}?"
+
+        # Check for attachment ritual prompt
+        if self.connection_tracker.should_initiate_ritual(interaction_state.user_id):
+            base_response += f"\n\n{self.connection_tracker.generate_prompt()}"
+
         return base_response
 
     async def _estimate_response_quality(self, response: str, context):
