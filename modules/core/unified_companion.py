@@ -600,6 +600,9 @@ class UnifiedCompanion:
         try:
             # Initialize MythoMax interface
             await self.mythomax.initialize()
+
+            if self.database:
+                await self.database.initialize()
             
             # Load guidance modules
             await self._load_guidance_modules()
@@ -638,6 +641,15 @@ class UnifiedCompanion:
             "technical": {},    # Technical context and progress
             "creative": {}      # Creative projects and development
         }
+
+        if self.database:
+            try:
+                user_id = self.config.get("user_id", "system")
+                memories = await self.database.get_relevant_memories(user_id, limit=50)
+                for mem in memories:
+                    self.memory_system["long_term"].setdefault(mem.memory_type, []).append(mem.content)
+            except Exception as e:
+                self.logger.warning(f"Failed to load persistent memories: {e}")
     
     async def _initialize_safety_system(self):
         """Initialize safety monitoring and intervention system"""

@@ -168,6 +168,9 @@ pip install -r requirements.production.txt
 
 # Configure MongoDB connection
 # Edit database settings in start_unified_companion.py
+#
+# For lightweight persistence without MongoDB, set `database.type` to `jsonfile`
+# and provide a path via `database.connection_string` or `JSON_DB_PATH` env var.
 
 # Launch production system
 python start_unified_companion.py --production

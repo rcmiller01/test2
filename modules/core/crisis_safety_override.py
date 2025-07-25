@@ -142,6 +142,7 @@ class CrisisSafetyOverride:
         
         # Override flags and callbacks
         self.override_active = False
+        self.interrupt_active = False
         self.intervention_callbacks: List[Callable] = []
         self.active_interventions: Dict[str, CrisisIntervention] = {}
         
@@ -469,18 +470,25 @@ class CrisisSafetyOverride:
         Returns True if normal processing should be bypassed for immediate crisis response
         """
         assessment = await self.assess_crisis_level(user_input, context)
-        
+
         # Immediate interrupt for critical/high crisis levels
         if assessment.level in [CrisisLevel.CRITICAL, CrisisLevel.HIGH]:
-            self.logger.warning(f"CRISIS INTERRUPT TRIGGERED - Level: {assessment.level.value}")
+            self.logger.warning(
+                f"CRISIS INTERRUPT TRIGGERED - Level: {assessment.level.value}"
+            )
+            self.interrupt_active = True
             return True
             
         # Interrupt for medium level with additional risk factors
         if assessment.level == CrisisLevel.MEDIUM:
             if assessment.immediate_response_needed or len(assessment.safety_concerns) > 2:
-                self.logger.warning(f"CRISIS INTERRUPT TRIGGERED - Medium level with high risk")
+                self.logger.warning(
+                    "CRISIS INTERRUPT TRIGGERED - Medium level with high risk"
+                )
+                self.interrupt_active = True
                 return True
-                
+
+        self.interrupt_active = False
         return False
     
     async def execute_interrupt_response(self, user_input: str, context: Dict[str, Any]) -> Dict[str, Any]:
@@ -490,6 +498,7 @@ class CrisisSafetyOverride:
         This bypasses normal processing and provides immediate safety-focused response
         """
         self.logger.critical("EXECUTING CRISIS INTERRUPT RESPONSE")
+        self.interrupt_active = True
         
         # Perform crisis assessment
         assessment = await self.assess_crisis_level(user_input, context)
@@ -509,6 +518,7 @@ class CrisisSafetyOverride:
                 self.logger.error(f"Error executing intervention callback: {e}")
         
         # Return interrupt response package
+        self.interrupt_active = False
         return {
             "type": "crisis_interrupt",
             "crisis_level": assessment.level.value,

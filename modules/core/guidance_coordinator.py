@@ -188,10 +188,14 @@ class GuidanceCoordinator:
         processing_time = (datetime.now() - start_time).total_seconds()
         self.logger.info(f"🎯 Guidance analysis complete: Mode={guidance.primary_mode}, "
                         f"Crisis={guidance.crisis_level}, Time={processing_time:.3f}s")
-        
+
         # Log final guidance summary
         if guidance.crisis_level > 0:
             self.logger.warning(f"🚨 Crisis level {guidance.crisis_level} detected - safety protocols activated")
+
+        self.logger.debug(
+            f"Guidance package generated with priorities E:{guidance.emotional_priority} T:{guidance.technical_priority} C:{guidance.creative_priority}"
+        )
         
         return guidance
     
@@ -362,11 +366,12 @@ class GuidanceCoordinator:
             if isinstance(result, Exception):
                 logger.error(f"Guidance module error: {result}")
                 continue
-                
+
             if not isinstance(result, dict):
                 continue
-                
+
             result_type = result.get('type', 'unknown')
+            logger.debug(f"Integrating result from {result_type} module")
             
             if result_type == 'attachment':
                 guidance.attachment_guidance = result.get('guidance', '')
