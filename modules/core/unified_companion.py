@@ -20,8 +20,9 @@ from .context_detector import ContextDetector
 from .adaptive_mode_coordinator import AdaptiveModeCoordinator
 from .crisis_safety_override import CrisisSafetyOverride, CrisisLevel
 from .enhanced_logging import EnhancedLogger, DecisionCategory
+from .goodbye_manager import GoodbyeManager
 from ..database.database_interface import (
-    create_database_interface, DatabaseInterface, UserProfile, 
+    create_database_interface, DatabaseInterface, UserProfile,
     InteractionRecord, PsychologicalState, MemoryFragment, InteractionType
 )
 
@@ -426,6 +427,9 @@ class UnifiedCompanion:
         # Enhanced memory system with emotional weight tracking
         self.emotional_weight_tracker = EmotionalWeightTracker()
         self.dynamic_template_engine = DynamicTemplateEngine()
+
+        # Goodbye / closure manager
+        self.goodbye_manager = GoodbyeManager()
         
         # Symbolic context persistence
         self.symbolic_context_manager = SymbolicContextManager()
@@ -655,12 +659,15 @@ class UnifiedCompanion:
         """
         # Generate unique interaction ID
         interaction_id = str(uuid.uuid4())
-        
+
         # Start interaction tracing
         session_id = session_context.get("session_id") if session_context else f"session_{int(datetime.now().timestamp())}"
         if session_id is None:
             session_id = f"session_{int(datetime.now().timestamp())}"
         self.enhanced_logger.start_interaction_trace(interaction_id, user_id, session_id)
+
+        # Record interaction time for goodbye management
+        self.goodbye_manager.register_interaction(user_id)
 
         try:
             # PRIORITY CHECK: Crisis Interrupt Assessment
@@ -1331,6 +1338,13 @@ Emotional Characteristics:
                 "error_logged": True
             }
         }
+
+    async def end_session(self, user_id: str) -> Dict[str, str]:
+        """Generate goodbye when a session ends."""
+        self.goodbye_manager.mark_session_end(user_id)
+        reflection = "This time together means a lot to me."
+        goodbye = self.goodbye_manager.generate_goodbye(user_id)
+        return {"reflection": reflection, "goodbye": goodbye}
     
     async def get_interaction_summary(self, user_id: str) -> Dict[str, Any]:
         """Get summary of user's interaction patterns and adaptive profile"""
