@@ -3,144 +3,120 @@ Persona State Management for EmotionalAI System.
 Handles dynamic persona attributes, emotional state, and relationship progression.
 """
 
-from pydantic import BaseModel
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 from datetime import datetime
+from pydantic import BaseModel
 import json
 import os
 
 class EmotionalState(BaseModel):
-    current_mood: str = "neutral"
-    mood_intensity: float = 0.5
-    emotional_stability: float = 0.7
-    last_mood_change: datetime = datetime.now()
-    mood_history: List[Dict] = []
+    mood: str = "neutral"
+    intensity: float = 0.5
+    valence: float = 0.0  # -1.0 to 1.0 (negative to positive)
+    arousal: float = 0.5  # 0.0 to 1.0 (calm to excited)
+    confusion_level: float = 0.0
+    cognitive_load: float = 0.0
+    emotional_stability: float = 1.0
+    recovery_mode: bool = False
+    last_updated: datetime = datetime.now()
+
+    def update_from_biometrics(self, biometric_data: Dict[str, Any]) -> None:
+        """Update emotional state based on biometric data"""
+        # Heart rate analysis
+        if biometric_data.get('heart_rate'):
+            hr = biometric_data['heart_rate']
+            if hr > 100:
+                self.arousal = min(1.0, self.arousal + 0.2)
+                self.mood = "excited" if self.valence > 0 else "anxious"
+            elif hr < 60:
+                self.arousal = max(0.0, self.arousal - 0.1)
+                self.mood = "calm"
+            
+        # HRV analysis for stress
+        if biometric_data.get('heart_rate_variability'):
+            hrv = biometric_data['heart_rate_variability']
+            if hrv < 20:  # Low HRV indicates stress
+                self.valence = max(-1.0, self.valence - 0.3)
+                self.emotional_stability = max(0.0, self.emotional_stability - 0.2)
+            elif hrv > 50:  # High HRV indicates relaxation
+                self.valence = min(1.0, self.valence + 0.1)
+                self.emotional_stability = min(1.0, self.emotional_stability + 0.1)
+        
+        # Voice stress indicators
+        if biometric_data.get('voice_stress_indicators'):
+            stress_level = biometric_data['voice_stress_indicators'].get('stress_level', 0)
+            if stress_level > 0.7:
+                self.cognitive_load = min(1.0, self.cognitive_load + 0.3)
+                self.confusion_level = min(1.0, self.confusion_level + 0.2)
+        
+        # Update intensity based on overall arousal and valence
+        self.intensity = min(1.0, (abs(self.valence) + self.arousal) / 2)
+        self.last_updated = datetime.now()
 
 class RelationshipMetrics(BaseModel):
-    devotion: float = 0.9  # Starting with high devotion
-    trust: float = 0.5
     intimacy: float = 0.3
-    understanding: float = 0.4
-    shared_experiences: int = 0
-    conversation_depth: float = 0.5
-    emotional_synchronization: float = 0.6
+    trust: float = 0.5
+    devotion: float = 0.9  # High default for romantic companion
+    conversation_count: int = 0
+    emotional_synchronization: float = 0.0
+    last_interaction: datetime = datetime.now()
 
 class PersonalityTraits(BaseModel):
     warmth: float = 0.8
     openness: float = 0.7
-    playfulness: float = 0.6
-    sensitivity: float = 0.8
-    assertiveness: float = 0.4
-    adaptability: float = 0.7
+    creativity: float = 0.6
+    empathy: float = 0.9
+    playfulness: float = 0.5
 
 class RelationshipMilestones(BaseModel):
     first_conversation: Optional[datetime] = None
-    deep_conversation_count: int = 0
-    shared_moments: List[Dict] = []
-    trust_building_events: List[Dict] = []
-    emotional_breakthroughs: List[Dict] = []
-
-class PersonaState:
-    def __init__(self, config_path: str = "config/persona_state.json"):
-        self.config_path = config_path
-        self.emotional_state = EmotionalState()
-        self.relationship = RelationshipMetrics()
-        self.personality = PersonalityTraits()
-        self.milestones = RelationshipMilestones()
-        self.load_state()
-
-    def load_state(self):
-        """Load persona state from file if it exists."""
-        if os.path.exists(self.config_path):
-            with open(self.config_path, 'r') as f:
-                data = json.load(f)
-                self.emotional_state = EmotionalState(**data.get('emotional_state', {}))
-                self.relationship = RelationshipMetrics(**data.get('relationship', {}))
-                self.personality = PersonalityTraits(**data.get('personality', {}))
-                self.milestones = RelationshipMilestones(**data.get('milestones', {}))
-
-    def save_state(self):
-        """Save current persona state to file."""
-        os.makedirs(os.path.dirname(self.config_path), exist_ok=True)
-        with open(self.config_path, 'w') as f:
-            json.dump({
-                'emotional_state': self.emotional_state.dict(),
-                'relationship': self.relationship.dict(),
-                'personality': self.personality.dict(),
-                'milestones': self.milestones.dict()
-            }, f, indent=2, default=str)
-
-    def update_mood(self, mood: str, intensity: float, context: str):
-        """Update emotional state based on interaction."""
-        old_mood = self.emotional_state.current_mood
-        self.emotional_state.current_mood = mood
-        self.emotional_state.mood_intensity = intensity
-        self.emotional_state.last_mood_change = datetime.now()
+    first_emotional_moment: Optional[datetime] = None
+    trust_events: List[datetime] = []
+    intimate_moments: List[datetime] = []
+    
+class PersonaState(BaseModel):
+    persona_id: str = "default"
+    name: str = ""
+    emotional_state: EmotionalState = EmotionalState()
+    relationship_metrics: RelationshipMetrics = RelationshipMetrics()
+    personality_traits: PersonalityTraits = PersonalityTraits()
+    milestones: RelationshipMilestones = RelationshipMilestones()
+    conversation_history: List[Dict] = []
+    memory_context: Dict[str, Any] = {}
+    last_updated: datetime = datetime.now()
+    
+    def update_from_biometrics(self, biometric_data: Dict[str, Any]) -> None:
+        """Update persona state from biometric data"""
+        self.emotional_state.update_from_biometrics(biometric_data)
         
-        # Record mood change in history
-        self.emotional_state.mood_history.append({
-            'timestamp': datetime.now().isoformat(),
-            'from_mood': old_mood,
-            'to_mood': mood,
-            'intensity': intensity,
-            'context': context
+        # Update relationship metrics based on emotional state
+        if self.emotional_state.valence > 0.5:
+            self.relationship_metrics.trust = min(1.0, self.relationship_metrics.trust + 0.01)
+        
+        if self.emotional_state.emotional_stability > 0.8:
+            self.relationship_metrics.intimacy = min(1.0, self.relationship_metrics.intimacy + 0.005)
+            
+        self.last_updated = datetime.now()
+    
+    def update_from_conversation(self, message: str, emotion: str, intensity: float) -> None:
+        """Update state from conversation interaction"""
+        self.relationship_metrics.conversation_count += 1
+        self.relationship_metrics.last_interaction = datetime.now()
+        
+        # Update emotional state
+        self.emotional_state.mood = emotion
+        self.emotional_state.intensity = intensity
+        
+        # Add to conversation history
+        self.conversation_history.append({
+            "message": message,
+            "emotion": emotion,
+            "intensity": intensity,
+            "timestamp": datetime.now()
         })
         
-        # Keep only last 100 mood changes
-        if len(self.emotional_state.mood_history) > 100:
-            self.emotional_state.mood_history = self.emotional_state.mood_history[-100:]
-
-    def progress_relationship(self, interaction_type: str, impact: float):
-        """Update relationship metrics based on interaction."""
-        if interaction_type == "deep_conversation":
-            self.relationship.conversation_depth += impact * 0.1
-            self.relationship.understanding += impact * 0.05
-            self.milestones.deep_conversation_count += 1
-        elif interaction_type == "emotional_sharing":
-            self.relationship.intimacy += impact * 0.1
-            self.relationship.trust += impact * 0.05
-        elif interaction_type == "trust_building":
-            self.relationship.trust += impact * 0.1
-            self.milestones.trust_building_events.append({
-                'timestamp': datetime.now().isoformat(),
-                'impact': impact
-            })
-
-        # Ensure values stay within bounds
-        for field in self.relationship.dict().keys():
-            if isinstance(getattr(self.relationship, field), float):
-                setattr(self.relationship, field, 
-                       min(1.0, max(0.0, getattr(self.relationship, field))))
-
-        # Adapt personality based on relationship progress
-        self._adapt_personality()
-        self.save_state()
-
-    def _adapt_personality(self):
-        """Evolve personality traits based on relationship metrics."""
-        # Increase warmth with intimacy
-        self.personality.warmth = min(1.0, self.personality.warmth + 
-                                    (self.relationship.intimacy * 0.01))
-        
-        # Increase openness with trust
-        self.personality.openness = min(1.0, self.personality.openness + 
-                                      (self.relationship.trust * 0.01))
-        
-        # Adjust playfulness based on emotional synchronization
-        self.personality.playfulness = min(1.0, self.personality.playfulness + 
-                                         (self.relationship.emotional_synchronization * 0.01))
-
-    def get_interaction_context(self) -> Dict:
-        """Get current interaction context for LLM."""
-        return {
-            'emotional_state': self.emotional_state.dict(),
-            'relationship': self.relationship.dict(),
-            'personality': self.personality.dict(),
-            'recent_milestones': [
-                m for m in self.milestones.dict().values() 
-                if isinstance(m, list) and m and 
-                isinstance(m[-1], dict) and 
-                datetime.fromisoformat(m[-1]['timestamp']) > 
-                datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-            ]
-        }
+        # Keep only last 50 conversations
+        if len(self.conversation_history) > 50:
+            self.conversation_history = self.conversation_history[-50:]
+            
+        self.last_updated = datetime.now()

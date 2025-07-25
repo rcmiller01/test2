@@ -22,6 +22,7 @@ from modules.memory.mia_self_talk import generate_self_talk
 from modules.memory.mia_memory_response import generate_memory_response, recall_similar_emotions
 from database.mongodb_client import initialize_mongodb, mongodb_client
 from clustering.cluster_manager import initialize_cluster, server_health_check
+from utils.biometric_processor import process_biometrics_for_emotion
 
 # LLM Orchestration
 class LLMOrchestrator:
