@@ -1539,7 +1539,13 @@ Emotional Characteristics:
         if relevant_memories:
             memory_context = "I remember you mentioning similar themes before, which helps me understand the deeper context of what you're sharing."
             base_response = f"{memory_context}\n\n{base_response}"
-        
+
+        # Apply mood-driven style adjustments
+        base_response = self.guidance_coordinator.apply_mood_style(
+            base_response,
+            guidance_package.primary_mode,
+        )
+
         return base_response
 
     async def _estimate_response_quality(self, response: str, context):

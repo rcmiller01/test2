@@ -11,6 +11,9 @@ from dataclasses import dataclass, field
 from datetime import datetime
 import logging
 
+from ..emotion.emotion_state_manager import emotion_state_manager
+from ..emotion.mood_style_profiles import MoodStyleProfile, get_mood_style_profile
+
 logger = logging.getLogger(__name__)
 
 @dataclass
@@ -57,6 +60,7 @@ class GuidanceCoordinator:
     def __init__(self, user_id: str):
         self.user_id = user_id
         self.logger = logging.getLogger(f"{__name__}.{user_id}")
+        self.emotion_manager = emotion_state_manager
         self._initialize_modules()
         
     def _initialize_modules(self):
@@ -468,3 +472,34 @@ class GuidanceCoordinator:
                 'context': context.get('conversation_summary', ''),
                 'timestamp': datetime.now().isoformat()
             })
+
+    def apply_mood_style(self, text: str, mode: str) -> str:
+        """Apply mood-driven stylistic adjustments to text."""
+        mood = self.emotion_manager.get_current_mood()
+        profile: MoodStyleProfile = get_mood_style_profile(mood, mode)
+
+        # Basic sentence length adjustment
+        sentences = [s.strip() for s in text.split('.') if s.strip()]
+        adjusted: List[str] = []
+        for s in sentences:
+            words = s.split()
+            if profile.sentence_length_avg and len(words) > profile.sentence_length_avg:
+                mid = len(words) // 2
+                adjusted.append(' '.join(words[:mid]))
+                adjusted.append(' '.join(words[mid:]))
+            else:
+                adjusted.append(s)
+
+        styled = '. '.join(adjusted)
+
+        # Warmth and directness cues
+        if profile.warmth_level > 0.8:
+            styled = f"❤️ {styled}"
+        if profile.directness_level > 0.8:
+            styled = f"{styled} I want to be clear with you."
+
+        # Simple metaphor addition
+        if profile.metaphor_density > 0.5:
+            styled += " Like gentle waves caressing the shore."
+
+        return styled
