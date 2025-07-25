@@ -250,7 +250,19 @@
             for emotion, intensity in emotional_state.items():
                 if intensity > 0.6:
                     tags.append(emotion)
-            
+
+            tone = context_analysis.get("detected_tone")
+            sentiment = context_analysis.get("sentiment_score", 0.0)
+            hour = datetime.now().hour
+            if hour < 6:
+                time_of_day = "night"
+            elif hour < 12:
+                time_of_day = "morning"
+            elif hour < 18:
+                time_of_day = "afternoon"
+            else:
+                time_of_day = "evening"
+
             memory_fragment = MemoryFragment(
                 memory_id=str(uuid.uuid4()),
                 user_id=user_id,
@@ -261,7 +273,10 @@
                 last_accessed=datetime.now(),
                 access_count=1,
                 related_interactions=[],
-                tags=tags
+                tags=tags,
+                tone=tone,
+                sentiment=sentiment,
+                time_of_day=time_of_day
             )
             
             await self.database.save_memory_fragment(memory_fragment)

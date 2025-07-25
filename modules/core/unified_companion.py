@@ -276,6 +276,7 @@ class SymbolicContextManager:
         self.symbolic_memories: Dict[str, List[Dict[str, Any]]] = {}
         self.emotional_contexts: Dict[str, Dict[str, Any]] = {}
         self.thematic_patterns: Dict[str, Dict[str, float]] = {}
+        self.symbol_usage: Dict[str, int] = {}
     
     async def store_symbolic_context(self, user_id: str, interaction_data: Dict[str, Any]):
         """Store symbolic and thematic context from interaction"""
@@ -297,7 +298,10 @@ class SymbolicContextManager:
             }
             
             self.symbolic_memories[user_id].append(symbolic_memory)
-            
+
+            for sym in symbolic_elements.keys():
+                self.symbol_usage[sym] = self.symbol_usage.get(sym, 0) + 1
+
             # Update thematic patterns
             self._update_thematic_patterns(user_id, symbolic_elements)
             
@@ -393,6 +397,11 @@ class SymbolicContextManager:
             "thematic_patterns": patterns,
             "dominant_themes": sorted(patterns.items(), key=lambda x: x[1], reverse=True)[:3]
         }
+
+    def resurrect_dormant_symbols(self, threshold: int = 5) -> List[str]:
+        """Return symbols that have not been used recently."""
+        dormant = [sym for sym, count in self.symbol_usage.items() if count <= threshold]
+        return dormant[:3]
 
 class UnifiedCompanion:
     """
