@@ -325,6 +325,30 @@ class TestDatabaseInterface(unittest.TestCase):
             mock_logging.info.assert_called_with("Using in-memory database")
 
 
+class TestAttachmentLoopEngine(unittest.TestCase):
+    """Tests for AttachmentLoopEngine"""
+
+    def test_bond_score_updates(self):
+        from modules.emotion.attachment_loop_engine import AttachmentLoopEngine
+
+        engine = AttachmentLoopEngine("user")
+        initial = engine.get_bond_status()
+        engine.record_event(0.5, True)
+        updated = engine.get_bond_status()
+
+        self.assertGreaterEqual(updated, initial)
+
+
+class TestMemoryNarrativeTemplates(unittest.TestCase):
+    """Tests for memory narrative template generation"""
+
+    def test_generate_narrative(self):
+        from modules.memory.memory_narrative_templates import generate_narrative
+
+        text = generate_narrative("you held my hand", "warmth")
+        self.assertIn("you held my hand", text)
+
+
 # Test runner for async tests
 def async_test(coro):
     """Decorator to run async tests"""
