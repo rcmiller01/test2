@@ -152,6 +152,9 @@ class MemoryFragment:
     access_count: int
     related_interactions: List[str]
     tags: List[str]
+    tone: Optional[str] = None
+    sentiment: float = 0.0
+    time_of_day: Optional[str] = None
     
     def to_dict(self):
         return {
@@ -164,7 +167,10 @@ class MemoryFragment:
             "last_accessed": self.last_accessed,
             "access_count": self.access_count,
             "related_interactions": self.related_interactions,
-            "tags": self.tags
+            "tags": self.tags,
+            "tone": self.tone,
+            "sentiment": self.sentiment,
+            "time_of_day": self.time_of_day
         }
 
 class UnifiedCompanionDatabase:

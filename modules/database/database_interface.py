@@ -208,6 +208,9 @@ class MemoryFragment:
     access_count: int
     related_interactions: List[str]
     tags: List[str]
+    tone: Optional[str] = None
+    sentiment: float = 0.0
+    time_of_day: Optional[str] = None
     
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -220,7 +223,10 @@ class MemoryFragment:
             "last_accessed": self.last_accessed.isoformat(),
             "access_count": self.access_count,
             "related_interactions": self.related_interactions,
-            "tags": self.tags
+            "tags": self.tags,
+            "tone": self.tone,
+            "sentiment": self.sentiment,
+            "time_of_day": self.time_of_day
         }
     
     @classmethod
@@ -235,7 +241,39 @@ class MemoryFragment:
             last_accessed=datetime.fromisoformat(data["last_accessed"]),
             access_count=data["access_count"],
             related_interactions=data["related_interactions"],
-            tags=data["tags"]
+            tags=data["tags"],
+            tone=data.get("tone"),
+            sentiment=data.get("sentiment", 0.0),
+            time_of_day=data.get("time_of_day")
+        )
+
+
+@dataclass
+class EmotionalRiskEntry:
+    """Log of emotionally vulnerable interactions"""
+    entry_id: str
+    user_id: str
+    timestamp: datetime
+    user_input: str
+    risk_tags: List[str]
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "entry_id": self.entry_id,
+            "user_id": self.user_id,
+            "timestamp": self.timestamp.isoformat(),
+            "user_input": self.user_input,
+            "risk_tags": self.risk_tags,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'EmotionalRiskEntry':
+        return cls(
+            entry_id=data["entry_id"],
+            user_id=data["user_id"],
+            timestamp=datetime.fromisoformat(data["timestamp"]),
+            user_input=data.get("user_input", ""),
+            risk_tags=data.get("risk_tags", []),
         )
 
 class DatabaseInterface(Protocol):
@@ -277,9 +315,17 @@ class DatabaseInterface(Protocol):
         """Save a memory fragment"""
         ...
     
-    async def get_relevant_memories(self, user_id: str, memory_type: Optional[str] = None, 
+    async def get_relevant_memories(self, user_id: str, memory_type: Optional[str] = None,
                                   tags: Optional[List[str]] = None, limit: int = 10) -> List[MemoryFragment]:
         """Get relevant memory fragments for context"""
+        ...
+
+    async def log_emotional_risk(self, entry: EmotionalRiskEntry) -> bool:
+        """Log an emotionally vulnerable interaction"""
+        ...
+
+    async def get_emotional_risk_history(self, user_id: str, limit: int = 20) -> List[EmotionalRiskEntry]:
+        """Retrieve emotional risk history"""
         ...
 
 class InMemoryDatabase:
@@ -293,6 +339,7 @@ class InMemoryDatabase:
         self.sessions: Dict[str, SessionRecord] = {}
         self.psychological_states: List[PsychologicalState] = []
         self.memory_fragments: List[MemoryFragment] = []
+        self.emotional_risk_registry: List[EmotionalRiskEntry] = []
         self.logger = logging.getLogger(__name__)
     
     async def initialize(self) -> None:
@@ -461,6 +508,25 @@ class InMemoryDatabase:
         except Exception as e:
             self.logger.error(f"Error updating memory access: {e}")
             return False
+
+    async def log_emotional_risk(self, entry: EmotionalRiskEntry) -> bool:
+        """Log an emotional risk entry"""
+        try:
+            self.emotional_risk_registry.append(entry)
+            return True
+        except Exception as e:
+            self.logger.error(f"Error logging emotional risk: {e}")
+            return False
+
+    async def get_emotional_risk_history(self, user_id: str, limit: int = 20) -> List[EmotionalRiskEntry]:
+        """Retrieve emotional risk history"""
+        try:
+            entries = [e for e in self.emotional_risk_registry if e.user_id == user_id]
+            entries.sort(key=lambda x: x.timestamp, reverse=True)
+            return entries[:limit]
+        except Exception as e:
+            self.logger.error(f"Error getting emotional risk history: {e}")
+            return []
     
     async def get_user_analytics(self, user_id: str, days: int = 30) -> Dict[str, Any]:
         """Get user interaction analytics"""

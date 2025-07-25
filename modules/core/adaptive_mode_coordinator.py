@@ -39,6 +39,7 @@ class ModeConfiguration:
     response_length: str = "adaptive"  # short, medium, long, adaptive
     formality_level: str = "casual_caring"  # formal, casual_caring, intimate
     proactivity: str = "responsive"  # reactive, responsive, proactive
+    personality_inflections: Dict[str, Any] = field(default_factory=dict)
 
 class AdaptiveModeCoordinator:
     """
@@ -78,7 +79,13 @@ class AdaptiveModeCoordinator:
                 safety_vigilance=0.9,
                 response_length='adaptive',
                 formality_level='intimate',
-                proactivity='responsive'
+                proactivity='responsive',
+                personality_inflections={
+                    'tone': 'gentle',
+                    'pacing': 'slow',
+                    'metaphor_density': 'high',
+                    'directness': 'low'
+                }
             ),
             
             'development': ModeConfiguration(
@@ -97,7 +104,13 @@ class AdaptiveModeCoordinator:
                 safety_vigilance=0.6,
                 response_length='medium',
                 formality_level='casual_caring',
-                proactivity='proactive'
+                proactivity='proactive',
+                personality_inflections={
+                    'tone': 'direct',
+                    'pacing': 'medium',
+                    'metaphor_density': 'low',
+                    'directness': 'high'
+                }
             ),
             
             'creative': ModeConfiguration(
@@ -116,7 +129,13 @@ class AdaptiveModeCoordinator:
                 safety_vigilance=0.7,
                 response_length='adaptive',
                 formality_level='casual_caring',
-                proactivity='proactive'
+                proactivity='proactive',
+                personality_inflections={
+                    'tone': 'playful',
+                    'pacing': 'varied',
+                    'metaphor_density': 'very_high',
+                    'directness': 'medium'
+                }
             ),
             
             'hybrid': ModeConfiguration(
@@ -135,7 +154,13 @@ class AdaptiveModeCoordinator:
                 safety_vigilance=0.8,
                 response_length='adaptive',
                 formality_level='casual_caring',
-                proactivity='responsive'
+                proactivity='responsive',
+                personality_inflections={
+                    'tone': 'balanced',
+                    'pacing': 'adaptive',
+                    'metaphor_density': 'moderate',
+                    'directness': 'medium'
+                }
             ),
             
             'crisis': ModeConfiguration(
@@ -154,7 +179,13 @@ class AdaptiveModeCoordinator:
                 safety_vigilance=1.0,
                 response_length='short',
                 formality_level='intimate',
-                proactivity='highly_responsive'
+                proactivity='highly_responsive',
+                personality_inflections={
+                    'tone': 'calm',
+                    'pacing': 'slow',
+                    'metaphor_density': 'minimal',
+                    'directness': 'high'
+                }
             )
         }
     

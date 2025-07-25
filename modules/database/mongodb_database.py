@@ -12,7 +12,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 
 from .database_interface import (
     DatabaseInterface, UserProfile, InteractionRecord, SessionRecord,
-    PsychologicalState, MemoryFragment
+    PsychologicalState, MemoryFragment, EmotionalRiskEntry
 )
 
 
@@ -36,7 +36,8 @@ class MongoDatabase:
             "psychological_states": "psychological_states",
             "memory_fragments": "memory_fragments",
             "emotional_patterns": "emotional_patterns",
-            "crisis_logs": "crisis_logs"
+            "crisis_logs": "crisis_logs",
+            "emotional_risk": "emotional_risk"
         }
     
     async def initialize(self) -> None:
@@ -86,9 +87,14 @@ class MongoDatabase:
                 ("user_id", 1), ("memory_type", 1)
             ])
             await self.db[self.collections["memory_fragments"]].create_index("tags")
-            
+
             # Crisis logs
             await self.db[self.collections["crisis_logs"]].create_index([
+                ("user_id", 1), ("timestamp", -1)
+            ])
+
+            # Emotional risk registry
+            await self.db[self.collections["emotional_risk"]].create_index([
                 ("user_id", 1), ("timestamp", -1)
             ])
             
@@ -276,6 +282,32 @@ class MongoDatabase:
             return crisis_logs
         except Exception as e:
             self.logger.error(f"Error getting crisis history: {e}")
+            return []
+
+    async def log_emotional_risk(self, entry: EmotionalRiskEntry) -> bool:
+        """Log emotional risk entry"""
+        try:
+            await self.db[self.collections["emotional_risk"]].insert_one(entry.to_dict())
+            return True
+        except Exception as e:
+            self.logger.error(f"Error logging emotional risk: {e}")
+            return False
+
+    async def get_emotional_risk_history(self, user_id: str, limit: int = 20) -> List[EmotionalRiskEntry]:
+        """Retrieve emotional risk history"""
+        try:
+            cursor = self.db[self.collections["emotional_risk"]].find({"user_id": user_id}).sort(
+                "timestamp", -1
+            ).limit(limit)
+
+            entries: List[EmotionalRiskEntry] = []
+            async for doc in cursor:
+                doc.pop("_id", None)
+                entries.append(EmotionalRiskEntry.from_dict(doc))
+
+            return entries
+        except Exception as e:
+            self.logger.error(f"Error retrieving emotional risk history: {e}")
             return []
     
     async def save_emotional_pattern(self, user_id: str, pattern_data: Dict[str, Any]) -> bool:

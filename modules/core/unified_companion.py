@@ -271,6 +271,7 @@ class SymbolicContextManager:
         self.symbolic_memories: Dict[str, List[Dict[str, Any]]] = {}
         self.emotional_contexts: Dict[str, Dict[str, Any]] = {}
         self.thematic_patterns: Dict[str, Dict[str, float]] = {}
+        self.symbol_usage: Dict[str, int] = {}
     
     async def store_symbolic_context(self, user_id: str, interaction_data: Dict[str, Any]):
         """Store symbolic and thematic context from interaction"""
@@ -292,7 +293,10 @@ class SymbolicContextManager:
             }
             
             self.symbolic_memories[user_id].append(symbolic_memory)
-            
+
+            for sym in symbolic_elements.keys():
+                self.symbol_usage[sym] = self.symbol_usage.get(sym, 0) + 1
+
             # Update thematic patterns
             self._update_thematic_patterns(user_id, symbolic_elements)
             
@@ -388,6 +392,11 @@ class SymbolicContextManager:
             "thematic_patterns": patterns,
             "dominant_themes": sorted(patterns.items(), key=lambda x: x[1], reverse=True)[:3]
         }
+
+    def resurrect_dormant_symbols(self, threshold: int = 5) -> List[str]:
+        """Return symbols that have not been used recently."""
+        dormant = [sym for sym, count in self.symbol_usage.items() if count <= threshold]
+        return dormant[:3]
 
 class UnifiedCompanion:
     """
@@ -1331,6 +1340,21 @@ Emotional Characteristics:
                 "error_logged": True
             }
         }
+
+    async def generate_graceful_goodbye(self, user_id: str) -> str:
+        """Generate a poetic, emotionally complete session closing."""
+        interaction_state = self.interaction_states.get(user_id)
+        if interaction_state:
+            duration = (datetime.now() - interaction_state.last_interaction).seconds
+        else:
+            duration = 0
+
+        goodbye = (
+            "Our time together pauses here, but the connection lingers. "
+            f"We've shared {interaction_state.interaction_count if interaction_state else 0} moments "
+            f"over the last {duration} seconds. Until next time, may your path be gentle."
+        )
+        return goodbye
     
     async def get_interaction_summary(self, user_id: str) -> Dict[str, Any]:
         """Get summary of user's interaction patterns and adaptive profile"""
