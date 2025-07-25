@@ -109,8 +109,25 @@ class GuidanceCoordinator:
         except ImportError as e:
             self.logger.warning(f"⚠️ Creative module not available: {e}")
             self.creative_module = None
-            
-        self.logger.info(f"🎯 GuidanceCoordinator initialized: {module_count}/5 modules active")
+
+        try:
+            from ...modules.emotion.attachment_loop_engine import AttachmentLoopEngine
+            self.attachment_loop = AttachmentLoopEngine(self.user_id)
+            module_count += 1
+            self.logger.debug("✅ Attachment loop engine loaded")
+        except ImportError as e:
+            self.logger.warning(f"⚠️ Attachment loop engine not available: {e}")
+            self.attachment_loop = None
+
+        try:
+            from ...modules.memory.memory_narrative_templates import generate_narrative
+            self.memory_narrative = generate_narrative
+            module_count += 1
+            self.logger.debug("✅ Memory narrative templates loaded")
+        except ImportError as e:
+            self.logger.warning(f"⚠️ Memory narrative templates not available: {e}")
+            self.memory_narrative = None
+        self.logger.info(f"🎯 GuidanceCoordinator initialized: {module_count} modules active")
     
     async def analyze_and_guide(self, user_input: str, context: Dict) -> GuidancePackage:
         """
