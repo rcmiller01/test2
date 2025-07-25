@@ -253,14 +253,28 @@ class HapticSystem:
                     from js import navigator
                     if hasattr(navigator, 'vibrate'):
                         navigator.vibrate(vibration_pattern)
+                        print(f"[Haptic] Applied vibration via navigator API: {vibration_pattern}")
+                    else:
+                        print("[Haptic] Navigator vibrate API not available")
+                except ImportError as import_error:
+                    print(f"[Haptic] Navigator API import failed: {import_error}")
+                    self._fallback_haptic_simulation(vibration_pattern, location)
+                except AttributeError as attr_error:
+                    print(f"[Haptic] Navigator API attribute error: {attr_error}")
+                    self._fallback_haptic_simulation(vibration_pattern, location)
                 except Exception as nav_error:
-                    print(f"[Haptic] Navigator API error: {nav_error}")
+                    print(f"[Haptic] Navigator API unexpected error: {nav_error}")
+                    self._fallback_haptic_simulation(vibration_pattern, location)
             else:
-                # Fallback for non-browser environments
-                print(f"[Haptic] Simulated vibration: {vibration_pattern} at {location}")
+                self._fallback_haptic_simulation(vibration_pattern, location)
                 
         except Exception as e:
             print(f"[Haptic] Error applying feedback: {e}")
+    
+    def _fallback_haptic_simulation(self, vibration_pattern, location):
+        """Fallback haptic simulation for non-browser environments"""
+        print(f"[Haptic] Simulated vibration: {vibration_pattern} at {location}")
+        # Could integrate with system haptic APIs here in the future
     
     def stop_haptic_feedback(self):
         """Stop current haptic feedback"""

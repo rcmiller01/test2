@@ -7,9 +7,9 @@ services:
     container_name: emotional_ai_mongodb
     restart: unless-stopped
     environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: emotional_ai_password
-      MONGO_INITDB_DATABASE: emotional_ai
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-emotional_ai}
     ports:
       - "27017:27017"
     volumes:
@@ -31,7 +31,7 @@ services:
     container_name: emotional_ai_m3_primary
     restart: unless-stopped
     environment:
-      - MONGODB_URI=mongodb://admin:emotional_ai_password@mongodb:27017/emotional_ai?authSource=admin
+      - MONGODB_URI=mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD}@mongodb:27017/${MONGO_DATABASE:-emotional_ai}?authSource=admin
       - SERVER_ROLE=primary
       - SERVER_ID=m3-primary
       - CLUSTER_ENABLED=true

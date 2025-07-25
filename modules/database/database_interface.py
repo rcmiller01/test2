@@ -507,29 +507,47 @@ class InMemoryDatabase:
         """Close database connection (no-op for in-memory)"""
         self.logger.info("In-memory database closed")
 
-def create_database_interface(connection_string: Optional[str] = None, database_type: str = "inmemory") -> DatabaseInterface:
+def create_database_interface(connection_string: Optional[str] = None, database_type: str = "auto") -> DatabaseInterface:
     """
     Factory function to create appropriate database interface
     Auto-detects MongoDB when connection string is provided
     """
-    # Auto-detect MongoDB when connection string is provided but type is default
-    if connection_string and database_type == "inmemory":
-        database_type = "mongodb"
-        logging.info("Auto-detected MongoDB from connection string")
+    import os
     
-    if database_type == "inmemory" or not connection_string:
+    # Auto-detect database type based on environment and parameters
+    if database_type == "auto":
+        if connection_string or os.getenv('MONGO_CONNECTION_STRING'):
+            database_type = "mongodb"
+            logging.info("Auto-detected MongoDB from connection string or environment")
+        else:
+            database_type = "inmemory"
+            logging.info("No connection string found, defaulting to in-memory database")
+    
+    # Use environment variable if no connection string provided
+    if not connection_string:
+        connection_string = os.getenv('MONGO_CONNECTION_STRING')
+    
+    if database_type == "inmemory":
         logging.info("Using in-memory database")
         return InMemoryDatabase()
     elif database_type == "mongodb":
+        if not connection_string:
+            raise ValueError("MongoDB connection string required but not provided")
+            
         try:
             from .mongodb_database import MongoDatabase
-            logging.info(f"Initializing MongoDB with connection: {connection_string[:20]}...")
-            return MongoDatabase(connection_string)
+            logging.info(f"Initializing MongoDB with connection: {connection_string[:20] if len(connection_string) > 20 else connection_string}...")
+            db = MongoDatabase(connection_string)
+            # Test basic functionality to ensure MongoDB is working
+            logging.info("MongoDB interface created successfully")
+            return db
         except ImportError as e:
-            logging.warning(f"MongoDB dependencies not available ({e}), using in-memory database")
-            return InMemoryDatabase()
+            error_msg = f"MongoDB dependencies not available: {e}. Install with 'pip install motor pymongo'"
+            logging.error(error_msg)
+            raise ImportError(error_msg)
         except Exception as e:
-            logging.error(f"Error creating MongoDB interface ({e}), using in-memory database")
-            return InMemoryDatabase()
+            error_msg = f"Failed to create MongoDB interface: {e}"
+            logging.error(error_msg)
+            raise RuntimeError(error_msg)
     else:
-        raise ValueError(f"Unsupported database type: {database_type}")
+        raise ValueError(f"Unsupported database type: {database_type}. Supported types: 'auto', 'inmemory', 'mongodb'")
