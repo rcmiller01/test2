@@ -9,6 +9,7 @@ import asyncio
 import json
 import sys
 import os
+from datetime import datetime
 from typing import Dict, Any
 from unittest.mock import Mock, patch, AsyncMock
 
@@ -177,6 +178,28 @@ class TestUnifiedCompanion(unittest.TestCase):
         # For now, just verify the attribute exists since the actual template engine
         # may not be fully implemented in the test environment
         self.assertIsNotNone(self.companion.dynamic_template_engine)
+
+    async def test_end_session_goodbye(self):
+        """Test goodbye generation when ending a session"""
+        await self.async_setUp()
+        from modules.core.unified_companion import InteractionState
+        state = InteractionState(
+            user_id=self.test_user,
+            session_id="sess1",
+            interaction_count=1,
+            last_interaction=datetime.now(),
+            emotional_state={"affection": 0.8},
+            technical_context={},
+            creative_context={},
+            conversation_history=[],
+            active_needs=[],
+            adaptive_profile={},
+        )
+        self.companion.interaction_states[self.test_user] = state
+        result = await self.companion.end_session(self.test_user)
+        self.assertIn("goodbye", result)
+        self.assertIsInstance(result["goodbye"], str)
+        self.assertIn("cherish", result["reflection"])
     
     def test_interaction_type_enum(self):
         """Test InteractionType enum values"""
@@ -344,6 +367,7 @@ TestUnifiedCompanion.test_crisis_interrupt_response = async_test(TestUnifiedComp
 TestUnifiedCompanion.test_database_auto_detection = async_test(TestUnifiedCompanion.test_database_auto_detection)
 TestUnifiedCompanion.test_emotional_weight_tracking = async_test(TestUnifiedCompanion.test_emotional_weight_tracking)
 TestUnifiedCompanion.test_template_engine_selection = async_test(TestUnifiedCompanion.test_template_engine_selection)
+TestUnifiedCompanion.test_end_session_goodbye = async_test(TestUnifiedCompanion.test_end_session_goodbye)
 TestCrisisSafetyOverride.test_crisis_assessment = async_test(TestCrisisSafetyOverride.test_crisis_assessment)
 TestCrisisSafetyOverride.test_crisis_level_detection = async_test(TestCrisisSafetyOverride.test_crisis_level_detection)
 TestDatabaseInterface.test_user_profile_operations = async_test(TestDatabaseInterface.test_user_profile_operations)
