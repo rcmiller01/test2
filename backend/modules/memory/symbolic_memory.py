@@ -57,6 +57,7 @@ class SymbolicMemorySystem:
         self.db_path = db_path
         self.connection = None
         self.symbols_cache = {}
+        # symbol -> {frequency, avg_emotion, last_used, decay_score}
         self.clusters_cache = {}
         self.emotional_weights = {}
         
@@ -153,15 +154,20 @@ class SymbolicMemorySystem:
         
         # Load symbol frequencies
         cursor.execute("""
-            SELECT symbol, COUNT(*) as frequency, AVG(emotional_weight) as avg_emotion
-            FROM symbolic_memories 
+            SELECT symbol, COUNT(*) as frequency, AVG(emotional_weight) as avg_emotion,
+                   MAX(last_accessed) as last_used
+            FROM symbolic_memories
             GROUP BY symbol
         """)
         
         for row in cursor.fetchall():
+            last_used = row['last_used']
+            last_dt = datetime.fromisoformat(last_used) if last_used else datetime.now()
             self.symbols_cache[row['symbol']] = {
                 'frequency': row['frequency'],
-                'avg_emotion': row['avg_emotion']
+                'avg_emotion': row['avg_emotion'],
+                'last_used': last_dt,
+                'decay_score': 0.0
             }
         
         logger.info(f"📚 Loaded {len(self.symbols_cache)} symbols into cache")
@@ -226,6 +232,16 @@ class SymbolicMemorySystem:
                     symbolic_memory.last_accessed,
                     symbolic_memory.access_count
                 ))
+
+                # Track symbol usage
+                if symbol not in self.symbols_cache:
+                    self.symbols_cache[symbol] = {
+                        'frequency': 0,
+                        'avg_emotion': emotional_weight,
+                        'last_used': now,
+                        'decay_score': 0.0
+                    }
+                self.symbols_cache[symbol]['last_used'] = now
             
             # Store emotional contexts
             for emotion, intensity in emotional_context.items():
@@ -432,6 +448,7 @@ class SymbolicMemorySystem:
     
     async def _update_symbol_cache(self, symbols: List[str], emotional_weight: float):
         """Update symbol frequency cache"""
+        now = datetime.now()
         for symbol in symbols:
             if symbol in self.symbols_cache:
                 self.symbols_cache[symbol]['frequency'] += 1
@@ -443,18 +460,28 @@ class SymbolicMemorySystem:
             else:
                 self.symbols_cache[symbol] = {
                     'frequency': 1,
-                    'avg_emotion': emotional_weight
+                    'avg_emotion': emotional_weight,
+                    'last_used': now,
+                    'decay_score': 0.0
                 }
+            self.symbols_cache[symbol]['last_used'] = now
+            self.symbols_cache[symbol]['decay_score'] = 0.0
     
     async def _update_access_tracking(self, memory_id: str):
         """Update memory access tracking"""
         cursor = self.connection.cursor()
         cursor.execute("""
-            UPDATE symbolic_memories 
+            UPDATE symbolic_memories
             SET access_count = access_count + 1, last_accessed = ?
             WHERE id = ?
         """, (datetime.now(), memory_id))
         self.connection.commit()
+
+        # Update symbol usage cache
+        symbol = memory_id.split("_")[-1]
+        if symbol in self.symbols_cache:
+            self.symbols_cache[symbol]['last_used'] = datetime.now()
+            self.symbols_cache[symbol]['decay_score'] = 0.0
     
     async def _update_memory_clusters(self, memory_id: str, symbols: List[str], emotional_weight: float):
         """Update or create memory clusters based on symbolic associations"""

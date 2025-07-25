@@ -36,6 +36,7 @@ class GuidancePackage:
     # Utility guidance
     utility_recommendations: List[str] = field(default_factory=list)
     creative_guidance: str = ""
+    symbolic_resurrection_line: str = ""
     
     # Safety and intervention
     crisis_level: int = 0
@@ -109,8 +110,18 @@ class GuidanceCoordinator:
         except ImportError as e:
             self.logger.warning(f"⚠️ Creative module not available: {e}")
             self.creative_module = None
-            
-        self.logger.info(f"🎯 GuidanceCoordinator initialized: {module_count}/5 modules active")
+
+        try:
+            from ...backend.modules.memory.symbol_resurrection import SymbolResurrectionEngine
+            from ...backend.modules.memory.symbolic_memory import symbolic_memory_system
+            self.symbol_res_engine = SymbolResurrectionEngine(symbolic_memory_system)
+            module_count += 1
+            self.logger.debug("✅ Symbol resurrection engine loaded")
+        except ImportError as e:
+            self.logger.warning(f"⚠️ Symbol resurrection engine not available: {e}")
+            self.symbol_res_engine = None
+
+        self.logger.info(f"🎯 GuidanceCoordinator initialized: {module_count}/6 modules active")
     
     async def analyze_and_guide(self, user_input: str, context: Dict) -> GuidancePackage:
         """
@@ -184,7 +195,12 @@ class GuidanceCoordinator:
         # Assess safety and crisis levels
         self.logger.debug("🚨 Assessing safety protocols...")
         await self._assess_safety_protocols(guidance, user_input, context)
-        
+
+        if self.symbol_res_engine:
+            line = self.symbol_res_engine.propose_resurrection_line(context.get('current_emotional_state'))
+            if line:
+                guidance.symbolic_resurrection_line = line
+
         processing_time = (datetime.now() - start_time).total_seconds()
         self.logger.info(f"🎯 Guidance analysis complete: Mode={guidance.primary_mode}, "
                         f"Crisis={guidance.crisis_level}, Time={processing_time:.3f}s")
