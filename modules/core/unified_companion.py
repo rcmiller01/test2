@@ -27,6 +27,7 @@ from .goodbye_protocol import GoodbyeProtocol
 from ..relationship.connection_depth_tracker import ConnectionDepthTracker
 from ..database.database_interface import (
     create_database_interface, DatabaseInterface, UserProfile,
+    create_database_interface, DatabaseInterface, UserProfile,
     InteractionRecord, PsychologicalState, MemoryFragment, InteractionType
 )
 
@@ -695,11 +696,15 @@ class UnifiedCompanion:
         # Generate unique interaction ID
         interaction_id = str(uuid.uuid4())
 
+
         # Start interaction tracing
         session_id = session_context.get("session_id") if session_context else f"session_{int(datetime.now().timestamp())}"
         if session_id is None:
             session_id = f"session_{int(datetime.now().timestamp())}"
         self.enhanced_logger.start_interaction_trace(interaction_id, user_id, session_id)
+
+        # Record interaction time for goodbye management
+        self.goodbye_manager.register_interaction(user_id)
 
         # Record interaction time for goodbye management
         self.goodbye_manager.register_interaction(user_id)
