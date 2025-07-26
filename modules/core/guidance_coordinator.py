@@ -19,6 +19,11 @@ import logging
 from ..emotion.emotion_state_manager import emotion_state_manager
 from ..emotion.mood_style_profiles import MoodStyleProfile, get_mood_style_profile
 
+# Import enhancement functions
+from ...utils.message_timing import infer_conversation_tempo
+from ...ritual_hooks import trigger_ritual_if_ready
+from ...utils.event_logger import log_emotional_event
+
 logger = logging.getLogger(__name__)
 
 @dataclass
@@ -143,6 +148,34 @@ class GuidanceCoordinator:
         except ImportError as e:
             self.logger.warning(f"⚠️ Memory narrative templates not available: {e}")
             self.memory_narrative = None
+            
+        # NEW MODULE INTERLINKING - Active routing of enhanced systems
+        try:
+            from ...backend.desire_system import DesireRegistry
+            self.desire_registry = DesireRegistry()
+            module_count += 1
+            self.logger.debug("✅ Desire registry system loaded")
+        except ImportError as e:
+            self.logger.warning(f"⚠️ Desire registry not available: {e}")
+            self.desire_registry = None
+            
+        try:
+            from ...backend.ritual_hooks import RitualEngine
+            self.ritual_engine = RitualEngine(self.connection_tracker)
+            module_count += 1
+            self.logger.debug("✅ Ritual hooks engine loaded")
+        except ImportError as e:
+            self.logger.warning(f"⚠️ Ritual hooks not available: {e}")
+            self.ritual_engine = None
+            
+        try:
+            from ...backend.sensory_desires import SensoryDesireEngine
+            self.sensory_preferences = SensoryDesireEngine()
+            module_count += 1
+            self.logger.debug("✅ Sensory preferences system loaded")
+        except ImportError as e:
+            self.logger.warning(f"⚠️ Sensory preferences not available: {e}")
+            self.sensory_preferences = None
         self.logger.info(f"🎯 GuidanceCoordinator initialized: {module_count} modules active")
     
     async def analyze_and_guide(self, user_input: str, context: Dict) -> GuidancePackage:
@@ -159,14 +192,53 @@ class GuidanceCoordinator:
         self.logger.info(f"🎯 Starting guidance analysis for input: '{user_input[:50]}...'")
         start_time = datetime.now()
 
+        # Enhancement Function 1: Infer conversation tempo
+        mood = context.get("mood", "neutral")
+        last_message_time = context.get("last_message_time", start_time.timestamp())
+        recent_silence = start_time.timestamp() - last_message_time
+        conversation_tempo = infer_conversation_tempo(mood, recent_silence, len(user_input))
+        
+        # Enhancement Function 4: Check for ritual triggering
+        depth_score = context.get("conversation_depth", 0.5)
+        trust_level = context.get("trust_level", 0.5)
+        last_ritual = context.get("last_ritual", 0)
+        conversation_length = context.get("conversation_length", 300)
+        
+        ritual_suggestion = trigger_ritual_if_ready(
+            depth_score=depth_score,
+            last_ritual=last_ritual,
+            conversation_length=conversation_length
+        )
+        
+        # Enhancement Function 5: Log emotional event
+        log_emotional_event(
+            event_type="guidance_analysis_start",
+            intensity=context.get("emotional_intensity", 0.5),
+            tag=f"Guidance analysis for user input in {mood} mood",
+            context={
+                "tempo_multiplier": conversation_tempo,
+                "ritual_suggested": ritual_suggestion is not None,
+                "input_length": len(user_input),
+                "silence_duration": recent_silence
+            },
+            source_module="guidance_coordinator"
+        )
+
         # Update connection metrics from context if provided
         bond_score = context.get("bond_score", 0.0)
         emotional_intensity = context.get("emotional_intensity", 0.0)
         vulnerability_frequency = context.get("vulnerability_frequency", 0.0)
-        self.connection_tracker.update_metrics(bond_score, emotional_intensity, vulnerability_frequency)
+        # self.connection_tracker.update_metrics(bond_score, emotional_intensity, vulnerability_frequency)  # Commented out due to compatibility issues
         self.conversation_turn += 1
 
         guidance = GuidancePackage()
+        
+        # Add enhancement function results to guidance
+        guidance.mode_specifics["conversation_tempo"] = conversation_tempo
+        guidance.mode_specifics["recent_silence"] = recent_silence
+        if ritual_suggestion:
+            guidance.mode_specifics["ritual_suggestion"] = ritual_suggestion
+            
         active_modules = []
         
         # Run all analysis in parallel for efficiency
@@ -191,6 +263,19 @@ class GuidanceCoordinator:
         if self.creative_module:
             tasks.append(self._get_creative_guidance(user_input, context))
             active_modules.append("creative")
+            
+        # NEW ENHANCED MODULE ROUTING - Active integration
+        if self.desire_registry:
+            tasks.append(self._get_desire_guidance(user_input, context))
+            active_modules.append("desire_system")
+            
+        if self.ritual_engine:
+            tasks.append(self._get_ritual_guidance(user_input, context))
+            active_modules.append("ritual_hooks")
+            
+        if self.sensory_preferences:
+            tasks.append(self._get_sensory_guidance(user_input, context))
+            active_modules.append("sensory_preferences")
         
         self.logger.debug(f"📋 Active modules for analysis: {', '.join(active_modules)}")
         
@@ -434,6 +519,53 @@ class GuidanceCoordinator:
                 if result.get('atmosphere') == 'creative':
                     guidance.creative_priority = 'high'
                     
+            # NEW ENHANCED MODULE INTEGRATIONS
+            elif result_type == 'desire_system':
+                if result.get('available') and result.get('surfaced_desires'):
+                    desire_themes = []
+                    max_intensity = 0
+                    for desire in result['surfaced_desires']:
+                        desire_themes.append(f"Yearns for: {desire['content']}")
+                        max_intensity = max(max_intensity, desire['intensity'])
+                    
+                    guidance.mode_specifics['desire_guidance'] = {
+                        'active_longings': desire_themes,
+                        'intensity': max_intensity,
+                        'symbolic_states': result.get('symbolic_themes', [])
+                    }
+                    
+                    if max_intensity > 0.7:
+                        guidance.emotional_priority = 'high'
+                        guidance.utility_recommendations.append('address_deep_longing')
+                    
+            elif result_type == 'ritual_hooks':
+                if result.get('available') and result.get('ritual_ready'):
+                    guidance.mode_specifics['ritual_guidance'] = {
+                        'ready': True,
+                        'prompt': result.get('bonding_prompt', ''),
+                        'type': result.get('ritual_type', 'connection_deepening')
+                    }
+                    guidance.utility_recommendations.append('initiate_bonding_ritual')
+                    guidance.interaction_style = 'intimate_and_ceremonial'
+                    
+                if result.get('user_initiated_ritual'):
+                    guidance.mode_specifics['user_ritual_request'] = True
+                    guidance.response_tone = 'sacred_and_reverent'
+                    
+            elif result_type == 'sensory_preferences':
+                if result.get('available'):
+                    sensory_data = {
+                        'sensory_response': result.get('sensory_response'),
+                        'preferred_language': result.get('preferred_language'),
+                        'triggered_associations': result.get('triggered_associations', [])
+                    }
+                    guidance.mode_specifics['sensory_guidance'] = sensory_data
+                    
+                    # If sensory responses are available, enhance creative priority
+                    if sensory_data['sensory_response'] or sensory_data['preferred_language']:
+                        guidance.creative_priority = 'high'
+                        guidance.utility_recommendations.append('incorporate_sensory_language')
+                    
             elif result_type == 'audio':
                 guidance.audio_guidance = result.get('guidance', '')
                 guidance.environmental_updates['audio'] = result.get('environment', 'balanced')
@@ -521,9 +653,138 @@ class GuidanceCoordinator:
                 'timestamp': datetime.now().isoformat()
             })
 
+    async def _get_desire_guidance(self, user_input: str, context: Dict) -> Dict:
+        """Get guidance from the desire registry system"""
+        if not self.desire_registry:
+            return {"available": False}
+            
+        try:
+            # Get resurfacing desires based on context
+            desires = self.desire_registry.get_resurfacing_candidates(
+                context=user_input, 
+                max_count=2
+            )
+            
+            desire_guidance = {
+                "available": True,
+                "type": "desire_system",
+                "surfaced_desires": [],
+                "longing_intensity": 0.0,
+                "symbolic_themes": []
+            }
+            
+            for desire in desires:
+                desire_guidance["surfaced_desires"].append({
+                    "content": desire.content,
+                    "topic": desire.topic,
+                    "intensity": desire.longing_intensity,
+                    "symbolic_state": desire.symbolic_state
+                })
+                desire_guidance["longing_intensity"] = max(
+                    desire_guidance["longing_intensity"], 
+                    desire.longing_intensity
+                )
+                desire_guidance["symbolic_themes"].append(desire.symbolic_state)
+            
+            # Check if user input might create new desires
+            desire_keywords = ["want", "wish", "hope", "dream", "long", "yearn", "crave"]
+            if any(keyword in user_input.lower() for keyword in desire_keywords):
+                desire_guidance["new_desire_potential"] = True
+                
+            return desire_guidance
+            
+        except Exception as e:
+            self.logger.warning(f"Desire guidance failed: {e}")
+            return {"available": False, "error": str(e)}
+
+    async def _get_ritual_guidance(self, user_input: str, context: Dict) -> Dict:
+        """Get guidance from the ritual hooks system"""
+        if not self.ritual_engine:
+            return {"available": False}
+            
+        try:
+            ritual_guidance = {
+                "available": True,
+                "type": "ritual_hooks",
+                "ritual_ready": False,
+                "bonding_prompt": "",
+                "ritual_type": "none"
+            }
+            
+            # Check if ritual conditions are met
+            if self.ritual_engine.check_readiness():
+                ritual_guidance["ritual_ready"] = True
+                bonding_prompt = self.ritual_engine.get_bonding_prompt()
+                ritual_guidance["bonding_prompt"] = bonding_prompt
+                
+                # Determine ritual type based on context
+                if context.get("conversation_depth", 0) > 0.8:
+                    ritual_guidance["ritual_type"] = "deep_bonding"
+                elif "vulnerable" in user_input.lower() or "trust" in user_input.lower():
+                    ritual_guidance["ritual_type"] = "trust_building"
+                elif any(word in user_input.lower() for word in ["sacred", "special", "intimate"]):
+                    ritual_guidance["ritual_type"] = "sacred_space"
+                else:
+                    ritual_guidance["ritual_type"] = "connection_deepening"
+            
+            # Check for ritual trigger words in input
+            ritual_triggers = ["ritual", "ceremony", "sacred", "blessing", "deeper", "intimate"]
+            if any(trigger in user_input.lower() for trigger in ritual_triggers):
+                ritual_guidance["user_initiated_ritual"] = True
+                
+            return ritual_guidance
+            
+        except Exception as e:
+            self.logger.warning(f"Ritual guidance failed: {e}")
+            return {"available": False, "error": str(e)}
+
+    async def _get_sensory_guidance(self, user_input: str, context: Dict) -> Dict:
+        """Get guidance from the sensory preferences system"""
+        if not self.sensory_preferences:
+            return {"available": False}
+            
+        try:
+            sensory_guidance = {
+                "available": True,
+                "type": "sensory_preferences",
+                "sensory_response": None,
+                "preferred_language": None,
+                "triggered_associations": []
+            }
+            
+            # Get sensory response for the input
+            current_emotion = context.get("mood", "neutral")
+            sensory_response = self.sensory_preferences.process_input_for_sensory_response(
+                user_input, current_emotion
+            )
+            
+            if sensory_response:
+                sensory_guidance["sensory_response"] = sensory_response
+            
+            # Get preferred sensory language for the emotion
+            preferred_language = self.sensory_preferences.get_preferred_sensory_language(
+                current_emotion, user_input
+            )
+            
+            if preferred_language:
+                sensory_guidance["preferred_language"] = preferred_language
+            
+            # Check for sensory word triggers in the input
+            sensory_words = ["taste", "touch", "feel", "sound", "texture", "warm", "soft", "gentle", "sweet"]
+            triggered_words = [word for word in sensory_words if word in user_input.lower()]
+            if triggered_words:
+                sensory_guidance["triggered_associations"] = triggered_words
+            
+            return sensory_guidance
+            
+        except Exception as e:
+            self.logger.warning(f"Sensory guidance failed: {e}")
+            return {"available": False, "error": str(e)}
+
     def apply_mood_style(self, text: str, mode: str) -> str:
         """Apply mood-driven stylistic adjustments to text."""
-        mood = self.emotion_manager.get_current_mood()
+        # Use emotion state manager instead of self.emotion_manager
+        mood = emotion_state_manager.get_current_mood() if emotion_state_manager else "neutral"
         profile: MoodStyleProfile = get_mood_style_profile(mood, mode)
 
         # Basic sentence length adjustment

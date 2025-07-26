@@ -318,3 +318,41 @@ class UnifiedCompanion:
         # This would integrate with a task scheduler in a full implementation
         logger.info("Proactive check scheduled")
         pass
+    
+    async def end_session(self, user_id: Optional[str] = None, context: Optional[Dict[str, Any]] = None) -> str:
+        """
+        Generate contextual goodbye when a session ends.
+        Uses Enhancement Function 2: choose_goodbye_template
+        """
+        # Import goodbye template function
+        from ..goodbye_manager import choose_goodbye_template
+        
+        # Extract context for goodbye selection
+        mood = context.get("mood", "neutral") if context else "neutral"
+        bond_score = context.get("bond_score", 0.5) if context else 0.5
+        conversation_depth = context.get("conversation_depth", 0.5) if context else 0.5
+        
+        # Generate contextual goodbye (using simplified signature)
+        goodbye_message = choose_goodbye_template(
+            mood=mood,
+            bond_score=bond_score,
+            conversation_depth=conversation_depth
+        )
+        
+        # Log the session end event
+        from ..utils.event_logger import log_emotional_event
+        log_emotional_event(
+            event_type="session_end",
+            intensity=bond_score,
+            tag=f"Session ended with {mood} mood, bond score {bond_score:.2f}",
+            context={
+                "mood": mood,
+                "bond_score": bond_score,
+                "conversation_depth": conversation_depth,
+                "goodbye_type": "contextual_farewell"
+            },
+            source_module="unified_companion"
+        )
+        
+        logger.info(f"Generated contextual goodbye for {mood} mood with bond score {bond_score}")
+        return goodbye_message

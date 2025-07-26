@@ -98,6 +98,33 @@ class TestUnifiedAIIntegration(unittest.TestCase):
         except ImportError as e:
             self.fail(f"Could not import RitualEngine: {e}")
     
+    @patch('backend.desire_system.DesireRegistry')
+    def test_desire_system_import(self, mock_desire):
+        """Test desire system can be imported"""
+        try:
+            from backend.desire_system import DesireRegistry, DesireOrchestrator
+            self.assertTrue(True, "DesireSystem imported successfully")
+        except ImportError as e:
+            self.fail(f"Could not import DesireSystem: {e}")
+    
+    @patch('backend.personality_evolution.PersonalityEvolution')
+    def test_personality_evolution_import(self, mock_evolution):
+        """Test personality evolution can be imported"""
+        try:
+            from backend.personality_evolution import PersonalityEvolution
+            self.assertTrue(True, "PersonalityEvolution imported successfully")
+        except ImportError as e:
+            self.fail(f"Could not import PersonalityEvolution: {e}")
+    
+    @patch('backend.sensory_desires.SensoryDesireEngine')
+    def test_sensory_desires_import(self, mock_sensory):
+        """Test sensory desires can be imported"""
+        try:
+            from backend.sensory_desires import SensoryDesireEngine
+            self.assertTrue(True, "SensoryDesireEngine imported successfully")
+        except ImportError as e:
+            self.fail(f"Could not import SensoryDesireEngine: {e}")
+    
     def test_updated_config_files_use_unified_ai(self):
         """Test that updated config files use unified_ai instead of personas"""
         config_files = [
