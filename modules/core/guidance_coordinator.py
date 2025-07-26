@@ -18,6 +18,9 @@ import logging
 
 from ..emotion.emotion_state_manager import emotion_state_manager
 from ..emotion.mood_style_profiles import MoodStyleProfile, get_mood_style_profile
+from ..autonomy.desire_initiator import desire_initiator
+from ..voice.voice_manager import voice_manager
+from ..memory.memory_manager import memory_manager
 
 logger = logging.getLogger(__name__)
 
@@ -224,6 +227,15 @@ class GuidanceCoordinator:
         # Assess safety and crisis levels
         self.logger.debug("🚨 Assessing safety protocols...")
         await self._assess_safety_protocols(guidance, user_input, context)
+
+        user_id = context.get("user_id", "default")
+        if desire_initiator.should_initiate(user_id):
+            guidance.symbolic_resurrection_line = desire_initiator.generate_expression(user_id)
+
+        # Example voice synthesis hook
+        guidance.environmental_updates["voice_style"] = voice_manager.mood_to_style(
+            emotion_state_manager.get_current_mood(), context.get("scene_intent", "casual")
+        )
 
         # Check for ritual readiness once per window
         if self.conversation_turn % self.ritual_check_interval == 0:
