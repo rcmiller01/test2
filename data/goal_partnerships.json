@@ -42,5 +42,73 @@
     "last_check_in": 1753555273.0599082,
     "next_suggested_action": "Create detailed implementation timeline",
     "partnership_strength": 0.6
+  },
+  "goal_1753555663_test_collaboration_goal": {
+    "goal_id": "goal_1753555663_test_collaboration_goal",
+    "user_id": "test_user",
+    "ai_commitment_level": 0.8500000000000001,
+    "user_motivation_profile": {
+      "primary_motivator": "achievement",
+      "risk_tolerance": "moderate",
+      "celebration_style": "encouraging",
+      "support_style": "analytical",
+      "communication_preference": "direct",
+      "goal_approach": "systematic",
+      "responds_to_excitement": true
+    },
+    "collaboration_history": [
+      "brainstorm_goal_1753555663_test_collaboration_goal_1753555663",
+      "brainstorm_goal_1753555663_test_collaboration_goal_1753555663"
+    ],
+    "success_celebration_style": "encouraging",
+    "setback_support_style": "analytical",
+    "last_check_in": 1753555663.9753041,
+    "next_suggested_action": "Create detailed implementation timeline",
+    "partnership_strength": 0.6
+  },
+  "goal_1753555669_dream_vacation_to_japan": {
+    "goal_id": "goal_1753555669_dream_vacation_to_japan",
+    "user_id": "demo_investor",
+    "ai_commitment_level": 0.8500000000000001,
+    "user_motivation_profile": {
+      "primary_motivator": "achievement",
+      "risk_tolerance": "moderate",
+      "celebration_style": "encouraging",
+      "support_style": "analytical",
+      "communication_preference": "direct",
+      "goal_approach": "systematic"
+    },
+    "collaboration_history": [
+      "brainstorm_goal_1753555669_dream_vacation_to_japan_1753555669",
+      "brainstorm_goal_1753555669_dream_vacation_to_japan_1753555669"
+    ],
+    "success_celebration_style": "encouraging",
+    "setback_support_style": "analytical",
+    "last_check_in": 1753555669.9612792,
+    "next_suggested_action": "Create detailed implementation timeline",
+    "partnership_strength": 0.6
+  },
+  "goal_1753555818_test_collaboration_goal": {
+    "goal_id": "goal_1753555818_test_collaboration_goal",
+    "user_id": "test_user",
+    "ai_commitment_level": 0.8500000000000001,
+    "user_motivation_profile": {
+      "primary_motivator": "achievement",
+      "risk_tolerance": "moderate",
+      "celebration_style": "encouraging",
+      "support_style": "analytical",
+      "communication_preference": "direct",
+      "goal_approach": "systematic",
+      "responds_to_excitement": true
+    },
+    "collaboration_history": [
+      "brainstorm_goal_1753555818_test_collaboration_goal_1753555818",
+      "brainstorm_goal_1753555818_test_collaboration_goal_1753555818"
+    ],
+    "success_celebration_style": "encouraging",
+    "setback_support_style": "analytical",
+    "last_check_in": 1753555818.244469,
+    "next_suggested_action": "Create detailed implementation timeline",
+    "partnership_strength": 0.6
   }
 }

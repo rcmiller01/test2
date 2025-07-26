@@ -6,5 +6,14 @@
     "support_style": "analytical",
     "communication_preference": "direct",
     "goal_approach": "systematic"
+  },
+  "test_user": {
+    "primary_motivator": "achievement",
+    "risk_tolerance": "moderate",
+    "celebration_style": "encouraging",
+    "support_style": "analytical",
+    "communication_preference": "direct",
+    "goal_approach": "systematic",
+    "responds_to_excitement": true
   }
 }

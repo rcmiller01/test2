@@ -4,7 +4,7 @@
     "name": "Dream Vacation to Japan",
     "description": "Two weeks exploring Tokyo, Kyoto, and Mount Fuji",
     "target_amount": 5000.0,
-    "current_amount": 67.2,
+    "current_amount": 134.4,
     "goal_type": "vacation",
     "target_date": null,
     "status": "active",
@@ -25,6 +25,14 @@
         "trade_id": null,
         "timestamp": 1753550383.4555,
         "date": "2025-07-26T13:19:43.455500"
+      },
+      {
+        "amount": 67.2,
+        "source": "SPY_credit_spread",
+        "notes": "Profitable options trade - building toward dreams!",
+        "trade_id": null,
+        "timestamp": 1753555677.7797463,
+        "date": "2025-07-26T14:47:57.779747"
       }
     ]
   },
@@ -81,6 +89,146 @@
     "priority": 1,
     "emotional_value": "Taking time to recharge and create memories",
     "celebration_plan": "enjoy every moment of your well-earned vacation",
+    "milestone_percentages": [
+      25,
+      50,
+      75
+    ],
+    "contributions": []
+  },
+  "goal_1753555663_verification_test_goal": {
+    "goal_id": "goal_1753555663_verification_test_goal",
+    "name": "Verification Test Goal",
+    "description": "Testing system",
+    "target_amount": 1000.0,
+    "current_amount": 0.0,
+    "goal_type": "general_savings",
+    "target_date": null,
+    "status": "active",
+    "created_at": 1753555663.9346793,
+    "priority": 1,
+    "emotional_value": "Working toward something important: Verification Test Goal",
+    "celebration_plan": "celebrate achieving Verification Test Goal",
+    "milestone_percentages": [
+      25,
+      50,
+      75
+    ],
+    "contributions": []
+  },
+  "goal_1753555663_test_collaboration_goal": {
+    "goal_id": "goal_1753555663_test_collaboration_goal",
+    "name": "Test Collaboration Goal",
+    "description": "Testing collaborative features",
+    "target_amount": 1500.0,
+    "current_amount": 0.0,
+    "goal_type": "general_savings",
+    "target_date": null,
+    "status": "active",
+    "created_at": 1753555663.966025,
+    "priority": 1,
+    "emotional_value": "Working toward something important: Test Collaboration Goal",
+    "celebration_plan": "celebrate achieving Test Collaboration Goal",
+    "milestone_percentages": [
+      25,
+      50,
+      75
+    ],
+    "contributions": []
+  },
+  "goal_1753555669_dream_vacation_to_japan": {
+    "goal_id": "goal_1753555669_dream_vacation_to_japan",
+    "name": "Dream Vacation to Japan",
+    "description": "Two weeks exploring Tokyo, Kyoto, and Mount Fuji with cherry blossoms",
+    "target_amount": 5000.0,
+    "current_amount": 0.0,
+    "goal_type": "vacation",
+    "target_date": null,
+    "status": "active",
+    "created_at": 1753555669.9523566,
+    "priority": 1,
+    "emotional_value": "Taking time to recharge and create memories",
+    "celebration_plan": "enjoy every moment of your well-earned vacation",
+    "milestone_percentages": [
+      25,
+      50,
+      75
+    ],
+    "contributions": []
+  },
+  "goal_1753555677_dream_vacation_to_japan": {
+    "goal_id": "goal_1753555677_dream_vacation_to_japan",
+    "name": "Dream Vacation to Japan",
+    "description": "Two weeks exploring Tokyo, Kyoto, and Mount Fuji",
+    "target_amount": 5000.0,
+    "current_amount": 0.0,
+    "goal_type": "vacation",
+    "target_date": null,
+    "status": "active",
+    "created_at": 1753555677.7741277,
+    "priority": 1,
+    "emotional_value": "Taking time to recharge and create memories",
+    "celebration_plan": "enjoy every moment of your well-earned vacation",
+    "milestone_percentages": [
+      25,
+      50,
+      75
+    ],
+    "contributions": []
+  },
+  "goal_1753555677_home_server_upgrade": {
+    "goal_id": "goal_1753555677_home_server_upgrade",
+    "name": "Home Server Upgrade",
+    "description": "High-performance server for AI development",
+    "target_amount": 2000.0,
+    "current_amount": 0.0,
+    "goal_type": "tech_upgrade",
+    "target_date": null,
+    "status": "active",
+    "created_at": 1753555677.7750134,
+    "priority": 2,
+    "emotional_value": "Improving our digital life and capabilities",
+    "celebration_plan": "set up and enjoy your new technology",
+    "milestone_percentages": [
+      25,
+      50,
+      75
+    ],
+    "contributions": []
+  },
+  "goal_1753555818_verification_test_goal": {
+    "goal_id": "goal_1753555818_verification_test_goal",
+    "name": "Verification Test Goal",
+    "description": "Testing system",
+    "target_amount": 1000.0,
+    "current_amount": 0.0,
+    "goal_type": "general_savings",
+    "target_date": null,
+    "status": "active",
+    "created_at": 1753555818.2309737,
+    "priority": 1,
+    "emotional_value": "Working toward something important: Verification Test Goal",
+    "celebration_plan": "celebrate achieving Verification Test Goal",
+    "milestone_percentages": [
+      25,
+      50,
+      75
+    ],
+    "contributions": []
+  },
+  "goal_1753555818_test_collaboration_goal": {
+    "goal_id": "goal_1753555818_test_collaboration_goal",
+    "name": "Test Collaboration Goal",
+    "description": "Testing collaborative features",
+    "target_amount": 1500.0,
+    "current_amount": 0.0,
+    "goal_type": "general_savings",
+    "target_date": null,
+    "status": "active",
+    "created_at": 1753555818.2358282,
+    "priority": 1,
+    "emotional_value": "Working toward something important: Test Collaboration Goal",
+    "celebration_plan": "celebrate achieving Test Collaboration Goal",
     "milestone_percentages": [
       25,
       50,
