@@ -97,6 +97,16 @@ class GuidanceCoordinator:
         except ImportError as e:
             self.logger.warning(f"⚠️ Attachment regulation module not available: {e}")
             self.attachment_engine = None
+        
+        try:
+            # Import and initialize dream module
+            from ...modules.dreams.dream_module import get_dream_module
+            self.dream_module = get_dream_module()
+            module_count += 1
+            self.logger.debug("✅ Dream module loaded")
+        except ImportError as e:
+            self.logger.warning(f"⚠️ Dream module not available: {e}")
+            self.dream_module = None
             
         try:
             from ...modules.memory.shadow_memory import ShadowMemoryLayer
@@ -245,6 +255,29 @@ class GuidanceCoordinator:
             },
             source_module="guidance_coordinator"
         )
+
+        # Low-activity mode check: if user silent + not sleeping → run soft internal prompt
+        if self.dream_module and recent_silence > 1800:  # 30+ minutes of silence
+            current_hour = datetime.now().hour
+            is_likely_sleeping = 0 <= current_hour <= 6 or 22 <= current_hour <= 23
+            
+            if not is_likely_sleeping:
+                # Get current emotional state for dream generation
+                emotional_state = {
+                    "longing": context.get("longing_score", 0.5),
+                    "trust": context.get("trust_level", 0.5),
+                    "connection": context.get("bond_score", 0.5)
+                }
+                
+                # Trigger idle drift thoughts
+                dream_reflection = self.dream_module.idle_thought_drift(
+                    recent_silence, 
+                    emotional_state
+                )
+                
+                if dream_reflection:
+                    context["internal_reflection"] = dream_reflection
+                    self.logger.info(f"✨ Generated internal reflection during low activity")
 
         # Update connection metrics from context if provided
         bond_score = context.get("bond_score", 0.0)

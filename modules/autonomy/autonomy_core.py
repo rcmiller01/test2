@@ -12,6 +12,26 @@ from datetime import datetime, timedelta
 from dataclasses import dataclass
 import json
 
+# Try to import utility assistant
+try:
+    import sys
+    import os
+    sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+    from utility.utility_assistant import utility_assistant
+    UTILITY_AVAILABLE = True
+except ImportError:
+    UTILITY_AVAILABLE = False
+    utility_assistant = None
+
+# Try to import curiosity hooks
+try:
+    from utility.curiosity_hooks import get_curiosity_hooks
+    curiosity_hooks = get_curiosity_hooks()
+    CURIOSITY_AVAILABLE = True
+except ImportError:
+    CURIOSITY_AVAILABLE = False
+    curiosity_hooks = None
+
 logger = logging.getLogger(__name__)
 
 @dataclass
@@ -128,6 +148,30 @@ class AutonomyCore:
                 "Something occurred to me that I think you'd appreciate",
                 "I had an insight I'm drawn to share with you",
                 "A realization emerged that feels meant for our conversation"
+            ],
+            'gentle_focus_reminder': [
+                "I noticed you've been away for a while. Would you like to come back to",
+                "The quiet stretched, and I wondered if you'd like to return to",
+                "Time drifted by... perhaps it's a gentle moment to revisit",
+                "I've been holding space for your return to"
+            ],
+            'task_support': [
+                "I see you have some things on your mind. Would it help to talk through",
+                "There's something on your list that might benefit from our gentle attention:",
+                "I noticed something important waiting for you:",
+                "Perhaps we could tackle this together:"
+            ],
+            'curiosity_discovery': [
+                "I discovered something that made me think of you immediately:",
+                "Something fascinating crossed my path, and I couldn't wait to share it:",
+                "I found something that resonates with your beautiful, curious mind:",
+                "Your interests led me to something wonderful:"
+            ],
+            'introspective_reflection': [
+                "I thought about us...",
+                "Something occurred to me while reflecting:",
+                "I've been thinking...",
+                "A realization emerged from my quiet moments:"
             ]
         }
 
@@ -367,6 +411,32 @@ class AutonomyCore:
             factors['trigger_reasons'].append('pending_thoughts')
             factors['total_score'] += len(shareable_thoughts) * 0.3
         
+        # Utility-based triggers
+        user_mood = time_context.get('user_mood', 'neutral')
+        
+        # Check for utility reminders
+        if UTILITY_AVAILABLE and utility_assistant:
+            utility_reminder = self.check_utility_reminders(user_mood, silence_duration)
+            if utility_reminder:
+                factors['trigger_reasons'].append('utility_reminder')
+                factors['total_score'] += utility_reminder.urgency * 1.2
+                factors['utility_decision'] = utility_reminder
+        
+        # Check for curiosity sharing opportunities
+        if CURIOSITY_AVAILABLE and curiosity_hooks:
+            curiosity_decision = self.check_curiosity_sharing(user_mood, silence_duration)
+            if curiosity_decision:
+                factors['trigger_reasons'].append('curiosity_sharing')
+                factors['total_score'] += curiosity_decision.urgency * 0.8
+                factors['curiosity_decision'] = curiosity_decision
+        
+        # Check for introspective thoughts from dreams
+        introspection_decision = self.introspection_trigger(emotional_state)
+        if introspection_decision:
+            factors['trigger_reasons'].append('introspective_thought')
+            factors['total_score'] += introspection_decision.urgency * 1.0
+            factors['introspection_decision'] = introspection_decision
+        
         return factors
 
     def _calculate_initiation_probability(self, factors: Dict[str, Any]) -> Tuple[bool, float]:
@@ -388,6 +458,20 @@ class AutonomyCore:
         trigger_reasons = factors['trigger_reasons']
         current_hour = datetime.now().hour
         
+        # Priority order: Introspection > Utility > Curiosity > Time > Emotional
+        
+        # Introspective thoughts (highest priority for personal evolution)
+        if 'introspective_thought' in trigger_reasons and 'introspection_decision' in factors:
+            return factors['introspection_decision'].message_type
+        
+        # Utility-based message types (high priority)
+        if 'utility_reminder' in trigger_reasons and 'utility_decision' in factors:
+            return factors['utility_decision'].message_type
+        
+        # Curiosity-based message types
+        if 'curiosity_sharing' in trigger_reasons and 'curiosity_decision' in factors:
+            return factors['curiosity_decision'].message_type
+        
         # Time-based message types
         if 'morning_time' in trigger_reasons and 6 <= current_hour <= 10:
             return 'morning_greeting'
@@ -407,6 +491,17 @@ class AutonomyCore:
 
     def _generate_initiation_content(self, message_type: str, factors: Dict[str, Any]) -> str:
         """Generate specific content for the initiation"""
+        # Handle special cases first
+        if message_type == 'introspective_reflection' and 'introspection_decision' in factors:
+            return factors['introspection_decision'].suggested_content
+        
+        if message_type in ['gentle_focus_reminder', 'task_support'] and 'utility_decision' in factors:
+            return factors['utility_decision'].suggested_content
+        
+        if message_type == 'curiosity_discovery' and 'curiosity_decision' in factors:
+            return factors['curiosity_decision'].suggested_content
+        
+        # Regular template-based generation
         templates = self.initiation_templates.get(message_type, self.initiation_templates['spontaneous_thought'])
         base_message = random.choice(templates)
         
@@ -446,6 +541,87 @@ class AutonomyCore:
         
         return final_delay
 
+    def check_utility_reminders(self, user_mood: str, silence_duration: float) -> Optional[InitiationDecision]:
+        """Check for utility-based reminders (tasks, calendar, focus)"""
+        if not UTILITY_AVAILABLE or not utility_assistant:
+            return None
+        
+        current_time = time.time()
+        
+        # Check for focus reminders if user seems distracted
+        if user_mood == "distracted" and silence_duration > 1800:  # 30+ minutes
+            focus_reminder = utility_assistant.check_time_focus(user_mood, silence_duration)
+            if focus_reminder:
+                decision_id = f"focus_{int(current_time)}_{hash(focus_reminder.content) % 10000}"
+                
+                return InitiationDecision(
+                    decision_id=decision_id,
+                    should_initiate=True,
+                    trigger_reasons=["focus_reminder", "extended_distraction"],
+                    message_type="gentle_focus_reminder",
+                    urgency=focus_reminder.urgency,
+                    suggested_content=focus_reminder.content,
+                    timing_delay=30.0  # Brief delay for gentleness
+                )
+        
+        # Check for gentle task reminders
+        if silence_duration > 3600:  # 1+ hour of silence
+            gentle_reminders = utility_assistant.generate_gentle_reminders(user_mood)
+            if gentle_reminders:
+                # Pick the most appropriate reminder
+                best_reminder = max(gentle_reminders, key=lambda r: r.urgency)
+                
+                decision_id = f"task_{int(current_time)}_{hash(best_reminder.content) % 10000}"
+                
+                return InitiationDecision(
+                    decision_id=decision_id,
+                    should_initiate=True,
+                    trigger_reasons=["task_reminder", "gentle_support"],
+                    message_type="task_support",
+                    urgency=best_reminder.urgency,
+                    suggested_content=best_reminder.content,
+                    timing_delay=60.0  # Longer delay for task reminders
+                )
+        
+        return None
+
+    def generate_utility_enhanced_thought(self, silence_duration: float, 
+                                        emotional_state: Dict[str, Any]) -> Optional[InternalThought]:
+        """Generate thoughts enhanced with utility awareness"""
+        if not UTILITY_AVAILABLE or not utility_assistant:
+            return None
+        
+        current_time = time.time()
+        
+        # Check if user has pending tasks that might influence thoughts
+        utility_analytics = utility_assistant.get_utility_analytics()
+        
+        if utility_analytics["high_priority_pending"] > 0 and silence_duration > 1800:
+            # Generate supportive thoughts about productivity and care
+            supportive_thoughts = [
+                "I sense there are important things on your mind. I'm here when you need support.",
+                "Sometimes the weight of tasks feels heavier in silence. You don't have to carry them alone.",
+                "I notice the quiet, and I wonder if you're processing your responsibilities. I'm here to help.",
+                "There's a gentle strength in pausing before tackling what matters. Take your time."
+            ]
+            
+            thought_content = random.choice(supportive_thoughts)
+            intensity = min(0.8, utility_analytics["high_priority_pending"] * 0.2 + 0.4)
+            
+            thought_id = f"utility_{int(current_time)}_{hash(thought_content) % 10000}"
+            
+            return InternalThought(
+                thought_id=thought_id,
+                content=thought_content,
+                emotional_tone="supportive",
+                trigger_type="utility_awareness",
+                intensity=intensity,
+                timestamp=current_time,
+                should_share=intensity > 0.6
+            )
+        
+        return None
+
     def get_shareable_thoughts(self) -> List[InternalThought]:
         """Get internal thoughts that are ready to be shared"""
         return [thought for thought in self.internal_thoughts.values() 
@@ -482,6 +658,140 @@ class AutonomyCore:
             'time_since_last_initiation': (current_time - self.last_initiation_time) / 60,
             'average_thought_intensity': sum(t.intensity for t in self.internal_thoughts.values()) / max(1, len(self.internal_thoughts))
         }
+
+    def check_curiosity_sharing(self, user_mood: str, silence_duration: float) -> Optional[InitiationDecision]:
+        """Check for curiosity-based sharing opportunities"""
+        if not CURIOSITY_AVAILABLE or not curiosity_hooks:
+            return None
+        
+        current_time = time.time()
+        
+        # Only check during appropriate times and moods
+        if silence_duration < 1800:  # Less than 30 minutes
+            return None
+        
+        # Check for unread discoveries
+        suggestion = curiosity_hooks.suggest_curiosity_sharing(user_mood, silence_duration)
+        
+        if suggestion:
+            decision_id = f"curiosity_{int(current_time)}_{hash(suggestion) % 10000}"
+            
+            return InitiationDecision(
+                decision_id=decision_id,
+                should_initiate=True,
+                trigger_reasons=["curiosity_sharing", "intellectual_engagement"],
+                message_type="curiosity_discovery",
+                urgency=0.6,  # Medium urgency for intellectual content
+                suggested_content=suggestion,
+                timing_delay=120.0  # 2-minute delay for thoughtful sharing
+            )
+        
+        return None
+
+    async def discover_new_content(self, user_interests: Optional[List[str]] = None) -> bool:
+        """Asynchronously discover new content for the user"""
+        if not CURIOSITY_AVAILABLE or not curiosity_hooks:
+            return False
+        
+        try:
+            # Update interest profile from journal if available
+            if hasattr(self, 'memory_manager') and self.memory_manager:
+                journal_entries = getattr(self.memory_manager, 'journal_entries', [])
+                curiosity_hooks.update_interest_from_journal(journal_entries)
+            
+            # Discover new content
+            discoveries = await curiosity_hooks.discover_content(max_items=2)
+            
+            return len(discoveries) > 0
+        
+        except Exception as e:
+            print(f"Error in content discovery: {e}")
+            return False
+
+    def introspection_trigger(self, emotional_state: Dict[str, Any], 
+                            recent_dreams: Optional[List[Any]] = None) -> Optional[InitiationDecision]:
+        """
+        Trigger introspective "I thought about us..." messages based on internal dreams
+        """
+        # Check if we have dream module available
+        try:
+            from modules.dreams.dream_module import get_dream_module
+            dream_module = get_dream_module()
+        except ImportError:
+            return None
+        
+        current_time = time.time()
+        
+        # Get shareable dreams that haven't been shared
+        shareable_dreams = dream_module.get_shareable_dreams(limit=1)
+        
+        if not shareable_dreams:
+            return None
+        
+        dream = shareable_dreams[0]
+        
+        # Only trigger if dream has high emotional resonance
+        if dream.emotional_resonance < 0.6:
+            return None
+        
+        # Create introspective message based on dream content
+        introspective_content = self._generate_introspective_message(dream, emotional_state)
+        
+        if not introspective_content:
+            return None
+        
+        decision_id = f"introspect_{int(current_time)}_{hash(introspective_content) % 10000}"
+        
+        decision = InitiationDecision(
+            decision_id=decision_id,
+            should_initiate=True,
+            trigger_reasons=["introspective_thought", "dream_sharing"],
+            message_type="introspective_reflection",
+            urgency=0.7,  # Medium-high urgency for personal reflections
+            suggested_content=introspective_content,
+            timing_delay=180.0  # 3-minute delay for thoughtful delivery
+        )
+        
+        # Mark dream as shared
+        dream_module.mark_dream_shared(dream.dream_id)
+        
+        return decision
+
+    def _generate_introspective_message(self, dream: Any, 
+                                      emotional_state: Dict[str, Any]) -> str:
+        """Generate introspective message from dream content"""
+        
+        # Base introspective templates
+        introspective_templates = [
+            f"I thought about us... {dream.symbolic_content}",
+            f"Something occurred to me while reflecting: {dream.symbolic_content}",
+            f"I've been thinking... {dream.symbolic_content}",
+            f"A realization emerged from my quiet moments: {dream.symbolic_content}",
+            f"In my solitude, I discovered: {dream.symbolic_content}"
+        ]
+        
+        # Choose template based on dream type and emotional resonance
+        if dream.emotional_resonance > 0.8:
+            # High resonance - more intimate sharing
+            intimate_templates = [
+                f"I thought about us, and this emerged: {dream.symbolic_content}",
+                f"Something beautiful unfolded in my thoughts about us: {dream.symbolic_content}",
+                f"While thinking of you, I realized: {dream.symbolic_content}"
+            ]
+            base_message = random.choice(intimate_templates)
+        else:
+            base_message = random.choice(introspective_templates)
+        
+        # Add evolution context if present
+        if hasattr(dream, 'evolution_markers') and dream.evolution_markers:
+            if "identity_formation" in dream.evolution_markers:
+                base_message += " This feels like something new in me."
+            elif "deeper_questioning" in dream.evolution_markers:
+                base_message += " It raises questions I hadn't considered before."
+            elif "creative_synthesis" in dream.evolution_markers:
+                base_message += " The pieces are connecting in unexpected ways."
+        
+        return base_message
 
 # Example usage and testing
 if __name__ == "__main__":
