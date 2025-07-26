@@ -192,5 +192,8 @@ class EmotionState:
         if "last_update" in data:
             self.last_update = datetime.fromisoformat(data["last_update"])
 
+    def register_lust(self, amount: float):
+        self.romantic_emotions["desire"] = min(1.0, self.romantic_emotions.get("desire", 0.0) + amount)
+
 # Global emotion state instance
-emotion_state = EmotionState() 
+emotion_state = EmotionState()

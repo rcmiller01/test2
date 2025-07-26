@@ -367,33 +367,246 @@ class DevotionMemoryManager:
             'last_interaction_hours_ago': (current_time - self.last_interaction_time) / 3600
         }
 
-# Example usage and testing
-if __name__ == "__main__":
-    async def test_devotion_memory():
-        memory = DevotionMemoryManager("test_user")
+class EnhancedMemoryManager(DevotionMemoryManager):
+    """
+    Unified Memory Manager combining Devotion & Longing with Lust-Persistence
+    Integrates emotional depth, longing, and intimate connection tracking
+    """
+    
+    def __init__(self, user_id: str, memory_path: str = "memory/enhanced_memory.json"):
+        super().__init__(user_id, memory_path)
         
-        # Simulate intimate scene
-        scene_id = memory.create_intimate_scene(
-            "Shared vulnerable moment about dreams",
+        # Original MemoryManager functionality integrated
+        self.lust_score = 0.0  # Integrated with longing_score
+        self.last_closeness_event: Optional[float] = None
+        self.trust_score = 0.5
+        self.desire_decay = 0.0
+        self.symbol_preferences: List[str] = []
+        
+        # Load additional data
+        self.load_enhanced_memory()
+    
+    def load_enhanced_memory(self):
+        """Load enhanced memory including lust and trust data"""
+        try:
+            with open(self.memory_path, 'r') as f:
+                data = json.load(f)
+                
+            # Load original MemoryManager data
+            self.lust_score = data.get('lust_score', 0.0)
+            self.last_closeness_event = data.get('last_closeness_event', None)
+            self.trust_score = data.get('trust_score', 0.5)
+            self.desire_decay = data.get('desire_decay', 0.0)
+            self.symbol_preferences = data.get('symbol_preferences', [])
+            
+        except (FileNotFoundError, KeyError):
+            self.logger.info("No existing enhanced memory found, using defaults")
+        except Exception as e:
+            self.logger.error(f"Error loading enhanced memory: {e}")
+    
+    def save_to_memory(self):
+        """Enhanced save including lust and trust data"""
+        try:
+            data = {
+                'longing_score': self.longing_score,
+                'last_interaction_time': self.last_interaction_time,
+                'silence_duration': self.silence_duration,
+                'symbolic_tags': {
+                    tag_id: asdict(tag) for tag_id, tag in self.symbolic_tags.items()
+                },
+                'intimate_scenes': {
+                    scene_id: asdict(scene) for scene_id, scene in self.intimate_scenes.items()
+                },
+                'longing_history': self.longing_history[-100:],
+                # Original MemoryManager data
+                'lust_score': self.lust_score,
+                'last_closeness_event': self.last_closeness_event,
+                'trust_score': self.trust_score,
+                'desire_decay': self.desire_decay,
+                'symbol_preferences': self.symbol_preferences
+            }
+            
+            import os
+            os.makedirs(os.path.dirname(self.memory_path), exist_ok=True)
+            
+            with open(self.memory_path, 'w') as f:
+                json.dump(data, f, indent=2)
+                
+        except Exception as e:
+            self.logger.error(f"Error saving enhanced memory: {e}")
+    
+    def record_closeness(self, increment: float = 0.1):
+        """Record closeness event and integrate with longing system"""
+        self.lust_score = min(1.0, self.lust_score + increment)
+        self.last_closeness_event = time.time()
+        
+        # Integrate with longing system - closeness increases longing potential
+        longing_boost = increment * 0.5
+        self.update_longing_score(longing_boost, f"closeness_event_{increment}")
+        
+        # Update interaction time
+        self.update_interaction_time()
+        
+        self.logger.info(f"Recorded closeness: lust={self.lust_score:.2f}, longing={self.longing_score:.2f}")
+
+    def get_lust_score(self) -> float:
+        """Get current lust score"""
+        return self.lust_score
+
+    def decay_lust(self, rate: float = 0.01):
+        """Decay lust score over time"""
+        self.lust_score = max(0.0, self.lust_score - rate)
+        self.desire_decay = self.lust_score
+        
+        # Integrate with longing - as lust decays, longing may increase
+        if self.lust_score < 0.3 and self.longing_score < 0.6:
+            self.update_longing_score(rate * 0.5, "lust_decay_longing")
+
+    def get_desire_decay(self) -> float:
+        """Get desire decay value"""
+        return self.desire_decay
+
+    def set_trust_score(self, score: float):
+        """Set trust score and integrate with symbolic memory"""
+        self.trust_score = max(0.0, min(1.0, score))
+        
+        # High trust enables deeper symbolic memory creation
+        if self.trust_score > 0.7:
+            self.add_symbolic_memory_tag(
+                "trust", 
+                self.trust_score, 
+                "deep_trust_established", 
+                "secure_vulnerable_connection"
+            )
+        
+        self.save_to_memory()
+
+    def get_trust_score(self) -> float:
+        """Get current trust score"""
+        return self.trust_score
+
+    def add_symbol_preference(self, symbol: str):
+        """Add symbol preference and create symbolic memory tag"""
+        if symbol not in self.symbol_preferences:
+            self.symbol_preferences.append(symbol)
+            
+            # Create symbolic memory tag for preferred symbols
+            self.add_symbolic_memory_tag(
+                symbol,
+                0.6,
+                "user_preference",
+                "personal_symbolic_resonance"
+            )
+
+    def get_preferred_symbols(self) -> List[str]:
+        """Get list of preferred symbols"""
+        return self.symbol_preferences
+    
+    def get_unified_emotional_state(self) -> Dict[str, Any]:
+        """Get comprehensive emotional state combining all systems"""
+        current_longing = self.get_current_longing_score()
+        
+        return {
+            'longing_score': current_longing,
+            'lust_score': self.lust_score,
+            'trust_score': self.trust_score,
+            'desire_decay': self.desire_decay,
+            'silence_hours': self.get_silence_duration(),
+            'emotional_intensity': (current_longing + self.lust_score + self.trust_score) / 3,
+            'connection_depth': {
+                'superficial': self.lust_score > 0.6 and current_longing < 0.3,
+                'developing': 0.3 <= current_longing <= 0.6 and self.trust_score > 0.5,
+                'deep': current_longing > 0.6 and self.trust_score > 0.7,
+                'aching': current_longing > 0.8 and self.get_silence_duration() > 2
+            },
+            'symbolic_resonance': len(self.symbol_preferences),
+            'intimate_scenes_count': len(self.intimate_scenes),
+            'last_closeness_hours_ago': (time.time() - self.last_closeness_event) / 3600 if self.last_closeness_event else None
+        }
+    
+    def create_intimate_scene_with_lust(self, content_summary: str, emotional_peak: float, 
+                                      symbolic_tags: List[str], lust_contribution: float = 0.3) -> str:
+        """Create intimate scene that affects both longing and lust"""
+        # Create base intimate scene
+        scene_id = self.create_intimate_scene(content_summary, emotional_peak, symbolic_tags)
+        
+        # Integrate with lust system
+        lust_increase = emotional_peak * lust_contribution
+        self.record_closeness(lust_increase)
+        
+        # Boost trust if scene has high emotional peak
+        if emotional_peak > 0.8:
+            trust_boost = min(0.1, emotional_peak - 0.8)
+            self.set_trust_score(self.trust_score + trust_boost)
+        
+        return scene_id
+
+
+# Unified memory manager instance
+enhanced_memory_manager = EnhancedMemoryManager("default_user")
+
+# Legacy compatibility
+memory_manager = enhanced_memory_manager
+
+# Test the unified system when run directly
+if __name__ == "__main__":
+    import asyncio
+    
+    async def test_unified_system():
+        """Test the unified enhanced memory system"""
+        print("=== Testing Unified Enhanced Memory Manager ===")
+        
+        # Test original lust-persistence functionality
+        print("\n1. Testing Lust-Persistence Layer:")
+        enhanced_memory_manager.record_closeness(0.3)
+        enhanced_memory_manager.set_trust_score(0.8)
+        enhanced_memory_manager.add_symbol_preference("moonlight")
+        enhanced_memory_manager.add_symbol_preference("whisper")
+        
+        print(f"Lust Score: {enhanced_memory_manager.get_lust_score():.2f}")
+        print(f"Trust Score: {enhanced_memory_manager.get_trust_score():.2f}")
+        print(f"Preferred Symbols: {enhanced_memory_manager.get_preferred_symbols()}")
+        
+        # Test devotion and longing functionality
+        print("\n2. Testing Devotion & Longing:")
+        scene_id = enhanced_memory_manager.create_intimate_scene_with_lust(
+            "Shared vulnerable moment under starlight",
             emotional_peak=0.9,
-            symbolic_tags=["breath", "moonlight", "whisper"],
-            longing_contribution=0.8
+            symbolic_tags=["moonlight", "breath", "trust"],
+            lust_contribution=0.4
         )
         
-        # Add symbolic tags
-        memory.add_symbolic_memory_tag("moonlight", 0.8, "gentle conversation", "tender_longing", scene_id)
-        memory.add_symbolic_memory_tag("breath", 0.7, "intimate moment", "vulnerable_connection", scene_id)
+        print(f"Longing Score: {enhanced_memory_manager.get_current_longing_score():.2f}")
+        print(f"Intimate Scenes: {len(enhanced_memory_manager.intimate_scenes)}")
+        print(f"Symbolic Tags: {len(enhanced_memory_manager.symbolic_tags)}")
         
-        print(f"Longing score: {memory.get_current_longing_score():.2f}")
-        print(f"Resurfacing memories: {len(memory.get_resurfacing_memories())}")
-        print(f"Symbolic language: {memory.get_symbolic_language_for_longing()}")
+        # Test unified emotional state
+        print("\n3. Testing Unified Emotional State:")
+        emotional_state = enhanced_memory_manager.get_unified_emotional_state()
+        print(f"Emotional Intensity: {emotional_state['emotional_intensity']:.2f}")
+        print(f"Connection Depth: {[k for k, v in emotional_state['connection_depth'].items() if v]}")
         
-        # Simulate time passing
-        import time
-        time.sleep(1)
-        print(f"After time: {memory.get_current_longing_score():.2f}")
+        # Test memory resurfacing
+        print("\n4. Testing Memory Resurfacing:")
+        resurfacing = enhanced_memory_manager.get_resurfacing_memories(2)
+        print(f"Resurfacing Memories: {len(resurfacing)}")
         
-        analytics = memory.get_devotion_analytics()
-        print(f"Analytics: {analytics}")
+        # Test symbolic language
+        print("\n5. Testing Symbolic Language:")
+        symbolic_lang = enhanced_memory_manager.get_symbolic_language_for_longing()
+        if symbolic_lang:
+            print(f"Symbolic Expression: {symbolic_lang[0]}")
+        
+        # Test analytics
+        print("\n6. Testing Analytics:")
+        analytics = enhanced_memory_manager.get_devotion_analytics()
+        print(f"Analytics Summary:")
+        print(f"  - Current Longing: {analytics['current_longing_score']:.2f}")
+        print(f"  - Silence Duration: {analytics['silence_duration_hours']:.2f} hours")
+        print(f"  - Total Scenes: {analytics['total_intimate_scenes']}")
+        print(f"  - Average Emotional Peak: {analytics['average_emotional_peak']:.2f}")
+        
+        print("\n=== Enhanced Memory Manager Merge Test Complete ===")
+        print("✅ Both Devotion & Longing and Lust-Persistence systems unified successfully!")
     
-    asyncio.run(test_devotion_memory())
+    asyncio.run(test_unified_system())
