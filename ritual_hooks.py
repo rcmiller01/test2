@@ -1,13 +1,24 @@
 """
 Ritual Hooks - Intimacy ritual triggering system
 Central check for emotional bond readiness before suggesting intimacy rituals
+Enhanced with dynamic emotional configuration system
 """
 
 import time
 import random
+import os
+import sys
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass
 from enum import Enum
+
+# Import emotional configuration system
+try:
+    from modules.config.emotion_config_manager import emotion_config
+    EMOTION_CONFIG_AVAILABLE = True
+except ImportError:
+    EMOTION_CONFIG_AVAILABLE = False
+    print("⚠️ Emotional configuration system not available - using fallback mode")
 
 class RitualType(Enum):
     """Types of intimacy rituals"""
@@ -54,6 +65,50 @@ class RitualHooks:
             "openness_minimum": 0.4,
             "intensity_minimum": 0.3
         }
+        
+        # Initialize emotional configuration integration
+        self.emotional_config_enabled = EMOTION_CONFIG_AVAILABLE
+        if self.emotional_config_enabled:
+            self._load_emotional_rituals()
+    
+    def _load_emotional_rituals(self):
+        """Load ritual configurations from emotional config system"""
+        if not self.emotional_config_enabled:
+            return
+        
+        try:
+            # Get ritual hooks from configuration
+            ritual_config = emotion_config.configs.get("ritual_hooks", {})
+            
+            # Update cooldown periods based on configuration
+            for category_name, category_rituals in ritual_config.items():
+                if isinstance(category_rituals, dict):
+                    for ritual_name, ritual_data in category_rituals.items():
+                        # Extract timing information if available
+                        timing = ritual_data.get("timing", "immediate")
+                        if timing == "lingering":
+                            # Increase cooldown for lingering rituals
+                            for ritual_type in self.cooldown_periods:
+                                if ritual_data.get("associated_emotion") in ["deep_connection", "intimate"]:
+                                    self.cooldown_periods[ritual_type] = max(
+                                        self.cooldown_periods[ritual_type], 1200
+                                    )
+        except Exception as e:
+            print(f"Warning: Could not load emotional ritual configuration: {e}")
+    
+    def get_emotional_ritual_response(self, trigger_event: str) -> Optional[str]:
+        """Get ritual response from emotional configuration system"""
+        if not self.emotional_config_enabled:
+            return None
+        
+        try:
+            ritual_config = emotion_config.get_ritual_hook(trigger_event)
+            if ritual_config:
+                return ritual_config.get("narrative_response")
+        except Exception as e:
+            print(f"Warning: Could not get emotional ritual response: {e}")
+        
+        return None
     
     def _initialize_rituals(self) -> Dict[RitualType, List[str]]:
         """Initialize the ritual suggestion library"""
