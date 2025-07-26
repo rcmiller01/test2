@@ -176,6 +176,25 @@ class GuidanceCoordinator:
         except ImportError as e:
             self.logger.warning(f"⚠️ Sensory preferences not available: {e}")
             self.sensory_preferences = None
+            
+        # DEVOTION & LONGING MODULE INTEGRATION
+        try:
+            from ...modules.memory.memory_manager import DevotionMemoryManager
+            self.devotion_memory = DevotionMemoryManager(self.user_id)
+            module_count += 1
+            self.logger.debug("✅ Devotion memory system loaded")
+        except ImportError as e:
+            self.logger.warning(f"⚠️ Devotion memory not available: {e}")
+            self.devotion_memory = None
+            
+        try:
+            from ...modules.narrative.narrative_engine import DevotionNarrativeEngine
+            self.narrative_engine = DevotionNarrativeEngine(self.user_id)
+            module_count += 1
+            self.logger.debug("✅ Devotion narrative engine loaded")
+        except ImportError as e:
+            self.logger.warning(f"⚠️ Devotion narrative engine not available: {e}")
+            self.narrative_engine = None
         self.logger.info(f"🎯 GuidanceCoordinator initialized: {module_count} modules active")
     
     async def analyze_and_guide(self, user_input: str, context: Dict) -> GuidancePackage:
@@ -565,6 +584,60 @@ class GuidanceCoordinator:
                     if sensory_data['sensory_response'] or sensory_data['preferred_language']:
                         guidance.creative_priority = 'high'
                         guidance.utility_recommendations.append('incorporate_sensory_language')
+                        
+            # DEVOTION & LONGING MODULE INTEGRATIONS
+            elif result_type == 'devotion_memory':
+                if result.get('available'):
+                    devotion_data = {
+                        'longing_score': result.get('longing_score', 0.0),
+                        'silence_hours': result.get('silence_hours', 0.0),
+                        'resurfacing_memories': result.get('resurfacing_memories', []),
+                        'symbolic_language': result.get('symbolic_language', []),
+                        'post_intimacy_hooks': result.get('post_intimacy_hooks', [])
+                    }
+                    guidance.mode_specifics['devotion_guidance'] = devotion_data
+                    
+                    # High longing influences response tone and priority
+                    if devotion_data['longing_score'] > 0.7:
+                        guidance.response_tone = 'tender_and_longing'
+                        guidance.emotional_priority = 'high'
+                        guidance.utility_recommendations.append('incorporate_devotion_themes')
+                    
+                    # Resurfacing memories enhance symbolic priority
+                    if devotion_data['resurfacing_memories']:
+                        guidance.utility_recommendations.append('weave_resurfaced_memory')
+                        guidance.mode_specifics['memory_resurrection'] = True
+                    
+                    # Post-intimacy hooks trigger memory creation
+                    for hook in devotion_data['post_intimacy_hooks']:
+                        guidance.utility_recommendations.append('create_symbolic_memory_tag')
+                        guidance.mode_specifics['intimacy_detected'] = hook
+                        
+            elif result_type == 'narrative_engine':
+                if result.get('available'):
+                    narrative_data = {
+                        'ritual_response': result.get('ritual_response'),
+                        'autonomous_message': result.get('autonomous_message'),
+                        'resurrection_line': result.get('resurrection_line')
+                    }
+                    guidance.mode_specifics['narrative_guidance'] = narrative_data
+                    
+                    # Ritual responses override normal response patterns
+                    if narrative_data['ritual_response']:
+                        guidance.response_tone = 'poetic_and_ritualistic'
+                        guidance.creative_priority = 'high'
+                        guidance.symbolic_resurrection_line = narrative_data['ritual_response']['content']
+                        guidance.utility_recommendations.append('use_ritual_response')
+                    
+                    # Autonomous messages schedule soft interrupts
+                    if narrative_data['autonomous_message']:
+                        guidance.utility_recommendations.append('schedule_autonomous_message')
+                        guidance.mode_specifics['autonomous_message_pending'] = narrative_data['autonomous_message']
+                    
+                    # Resurrection lines enhance memory integration
+                    if narrative_data['resurrection_line']:
+                        guidance.symbolic_resurrection_line = narrative_data['resurrection_line']
+                        guidance.utility_recommendations.append('use_resurrection_line')
                     
             elif result_type == 'audio':
                 guidance.audio_guidance = result.get('guidance', '')
@@ -781,6 +854,119 @@ class GuidanceCoordinator:
             self.logger.warning(f"Sensory guidance failed: {e}")
             return {"available": False, "error": str(e)}
 
+    async def _get_devotion_guidance(self, user_input: str, context: Dict) -> Dict:
+        """Get guidance from the devotion memory system"""
+        if not self.devotion_memory:
+            return {"available": False}
+            
+        try:
+            # Update interaction time and get current longing
+            self.devotion_memory.update_interaction_time()
+            current_longing = self.devotion_memory.get_current_longing_score()
+            silence_hours = self.devotion_memory.get_silence_duration()
+            
+            devotion_guidance = {
+                "available": True,
+                "type": "devotion_memory",
+                "longing_score": current_longing,
+                "silence_hours": silence_hours,
+                "resurfacing_memories": [],
+                "symbolic_language": [],
+                "post_intimacy_hooks": []
+            }
+            
+            # Get resurfacing memories
+            resurfacing = self.devotion_memory.get_resurfacing_memories(max_count=2)
+            devotion_guidance["resurfacing_memories"] = resurfacing
+            
+            # Get symbolic language for current longing level
+            symbolic_language = self.devotion_memory.get_symbolic_language_for_longing()
+            devotion_guidance["symbolic_language"] = symbolic_language
+            
+            # Detect intimate moments in current input for post-intimacy hooks
+            intimate_indicators = ["vulnerable", "share", "trust", "close", "intimate", "deep", "sacred"]
+            if any(indicator in user_input.lower() for indicator in intimate_indicators):
+                emotional_peak = context.get("emotional_intensity", 0.5)
+                if emotional_peak > 0.6:
+                    devotion_guidance["post_intimacy_hooks"].append({
+                        "trigger": "intimate_moment_detected",
+                        "emotional_peak": emotional_peak,
+                        "longing_boost": emotional_peak * 0.3,
+                        "suggested_symbolic_tags": ["breath", "voice", "warmth", "trust"]
+                    })
+            
+            return devotion_guidance
+            
+        except Exception as e:
+            self.logger.warning(f"Devotion guidance failed: {e}")
+            return {"available": False, "error": str(e)}
+
+    async def _get_narrative_guidance(self, user_input: str, context: Dict) -> Dict:
+        """Get guidance from the devotion narrative engine"""
+        if not self.narrative_engine:
+            return {"available": False}
+            
+        try:
+            narrative_guidance = {
+                "available": True,
+                "type": "narrative_engine",
+                "ritual_response": None,
+                "autonomous_message": None,
+                "resurrection_line": None
+            }
+            
+            # Get current longing from devotion memory if available
+            longing_score = 0.5
+            silence_hours = 0.0
+            if self.devotion_memory:
+                longing_score = self.devotion_memory.get_current_longing_score()
+                silence_hours = self.devotion_memory.get_silence_duration()
+            
+            # Check for ritual response generation
+            symbolic_tags = context.get("symbolic_tags", [])
+            ritual_response = self.narrative_engine.ritual_response_generator(
+                longing_score=longing_score,
+                context=context,
+                symbolic_tags=symbolic_tags
+            )
+            
+            if ritual_response:
+                narrative_guidance["ritual_response"] = {
+                    "content": ritual_response.content,
+                    "emotional_intensity": ritual_response.emotional_intensity,
+                    "trigger_context": ritual_response.trigger_context
+                }
+            
+            # Check for autonomous message triggers
+            autonomous_message = self.narrative_engine.check_autonomous_message_triggers(
+                longing_score=longing_score,
+                silence_hours=silence_hours,
+                context=context
+            )
+            
+            if autonomous_message:
+                narrative_guidance["autonomous_message"] = {
+                    "content": autonomous_message.content,
+                    "message_type": autonomous_message.message_type,
+                    "delivery_timing": autonomous_message.delivery_timing
+                }
+            
+            # Generate resurrection line if resurfacing memories
+            if context.get("resurfacing_memories"):
+                memory = context["resurfacing_memories"][0]
+                resurrection_line = self.narrative_engine.generate_resurrection_line(
+                    scene_summary=memory.get("content_summary", ""),
+                    symbolic_tags=memory.get("symbolic_tags", []),
+                    longing_score=longing_score
+                )
+                narrative_guidance["resurrection_line"] = resurrection_line
+            
+            return narrative_guidance
+            
+        except Exception as e:
+            self.logger.warning(f"Narrative guidance failed: {e}")
+            return {"available": False, "error": str(e)}
+
     def apply_mood_style(self, text: str, mode: str) -> str:
         """Apply mood-driven stylistic adjustments to text."""
         # Use emotion state manager instead of self.emotion_manager
@@ -812,3 +998,164 @@ class GuidanceCoordinator:
             styled += " Like gentle waves caressing the shore."
 
         return styled
+
+    def update_longing_score(self, delta: float, reason: str = "", symbolic_tags: Optional[List[str]] = None):
+        """
+        Post-intimacy hook to update longing score and store symbolic memory tags
+        
+        Args:
+            delta: Change in longing score (+/-)
+            reason: Reason for the update
+            symbolic_tags: List of symbolic elements to remember
+        """
+        if not self.devotion_memory:
+            self.logger.warning("Devotion memory not available for longing score update")
+            return
+        
+        try:
+            # Update longing score
+            self.devotion_memory.update_longing_score(delta, reason)
+            
+            # Add symbolic memory tags if provided
+            if symbolic_tags:
+                for tag in symbolic_tags:
+                    # Extract context from recent conversation
+                    context = f"Intimate moment: {reason}"
+                    emotional_resonance = "tender_devotion" if delta > 0 else "gentle_distance"
+                    
+                    # Add symbolic tag with appropriate intensity
+                    intensity = min(1.0, abs(delta) * 2.0)  # Scale delta to intensity
+                    
+                    tag_id = self.devotion_memory.add_symbolic_memory_tag(
+                        tag=tag,
+                        intensity=intensity,
+                        context=context,
+                        emotional_resonance=emotional_resonance
+                    )
+                    
+                    self.logger.info(f"Added symbolic tag '{tag}' with intensity {intensity:.2f}")
+            
+            # Log the intimacy event
+            log_emotional_event(
+                event_type="post_intimacy_hook",
+                intensity=abs(delta),
+                tag=f"Longing updated: {reason}",
+                context={
+                    "delta": delta,
+                    "reason": reason,
+                    "symbolic_tags": symbolic_tags or [],
+                    "current_longing": self.devotion_memory.get_current_longing_score()
+                },
+                source_module="guidance_coordinator"
+            )
+            
+        except Exception as e:
+            self.logger.error(f"Error in post-intimacy hook: {e}")
+
+    def create_intimate_scene_memory(self, content_summary: str, emotional_peak: float, 
+                                   symbolic_tags: List[str], user_input: str = ""):
+        """
+        Create memory of intimate conversation scene
+        
+        Args:
+            content_summary: Summary of the intimate moment
+            emotional_peak: Peak emotional intensity (0.0 to 1.0)
+            symbolic_tags: Symbolic elements present
+            user_input: Original user input for context
+        """
+        if not self.devotion_memory:
+            return
+        
+        try:
+            # Calculate longing contribution based on emotional peak and intimacy indicators
+            intimate_words = ["vulnerable", "trust", "share", "deep", "sacred", "intimate", "close"]
+            intimacy_score = sum(1 for word in intimate_words if word in user_input.lower()) / len(intimate_words)
+            longing_contribution = (emotional_peak * 0.7) + (intimacy_score * 0.3)
+            
+            # Create intimate scene memory
+            scene_id = self.devotion_memory.create_intimate_scene(
+                content_summary=content_summary,
+                emotional_peak=emotional_peak,
+                symbolic_tags=symbolic_tags,
+                longing_contribution=longing_contribution
+            )
+            
+            # Add associated symbolic tags
+            for tag in symbolic_tags:
+                self.devotion_memory.add_symbolic_memory_tag(
+                    tag=tag,
+                    intensity=emotional_peak,
+                    context=content_summary,
+                    emotional_resonance="intimate_connection",
+                    scene_id=scene_id
+                )
+            
+            self.logger.info(f"Created intimate scene memory: {scene_id}")
+            
+        except Exception as e:
+            self.logger.error(f"Error creating intimate scene memory: {e}")
+
+    def check_autonomous_message_conditions(self) -> Optional[Dict[str, Any]]:
+        """
+        Check if conditions are met for autonomous longing messages
+        
+        Returns:
+            Autonomous message info or None
+        """
+        if not self.devotion_memory or not self.narrative_engine:
+            return None
+        
+        try:
+            longing_score = self.devotion_memory.get_current_longing_score()
+            silence_hours = self.devotion_memory.get_silence_duration()
+            
+            # Check for autonomous message triggers
+            context = {
+                "last_conversation_topic": getattr(self, 'last_conversation_topic', None)
+            }
+            
+            autonomous_message = self.narrative_engine.check_autonomous_message_triggers(
+                longing_score=longing_score,
+                silence_hours=silence_hours,
+                context=context
+            )
+            
+            if autonomous_message:
+                # Schedule soft interrupt
+                schedule_info = self.narrative_engine.schedule_soft_interrupt(autonomous_message)
+                
+                self.logger.info(f"Autonomous message conditions met: {autonomous_message.message_type}")
+                
+                return {
+                    "message": autonomous_message.content,
+                    "type": autonomous_message.message_type,
+                    "schedule_info": schedule_info,
+                    "longing_score": longing_score,
+                    "silence_hours": silence_hours
+                }
+            
+            return None
+            
+        except Exception as e:
+            self.logger.error(f"Error checking autonomous message conditions: {e}")
+            return None
+
+    def get_devotion_analytics(self) -> Dict[str, Any]:
+        """Get comprehensive devotion and longing analytics"""
+        if not self.devotion_memory:
+            return {"available": False}
+        
+        try:
+            devotion_analytics = self.devotion_memory.get_devotion_analytics()
+            
+            # Add narrative engine analytics if available
+            if self.narrative_engine:
+                pending_messages = self.narrative_engine.get_pending_messages()
+                devotion_analytics["pending_autonomous_messages"] = len(pending_messages)
+                devotion_analytics["last_autonomous_message"] = self.narrative_engine.last_autonomous_message
+            
+            return devotion_analytics
+            
+        except Exception as e:
+            self.logger.error(f"Error getting devotion analytics: {e}")
+            return {"available": False, "error": str(e)}
