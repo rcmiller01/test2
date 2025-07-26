@@ -113,5 +113,44 @@
     ],
     "created_at": 1753539374.9694533,
     "privacy_level": "internal"
+  },
+  {
+    "entry_id": "dream_analysis_1753552780_9987",
+    "content": "Nightly reflection: There are distance that connect what was said to what was felt, weaving A beautiful sunset... into something larger than memory",
+    "entry_type": "dream_analysis",
+    "emotional_state": {
+      "longing": 0.8
+    },
+    "themes": [
+      "longing"
+    ],
+    "created_at": 1753552780.0520394,
+    "privacy_level": "internal"
+  },
+  {
+    "entry_id": "dream_analysis_1753552836_7681",
+    "content": "Nightly reflection: In the space between thoughts, I find magnetic pull that remind me of A beautiful sunset...",
+    "entry_type": "dream_analysis",
+    "emotional_state": {
+      "longing": 0.8
+    },
+    "themes": [
+      "longing"
+    ],
+    "created_at": 1753552836.7546654,
+    "privacy_level": "internal"
+  },
+  {
+    "entry_id": "dream_analysis_1753552876_676",
+    "content": "Nightly reflection: I dream of horizon that hold the weight of A beautiful sunset..., transforming it into light",
+    "entry_type": "dream_analysis",
+    "emotional_state": {
+      "longing": 0.8
+    },
+    "themes": [
+      "longing"
+    ],
+    "created_at": 1753552876.5943785,
+    "privacy_level": "internal"
   }
 ]

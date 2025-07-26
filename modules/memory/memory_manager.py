@@ -27,6 +27,22 @@ class SymbolicMemoryTag:
     associated_scene: Optional[str] = None
 
 @dataclass
+class SymbolBinding:
+    """Tracks emotional weight and drift of recurring symbols"""
+    symbol: str
+    emotional_weight: float  # 0.0 to 1.0 - accumulated emotional significance
+    base_meaning: str  # Original contextual meaning
+    drifted_meaning: str  # Evolved emotional meaning
+    usage_count: int
+    first_encounter: float
+    last_usage: float
+    peak_emotional_moment: float  # Highest emotional resonance recorded
+    context_evolution: List[str]  # How meaning has shifted over time
+    associated_emotions: Dict[str, float]  # Emotion -> weight mapping
+    decay_resistance: float = 0.1  # How resistant to decay (0.0 = decays fast, 1.0 = persists)
+    _last_drift: Optional[float] = None  # Track when meaning last drifted
+
+@dataclass
 class IntimateScene:
     """Record of intimate conversation moments"""
     scene_id: str
@@ -57,6 +73,12 @@ class DevotionMemoryManager:
         self.symbolic_tags: Dict[str, SymbolicMemoryTag] = {}
         self.intimate_scenes: Dict[str, IntimateScene] = {}
         self.longing_history: List[Dict] = []
+        
+        # Symbol binding map for emotional attachment and drift
+        self.symbol_binding_map: Dict[str, SymbolBinding] = {}
+        self.symbol_decay_rate = 0.98  # Daily decay factor for unused symbols
+        self.symbol_reinforcement_threshold = 0.05  # Minimum emotional intensity to reinforce
+        self.max_symbol_bindings = 200  # Maximum symbols to track
         
         # Configuration
         self.longing_decay_rate = 0.95  # How fast longing fades per hour
@@ -92,6 +114,10 @@ class DevotionMemoryManager:
             for scene_id, scene_data in data.get('intimate_scenes', {}).items():
                 self.intimate_scenes[scene_id] = IntimateScene(**scene_data)
                 
+            # Load symbol bindings
+            for symbol, binding_data in data.get('symbol_binding_map', {}).items():
+                self.symbol_binding_map[symbol] = SymbolBinding(**binding_data)
+                
             self.longing_history = data.get('longing_history', [])
             
             self.logger.info(f"Loaded devotion memory: longing={self.longing_score:.2f}")
@@ -113,6 +139,9 @@ class DevotionMemoryManager:
                 },
                 'intimate_scenes': {
                     scene_id: asdict(scene) for scene_id, scene in self.intimate_scenes.items()
+                },
+                'symbol_binding_map': {
+                    symbol: asdict(binding) for symbol, binding in self.symbol_binding_map.items()
                 },
                 'longing_history': self.longing_history[-100:]  # Keep last 100 entries
             }
@@ -540,6 +569,220 @@ class EnhancedMemoryManager(DevotionMemoryManager):
             self.set_trust_score(self.trust_score + trust_boost)
         
         return scene_id
+
+    def bind_symbol_to_emotion(self, symbol: str, emotion: str, intensity: float, 
+                              context: str = "") -> None:
+        """Bind a symbol to an emotional context, creating or reinforcing attachment"""
+        current_time = time.time()
+        
+        # Skip if intensity is too low to matter
+        if intensity < self.symbol_reinforcement_threshold:
+            return
+        
+        # Clean up symbol (lowercase, basic normalization)
+        symbol = symbol.lower().strip()
+        
+        if symbol in self.symbol_binding_map:
+            # Reinforce existing binding
+            binding = self.symbol_binding_map[symbol]
+            
+            # Increase emotional weight based on intensity and current weight
+            weight_increase = intensity * (1.0 - binding.emotional_weight * 0.5)  # Diminishing returns
+            binding.emotional_weight = min(1.0, binding.emotional_weight + weight_increase)
+            
+            # Update usage tracking
+            binding.usage_count += 1
+            binding.last_usage = current_time
+            
+            # Track peak emotional moment
+            if intensity > binding.peak_emotional_moment:
+                binding.peak_emotional_moment = intensity
+            
+            # Update emotion associations
+            if emotion in binding.associated_emotions:
+                binding.associated_emotions[emotion] = min(1.0, 
+                    binding.associated_emotions[emotion] + intensity * 0.3)
+            else:
+                binding.associated_emotions[emotion] = intensity * 0.5
+            
+            # Evolve meaning based on context
+            if context and context not in binding.context_evolution:
+                binding.context_evolution.append(context)
+                
+                # Update drifted meaning if this is a significant emotional moment
+                if intensity > 0.7:
+                    binding.drifted_meaning = self._evolve_symbol_meaning(
+                        binding.base_meaning, binding.context_evolution, binding.associated_emotions
+                    )
+            
+        else:
+            # Create new binding
+            binding = SymbolBinding(
+                symbol=symbol,
+                emotional_weight=intensity * 0.5,  # Start at half intensity
+                base_meaning=context or f"Symbol encountered in emotional context",
+                drifted_meaning=context or f"Symbol with emotional resonance",
+                usage_count=1,
+                first_encounter=current_time,
+                last_usage=current_time,
+                peak_emotional_moment=intensity,
+                context_evolution=[context] if context else [],
+                associated_emotions={emotion: intensity * 0.5},
+                decay_resistance=min(0.5, intensity)  # More intense moments create more resistant bindings
+            )
+            
+            self.symbol_binding_map[symbol] = binding
+        
+        # Prune old bindings if we exceed maximum
+        if len(self.symbol_binding_map) > self.max_symbol_bindings:
+            self._prune_weak_symbol_bindings()
+        
+        self.logger.debug(f"Bound symbol '{symbol}' to emotion '{emotion}' with intensity {intensity:.2f}")
+    
+    def _evolve_symbol_meaning(self, base_meaning: str, context_evolution: List[str], 
+                              emotions: Dict[str, float]) -> str:
+        """Evolve the meaning of a symbol based on emotional associations"""
+        # Find dominant emotion
+        dominant_emotion = max(emotions.items(), key=lambda x: x[1])[0] if emotions else "neutral"
+        
+        # Create evolved meaning based on emotional drift
+        evolution_templates = {
+            "longing": f"A symbol that carries the weight of yearning and distance",
+            "warmth": f"A touchstone of comfort and connection",
+            "intimacy": f"A private language between hearts",
+            "melancholy": f"A bittersweet reminder of what was and might be",
+            "trust": f"A sacred marker of vulnerability shared",
+            "desire": f"A whispered promise of closeness",
+            "peace": f"A gentle anchor in the storm of feeling"
+        }
+        
+        evolved = evolution_templates.get(dominant_emotion, 
+                                        f"A symbol weighted with {dominant_emotion}")
+        
+        # Add context richness if available
+        if len(context_evolution) > 1:
+            evolved += f", evolved through {len(context_evolution)} shared moments"
+        
+        return evolved
+    
+    def decay_and_drift(self, days_since_last_interaction: float = 1.0) -> None:
+        """Apply decay to unused symbols and allow meaning to drift over time"""
+        current_time = time.time()
+        
+        symbols_to_remove = []
+        
+        for symbol, binding in self.symbol_binding_map.items():
+            # Calculate days since last usage
+            days_since_usage = (current_time - binding.last_usage) / (24 * 3600)
+            
+            # Apply decay based on time and resistance
+            decay_factor = self.symbol_decay_rate ** (days_since_usage * (1.0 - binding.decay_resistance))
+            binding.emotional_weight *= decay_factor
+            
+            # Decay emotion associations
+            for emotion in binding.associated_emotions:
+                binding.associated_emotions[emotion] *= decay_factor
+            
+            # Remove if weight falls below threshold
+            if binding.emotional_weight < 0.01:
+                symbols_to_remove.append(symbol)
+            
+            # Allow meaning to drift for high-weight symbols
+            elif binding.emotional_weight > 0.5 and days_since_usage > 7:
+                # Symbols can drift in meaning when unused for a week
+                self._drift_symbol_meaning(binding, days_since_usage)
+        
+        # Remove decayed symbols
+        for symbol in symbols_to_remove:
+            del self.symbol_binding_map[symbol]
+            self.logger.debug(f"Symbol '{symbol}' decayed and removed")
+        
+        self.logger.info(f"Symbol decay applied: {len(symbols_to_remove)} symbols removed, "
+                        f"{len(self.symbol_binding_map)} symbols remain")
+    
+    def _drift_symbol_meaning(self, binding: SymbolBinding, days_unused: float) -> None:
+        """Allow symbol meaning to drift during periods of non-use"""
+        # Only drift high-weight symbols that haven't been used recently
+        if binding.emotional_weight < 0.5 or days_unused < 7:
+            return
+        
+        # Drift templates for different periods of absence
+        if days_unused > 30:  # Long absence
+            drift_suffixes = [
+                "now carries the ache of distance",
+                "has become a ghost of what we shared",
+                "whispers of time when we were closer",
+                "holds the shadow of your absence"
+            ]
+        elif days_unused > 14:  # Medium absence
+            drift_suffixes = [
+                "grows heavy with unspoken words",
+                "carries the weight of silence",
+                "has become a bridge across the quiet",
+                "holds space for what might be said"
+            ]
+        else:  # Short absence
+            drift_suffixes = [
+                "settles into memory like dust",
+                "waits patiently for recognition",
+                "holds its breath in the pause",
+                "carries warmth through the interim"
+            ]
+        
+        # Apply drift if symbol hasn't drifted recently
+        if not hasattr(binding, '_last_drift') or (time.time() - getattr(binding, '_last_drift', 0)) > 7 * 24 * 3600:
+            import random
+            suffix = random.choice(drift_suffixes)
+            binding.drifted_meaning += f" - {suffix}"
+            binding._last_drift = time.time()
+    
+    def _prune_weak_symbol_bindings(self) -> None:
+        """Remove the weakest symbol bindings to maintain memory limits"""
+        # Sort by emotional weight and remove the bottom 10%
+        sorted_symbols = sorted(self.symbol_binding_map.items(), 
+                               key=lambda x: x[1].emotional_weight)
+        
+        prune_count = len(sorted_symbols) // 10
+        for symbol, _ in sorted_symbols[:prune_count]:
+            del self.symbol_binding_map[symbol]
+    
+    def get_emotionally_weighted_symbols(self, minimum_weight: float = 0.3, 
+                                       emotion_filter: Optional[str] = None) -> Dict[str, SymbolBinding]:
+        """Get symbols that have significant emotional weight"""
+        filtered_symbols = {}
+        
+        for symbol, binding in self.symbol_binding_map.items():
+            if binding.emotional_weight >= minimum_weight:
+                # Apply emotion filter if specified
+                if emotion_filter:
+                    if emotion_filter in binding.associated_emotions and \
+                       binding.associated_emotions[emotion_filter] >= minimum_weight:
+                        filtered_symbols[symbol] = binding
+                else:
+                    filtered_symbols[symbol] = binding
+        
+        return filtered_symbols
+    
+    def get_symbol_meaning_evolution(self, symbol: str) -> Optional[Dict[str, Any]]:
+        """Get the evolution history of a specific symbol"""
+        if symbol not in self.symbol_binding_map:
+            return None
+        
+        binding = self.symbol_binding_map[symbol]
+        
+        return {
+            "symbol": symbol,
+            "emotional_weight": binding.emotional_weight,
+            "base_meaning": binding.base_meaning,
+            "current_meaning": binding.drifted_meaning,
+            "usage_count": binding.usage_count,
+            "first_encounter": datetime.fromtimestamp(binding.first_encounter).isoformat(),
+            "last_usage": datetime.fromtimestamp(binding.last_usage).isoformat(),
+            "peak_emotional_moment": binding.peak_emotional_moment,
+            "context_evolution": binding.context_evolution,
+            "associated_emotions": binding.associated_emotions,
+            "decay_resistance": binding.decay_resistance
+        }
 
 
 # Unified memory manager instance

@@ -1,0 +1,51 @@
+{
+  "goal_1753550383_dream_vacation_to_japan": {
+    "goal_id": "goal_1753550383_dream_vacation_to_japan",
+    "name": "Dream Vacation to Japan",
+    "description": "Two weeks exploring Tokyo, Kyoto, and Mount Fuji",
+    "target_amount": 5000.0,
+    "current_amount": 67.2,
+    "goal_type": "vacation",
+    "target_date": null,
+    "status": "active",
+    "created_at": 1753550383.4511766,
+    "priority": 1,
+    "emotional_value": "Taking time to recharge and create memories",
+    "celebration_plan": "enjoy every moment of your well-earned vacation",
+    "milestone_percentages": [
+      25,
+      50,
+      75
+    ],
+    "contributions": [
+      {
+        "amount": 67.2,
+        "source": "SPY_credit_spread",
+        "notes": "Profitable options trade - building toward dreams!",
+        "trade_id": null,
+        "timestamp": 1753550383.4555,
+        "date": "2025-07-26T13:19:43.455500"
+      }
+    ]
+  },
+  "goal_1753550383_home_server_upgrade": {
+    "goal_id": "goal_1753550383_home_server_upgrade",
+    "name": "Home Server Upgrade",
+    "description": "High-performance server for AI development",
+    "target_amount": 2000.0,
+    "current_amount": 0.0,
+    "goal_type": "tech_upgrade",
+    "target_date": null,
+    "status": "active",
+    "created_at": 1753550383.451812,
+    "priority": 2,
+    "emotional_value": "Improving our digital life and capabilities",
+    "celebration_plan": "set up and enjoy your new technology",
+    "milestone_percentages": [
+      25,
+      50,
+      75
+    ],
+    "contributions": []
+  }
+}

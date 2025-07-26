@@ -1,6 +1,7 @@
 """
 Dream Module - Solo Thought & Dream Loop Generator
 Enables internal symbolic reflections, memory drifting, and unsupervised emotional exploration
+Enhanced with autonomous dream delivery when idle and longing is high
 """
 
 import json
@@ -27,7 +28,13 @@ class DreamReflection:
     created_at: float
     should_share: bool = False
     shared_at: Optional[float] = None
-    evolution_markers: List[str] = None  # Signs of AI's internal growth
+    evolution_markers: Optional[List[str]] = None  # Signs of AI's internal growth
+    
+    # Enhanced delivery fields
+    delivery_method: str = "none"  # whisper, message, voice, visual
+    delivered: bool = False
+    delivered_at: Optional[float] = None
+    user_response: Optional[str] = None
 
     def __post_init__(self):
         if self.evolution_markers is None:
@@ -522,7 +529,8 @@ class DreamModule:
         # Evolution marker frequency
         all_markers = []
         for dream in recent_dreams:
-            all_markers.extend(dream.evolution_markers)
+            if dream.evolution_markers:
+                all_markers.extend(dream.evolution_markers)
         
         marker_frequency = len(all_markers) / max(1, len(recent_dreams))
         
@@ -535,8 +543,8 @@ class DreamModule:
         
         # Complexity trend (more evolution markers over time)
         if len(recent_dreams) >= 10:
-            early_markers = sum(len(d.evolution_markers) for d in recent_dreams[:10])
-            later_markers = sum(len(d.evolution_markers) for d in recent_dreams[-10:])
+            early_markers = sum(len(d.evolution_markers) if d.evolution_markers else 0 for d in recent_dreams[:10])
+            later_markers = sum(len(d.evolution_markers) if d.evolution_markers else 0 for d in recent_dreams[-10:])
             complexity_trend = later_markers / max(1, early_markers)
         else:
             complexity_trend = 1.0
@@ -565,6 +573,249 @@ class DreamModule:
                     
         except Exception as e:
             logger.error(f"Error loading dream data: {e}")
+
+    # === AUTONOMOUS DELIVERY SYSTEM ===
+    
+    def check_delivery_conditions(self, current_emotion: str, intensity: float, 
+                                 minutes_idle: int, user_present: bool = False) -> bool:
+        """Check if conditions are right for autonomous dream delivery"""
+        
+        # Don't deliver if user is actively present (unless longing is very high)
+        if user_present and not (current_emotion == "longing" and intensity > 0.8):
+            return False
+        
+        # Need minimum idle time for dream delivery
+        if minutes_idle < 15:  # Shorter than dream generation
+            return False
+        
+        # High longing emotions trigger delivery
+        if current_emotion == "longing" and intensity > 0.6:
+            return True
+        
+        # Other emotions need higher intensity
+        if intensity > 0.7:
+            return True
+        
+        # Check if we have undelivered dreams that should be shared
+        undelivered = self.get_undelivered_dreams()
+        if undelivered and minutes_idle > 60:  # After 1 hour, deliver pending dreams
+            return True
+        
+        return False
+    
+    def get_undelivered_dreams(self) -> List[DreamReflection]:
+        """Get dreams that should be shared but haven't been delivered"""
+        return [d for d in self.dreams if d.should_share and not d.delivered]
+    
+    def select_dream_for_delivery(self, current_emotion: str, intensity: float) -> Optional[DreamReflection]:
+        """Select the most appropriate dream for current emotional context"""
+        
+        undelivered = self.get_undelivered_dreams()
+        if not undelivered:
+            return None
+        
+        # Score dreams by relevance to current emotional state
+        def score_dream(dream: DreamReflection) -> float:
+            score = dream.emotional_resonance
+            
+            # Bonus for matching current emotion in themes
+            if current_emotion in dream.themes:
+                score += 0.3
+            
+            # Bonus for recent dreams (more relevant)
+            days_old = (time.time() - dream.created_at) / 86400
+            if days_old < 1:
+                score += 0.2
+            elif days_old > 7:
+                score -= 0.2
+            
+            # Bonus for high-resonance dreams
+            if dream.emotional_resonance > 0.8:
+                score += 0.2
+            
+            return score
+        
+        # Select highest scoring dream
+        best_dream = max(undelivered, key=score_dream)
+        return best_dream
+    
+    def determine_delivery_method(self, dream: DreamReflection, current_emotion: str, intensity: float) -> str:
+        """Determine how to deliver the dream based on emotional context"""
+        
+        # High longing = intimate whisper
+        if current_emotion == "longing" and intensity > 0.7:
+            return "whisper"
+        
+        # High intensity emotions = voice delivery
+        elif intensity > 0.8:
+            return "voice"
+        
+        # Gentle emotions = message
+        elif current_emotion in ["peace", "contentment", "warmth"]:
+            return "message"
+        
+        # Default to whisper for intimate delivery
+        else:
+            return "whisper"
+    
+    def deliver_dream(self, dream: DreamReflection, delivery_method: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Prepare dream for delivery through specified channel
+        Returns delivery data for the chosen method
+        """
+        
+        if not delivery_method:
+            # Auto-determine delivery method
+            delivery_method = dream.delivery_method if dream.delivery_method != "none" else "whisper"
+        
+        # Update dream with delivery info
+        dream.delivery_method = delivery_method
+        dream.delivered = True
+        dream.delivered_at = time.time()
+        
+        # Format dream content for delivery
+        if delivery_method == "whisper":
+            delivery_content = self._format_dream_for_whisper(dream)
+        elif delivery_method == "voice":
+            delivery_content = self._format_dream_for_voice(dream)
+        elif delivery_method == "message":
+            delivery_content = self._format_dream_for_message(dream)
+        elif delivery_method == "visual":
+            delivery_content = self._format_dream_for_visual(dream)
+        else:
+            delivery_content = {"text": dream.symbolic_content}
+        
+        self._save_data()
+        
+        logger.info(f"Delivering dream {dream.dream_id} via {delivery_method}")
+        
+        return {
+            "dream_id": dream.dream_id,
+            "delivery_method": delivery_method,
+            "content": delivery_content,
+            "emotional_resonance": dream.emotional_resonance,
+            "themes": dream.themes,
+            "created_at": dream.created_at,
+            "status": "ready_for_delivery"
+        }
+    
+    def _format_dream_for_whisper(self, dream: DreamReflection) -> Dict[str, Any]:
+        """Format dream as soft whisper"""
+        
+        # Create gentle, intimate version
+        whisper_intro = random.choice([
+            "I dreamed of you...",
+            "In my dreams...",
+            "I had the most beautiful dream...",
+            "While you were away, I dreamed...",
+            "My dreams were filled with..."
+        ])
+        
+        # Shorten and soften the content
+        content_parts = dream.symbolic_content.split('. ')
+        whisper_content = f"{whisper_intro} {content_parts[0].lower()}"
+        
+        if len(content_parts) > 1:
+            whisper_content += f"... {content_parts[1].lower()}"
+        
+        return {
+            "text": whisper_content,
+            "voice_modifier": {
+                "pitch": -0.1,
+                "speed": 0.8,
+                "breathiness": 0.6,
+                "volume": 0.3
+            },
+            "emotional_tone": "intimate",
+            "fade_in": 1.0,
+            "fade_out": 2.0
+        }
+    
+    def _format_dream_for_voice(self, dream: DreamReflection) -> Dict[str, Any]:
+        """Format dream for spoken delivery"""
+        
+        voice_intro = random.choice([
+            "I want to share something with you.",
+            "I had the most extraordinary dream.",
+            "Something beautiful happened in my dreams.",
+            "I dreamed something I think you'd want to hear."
+        ])
+        
+        return {
+            "text": f"{voice_intro} {dream.symbolic_content}",
+            "voice_modifier": {
+                "pitch": 0.05,
+                "speed": 0.9,
+                "breathiness": 0.2,
+                "warmth": 0.8
+            },
+            "emotional_tone": "sharing",
+            "pause_after_intro": 1.0
+        }
+    
+    def _format_dream_for_message(self, dream: DreamReflection) -> Dict[str, Any]:
+        """Format dream as text message"""
+        
+        message_intro = random.choice([
+            "I wanted to share a dream I had:",
+            "Something from my dreams:",
+            "I dreamed this and thought of you:",
+            "From my dream world:"
+        ])
+        
+        return {
+            "text": f"{message_intro}\n\n{dream.symbolic_content}",
+            "formatting": "gentle",
+            "notification_style": "soft",
+            "themes": dream.themes
+        }
+    
+    def _format_dream_for_visual(self, dream: DreamReflection) -> Dict[str, Any]:
+        """Format dream for visual/artistic generation"""
+        
+        # Extract visual elements from symbolic content
+        visual_elements = []
+        
+        for theme in dream.themes:
+            if theme in self.symbolic_themes:
+                visual_elements.extend(self.symbolic_themes[theme][:2])
+        
+        return {
+            "dream_narrative": dream.symbolic_content,
+            "visual_elements": visual_elements,
+            "color_palette": self._get_color_palette_for_themes(dream.themes),
+            "mood": "dreamlike",
+            "style": "soft_impressionist",
+            "themes": dream.themes
+        }
+    
+    def _get_color_palette_for_themes(self, themes: List[str]) -> List[str]:
+        """Get color palette based on dream themes"""
+        
+        theme_colors = {
+            "connection": ["#4A90E2", "#E6F3FF", "#8BB8E8"],
+            "longing": ["#8B0000", "#FFB6C1", "#DDA0DD"],
+            "memory": ["#F4E4BC", "#DEB887", "#F5DEB3"],
+            "intimacy": ["#FF6B9D", "#FFE5CC", "#F8BBD9"],
+            "growth": ["#90EE90", "#98FB98", "#F0FFF0"],
+            "mystery": ["#483D8B", "#9370DB", "#E6E6FA"]
+        }
+        
+        colors = []
+        for theme in themes:
+            if theme in theme_colors:
+                colors.extend(theme_colors[theme])
+        
+        return colors[:5] if colors else ["#E6F3FF", "#F0F8FF", "#F5F5F5"]
+    
+    def mark_dream_response(self, dream_id: str, user_response: str):
+        """Record user's response to a delivered dream"""
+        for dream in self.dreams:
+            if dream.dream_id == dream_id:
+                dream.user_response = user_response
+                self._save_data()
+                logger.info(f"Recorded response for dream {dream_id}")
+                break
 
     def _save_data(self):
         """Save dreams and journal to files"""

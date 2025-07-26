@@ -353,6 +353,10 @@ class GuidanceCoordinator:
         else:
             self.logger.warning("⚠️ No modules available for guidance analysis - using fallback")
         
+        # Generate symbolic weight guidance from memory manager
+        self.logger.debug("🎭 Generating symbolic guidance...")
+        await self._generate_symbolic_guidance(guidance, user_input, context)
+        
         # Perform therapeutic analysis
         self.logger.debug("🧠 Performing therapeutic analysis...")
         await self._assess_therapeutic_needs(guidance, user_input, context)
@@ -693,6 +697,61 @@ class GuidanceCoordinator:
                     guidance.creative_priority = 'high'
                 guidance.creative_guidance += f" {result.get('guidance', '')}"
     
+    async def _generate_symbolic_guidance(self, guidance: GuidancePackage, user_input: str, context: Dict):
+        """Generate guidance incorporating emotionally weighted symbols from memory"""
+        try:
+            if not memory_manager:
+                self.logger.debug("No memory manager available for symbolic guidance")
+                return
+                
+            # Get emotionally weighted symbols above threshold
+            weighted_symbols = memory_manager.get_emotionally_weighted_symbols(minimum_weight=0.3)
+            
+            if not weighted_symbols:
+                self.logger.debug("No emotionally weighted symbols found")
+                return
+                
+            # Create symbolic guidance based on weighted symbols
+            symbolic_elements = []
+            for symbol, binding in weighted_symbols.items():
+                # Use drifted meaning if available, otherwise base meaning
+                meaning = binding.drifted_meaning or binding.base_meaning
+                weight = binding.emotional_weight
+                
+                # Create weighted symbolic element
+                symbolic_elements.append({
+                    'symbol': symbol,
+                    'meaning': meaning,
+                    'weight': weight,
+                    'emotions': list(binding.associated_emotions)
+                })
+            
+            # Sort by emotional weight (highest first)
+            symbolic_elements.sort(key=lambda x: x['weight'], reverse=True)
+            
+            # Generate guidance incorporating top symbols
+            if symbolic_elements:
+                top_symbols = symbolic_elements[:3]  # Use top 3 weighted symbols
+                
+                symbol_guidance = []
+                for elem in top_symbols:
+                    symbol_guidance.append(
+                        f"'{elem['symbol']}' carries deep meaning ({elem['meaning']}) "
+                        f"with emotional weight {elem['weight']:.2f}"
+                    )
+                
+                guidance.mode_specifics['symbolic_guidance'] = {
+                    'weighted_symbols': symbolic_elements,
+                    'guidance_text': "Incorporate these emotionally significant symbols: " + 
+                                   "; ".join(symbol_guidance),
+                    'symbol_count': len(symbolic_elements)
+                }
+                
+                self.logger.info(f"🎭 Generated symbolic guidance with {len(symbolic_elements)} weighted symbols")
+            
+        except Exception as e:
+            self.logger.error(f"Error generating symbolic guidance: {e}")
+
     async def _assess_therapeutic_needs(self, guidance: GuidancePackage, user_input: str, context: Dict):
         """Assess therapeutic intervention needs"""
         # Crisis keywords that require immediate attention
