@@ -1,0 +1,410 @@
+[
+  {
+    "session_id": "brainstorm_goal_1753555226_dream_vacation_to_japan_1753555226",
+    "goal_id": "goal_1753555226_dream_vacation_to_japan",
+    "mode": "brainstorming",
+    "started_at": "2025-07-26T14:40:26.143104",
+    "ai_ideas": [
+      {
+        "idea_type": "milestone_strategy",
+        "title": "Milestone-Based Achievement Path",
+        "description": "What if we break this into 6 exciting milestones? Each success builds momentum!",
+        "details": {
+          "milestones": [
+            {
+              "milestone_number": 1,
+              "target_amount": 500.0,
+              "percentage": 10.0,
+              "celebration": "Small treat - you're building momentum!",
+              "motivation_message": "$500 - The hardest part is starting, and you've done it!"
+            },
+            {
+              "milestone_number": 2,
+              "target_amount": 1250.0,
+              "percentage": 25.0,
+              "celebration": "Small treat - you're building momentum!",
+              "motivation_message": "$1,250 - The hardest part is starting, and you've done it!"
+            },
+            {
+              "milestone_number": 3,
+              "target_amount": 2500.0,
+              "percentage": 50.0,
+              "celebration": "Nice dinner out - you're halfway there!",
+              "motivation_message": "$2,500 - Halfway there! The momentum is building."
+            },
+            {
+              "milestone_number": 4,
+              "target_amount": 3750.0,
+              "percentage": 75.0,
+              "celebration": "Weekend getaway - you're in the home stretch!",
+              "motivation_message": "$3,750 - Three quarters done! You can see the finish line."
+            },
+            {
+              "milestone_number": 5,
+              "target_amount": 4500.0,
+              "percentage": 90.0,
+              "celebration": "Something special - victory is within reach!",
+              "motivation_message": "$4,500 - So close you can taste it! Final push!"
+            },
+            {
+              "milestone_number": 6,
+              "target_amount": 5000.0,
+              "percentage": 100.0,
+              "celebration": "FULL CELEBRATION - you achieved your goal!",
+              "motivation_message": "$5,000 - GOAL ACHIEVED! You absolute legend!"
+            }
+          ],
+          "celebration_plan": "Small reward for each milestone hit",
+          "motivation": "Psychological wins keep you motivated"
+        },
+        "ai_confidence": 0.9,
+        "emotional_appeal": "achievement_focused"
+      },
+      {
+        "idea_type": "automation_strategy",
+        "title": "Set-It-And-Forget-It Consistency",
+        "description": "How about we automate $417/month so you never have to think about it?",
+        "details": {
+          "monthly_amount": 416.6666666666667,
+          "automation_benefits": "Removes decision fatigue and emotional trading",
+          "flexibility": "Can adjust based on income changes"
+        },
+        "ai_confidence": 0.8,
+        "emotional_appeal": "security_focused"
+      }
+    ],
+    "user_responses": [
+      {
+        "timestamp": "2025-07-26T14:40:26.146422",
+        "response": {
+          "goal_id": "goal_1753555226_dream_vacation_to_japan",
+          "user_id": "demo_investor",
+          "timestamp": "2025-07-26T14:40:26.146385",
+          "text": "\nI LOVE the milestone approach! Breaking it into chunks feels so much more achievable. \nThe automation idea is brilliant too - I'm always busy and forget to invest regularly.\nThe gamification sounds fun but maybe not my main approach. \nWhat if we combined milestones with automation? Like auto-invest and celebrate each milestone?\nI'm also wondering about the risk - I want to be conservative since this is for a specific goal.\n",
+          "liked_ideas": [
+            {
+              "idea_type": "milestone_strategy",
+              "confidence": 0.7
+            },
+            {
+              "idea_type": "automation_strategy",
+              "confidence": 0.8
+            },
+            {
+              "idea_type": "gamification_strategy",
+              "confidence": 0.6
+            }
+          ],
+          "concerns": [
+            {
+              "type": "Risk tolerance concerns",
+              "text": "User mentioned 'risk' indicating risk tolerance concerns",
+              "severity": "medium"
+            }
+          ],
+          "custom_ideas": [
+            "What if we combined milestones with automation? Like auto-invest and celebrate each milestone?\nI'm also wondering about the risk - I want to be conservative since this is for a specific goal"
+          ],
+          "engagement_signals": {
+            "enthusiasm_level": "high",
+            "question_count": 2,
+            "exclamation_count": 1,
+            "positive_words": 2,
+            "uncertainty_words": 1
+          }
+        },
+        "ai_analysis": {
+          "engagement_level": "high",
+          "risk_comfort": "low",
+          "preferred_approach": "interactive",
+          "emotional_state": "neutral",
+          "commitment_indicators": []
+        }
+      }
+    ],
+    "consensus_reached": false,
+    "next_steps": []
+  },
+  {
+    "session_id": "brainstorm_goal_1753555226_dream_vacation_to_japan_1753555226",
+    "goal_id": "goal_1753555226_dream_vacation_to_japan",
+    "mode": "brainstorming",
+    "started_at": "2025-07-26T14:40:26.144458",
+    "ai_ideas": [
+      {
+        "idea_type": "milestone_strategy",
+        "title": "Milestone-Based Achievement Path",
+        "description": "What if we break this into 6 exciting milestones? Each success builds momentum!",
+        "details": {
+          "milestones": [
+            {
+              "milestone_number": 1,
+              "target_amount": 500.0,
+              "percentage": 10.0,
+              "celebration": "Small treat - you're building momentum!",
+              "motivation_message": "$500 - The hardest part is starting, and you've done it!"
+            },
+            {
+              "milestone_number": 2,
+              "target_amount": 1250.0,
+              "percentage": 25.0,
+              "celebration": "Small treat - you're building momentum!",
+              "motivation_message": "$1,250 - The hardest part is starting, and you've done it!"
+            },
+            {
+              "milestone_number": 3,
+              "target_amount": 2500.0,
+              "percentage": 50.0,
+              "celebration": "Nice dinner out - you're halfway there!",
+              "motivation_message": "$2,500 - Halfway there! The momentum is building."
+            },
+            {
+              "milestone_number": 4,
+              "target_amount": 3750.0,
+              "percentage": 75.0,
+              "celebration": "Weekend getaway - you're in the home stretch!",
+              "motivation_message": "$3,750 - Three quarters done! You can see the finish line."
+            },
+            {
+              "milestone_number": 5,
+              "target_amount": 4500.0,
+              "percentage": 90.0,
+              "celebration": "Something special - victory is within reach!",
+              "motivation_message": "$4,500 - So close you can taste it! Final push!"
+            },
+            {
+              "milestone_number": 6,
+              "target_amount": 5000.0,
+              "percentage": 100.0,
+              "celebration": "FULL CELEBRATION - you achieved your goal!",
+              "motivation_message": "$5,000 - GOAL ACHIEVED! You absolute legend!"
+            }
+          ],
+          "celebration_plan": "Small reward for each milestone hit",
+          "motivation": "Psychological wins keep you motivated"
+        },
+        "ai_confidence": 0.9,
+        "emotional_appeal": "achievement_focused"
+      },
+      {
+        "idea_type": "automation_strategy",
+        "title": "Set-It-And-Forget-It Consistency",
+        "description": "How about we automate $417/month so you never have to think about it?",
+        "details": {
+          "monthly_amount": 416.6666666666667,
+          "automation_benefits": "Removes decision fatigue and emotional trading",
+          "flexibility": "Can adjust based on income changes"
+        },
+        "ai_confidence": 0.8,
+        "emotional_appeal": "security_focused"
+      }
+    ],
+    "user_responses": [],
+    "consensus_reached": false,
+    "next_steps": []
+  },
+  {
+    "session_id": "brainstorm_goal_1753555273_dream_vacation_to_japan_1753555273",
+    "goal_id": "goal_1753555273_dream_vacation_to_japan",
+    "mode": "brainstorming",
+    "started_at": "2025-07-26T14:41:13.055778",
+    "ai_ideas": [
+      {
+        "idea_type": "milestone_strategy",
+        "title": "Milestone-Based Achievement Path",
+        "description": "What if we break this into 6 exciting milestones? Each success builds momentum!",
+        "details": {
+          "milestones": [
+            {
+              "milestone_number": 1,
+              "target_amount": 500.0,
+              "percentage": 10.0,
+              "celebration": "Small treat - you're building momentum!",
+              "motivation_message": "$500 - The hardest part is starting, and you've done it!"
+            },
+            {
+              "milestone_number": 2,
+              "target_amount": 1250.0,
+              "percentage": 25.0,
+              "celebration": "Small treat - you're building momentum!",
+              "motivation_message": "$1,250 - The hardest part is starting, and you've done it!"
+            },
+            {
+              "milestone_number": 3,
+              "target_amount": 2500.0,
+              "percentage": 50.0,
+              "celebration": "Nice dinner out - you're halfway there!",
+              "motivation_message": "$2,500 - Halfway there! The momentum is building."
+            },
+            {
+              "milestone_number": 4,
+              "target_amount": 3750.0,
+              "percentage": 75.0,
+              "celebration": "Weekend getaway - you're in the home stretch!",
+              "motivation_message": "$3,750 - Three quarters done! You can see the finish line."
+            },
+            {
+              "milestone_number": 5,
+              "target_amount": 4500.0,
+              "percentage": 90.0,
+              "celebration": "Something special - victory is within reach!",
+              "motivation_message": "$4,500 - So close you can taste it! Final push!"
+            },
+            {
+              "milestone_number": 6,
+              "target_amount": 5000.0,
+              "percentage": 100.0,
+              "celebration": "FULL CELEBRATION - you achieved your goal!",
+              "motivation_message": "$5,000 - GOAL ACHIEVED! You absolute legend!"
+            }
+          ],
+          "celebration_plan": "Small reward for each milestone hit",
+          "motivation": "Psychological wins keep you motivated"
+        },
+        "ai_confidence": 0.9,
+        "emotional_appeal": "achievement_focused"
+      },
+      {
+        "idea_type": "automation_strategy",
+        "title": "Set-It-And-Forget-It Consistency",
+        "description": "How about we automate $417/month so you never have to think about it?",
+        "details": {
+          "monthly_amount": 416.6666666666667,
+          "automation_benefits": "Removes decision fatigue and emotional trading",
+          "flexibility": "Can adjust based on income changes"
+        },
+        "ai_confidence": 0.8,
+        "emotional_appeal": "security_focused"
+      }
+    ],
+    "user_responses": [
+      {
+        "timestamp": "2025-07-26T14:41:13.059877",
+        "response": {
+          "goal_id": "goal_1753555273_dream_vacation_to_japan",
+          "user_id": "demo_investor",
+          "timestamp": "2025-07-26T14:41:13.059835",
+          "text": "\nI LOVE the milestone approach! Breaking it into chunks feels so much more achievable. \nThe automation idea is brilliant too - I'm always busy and forget to invest regularly.\nThe gamification sounds fun but maybe not my main approach. \nWhat if we combined milestones with automation? Like auto-invest and celebrate each milestone?\nI'm also wondering about the risk - I want to be conservative since this is for a specific goal.\n",
+          "liked_ideas": [
+            {
+              "idea_type": "milestone_strategy",
+              "confidence": 0.7
+            },
+            {
+              "idea_type": "automation_strategy",
+              "confidence": 0.8
+            },
+            {
+              "idea_type": "gamification_strategy",
+              "confidence": 0.6
+            }
+          ],
+          "concerns": [
+            {
+              "type": "Risk tolerance concerns",
+              "text": "User mentioned 'risk' indicating risk tolerance concerns",
+              "severity": "medium"
+            }
+          ],
+          "custom_ideas": [
+            "What if we combined milestones with automation? Like auto-invest and celebrate each milestone?\nI'm also wondering about the risk - I want to be conservative since this is for a specific goal"
+          ],
+          "engagement_signals": {
+            "enthusiasm_level": "high",
+            "question_count": 2,
+            "exclamation_count": 1,
+            "positive_words": 2,
+            "uncertainty_words": 1
+          }
+        },
+        "ai_analysis": {
+          "engagement_level": "high",
+          "risk_comfort": "low",
+          "preferred_approach": "interactive",
+          "emotional_state": "neutral",
+          "commitment_indicators": []
+        }
+      }
+    ],
+    "consensus_reached": false,
+    "next_steps": []
+  },
+  {
+    "session_id": "brainstorm_goal_1753555273_dream_vacation_to_japan_1753555273",
+    "goal_id": "goal_1753555273_dream_vacation_to_japan",
+    "mode": "brainstorming",
+    "started_at": "2025-07-26T14:41:13.057552",
+    "ai_ideas": [
+      {
+        "idea_type": "milestone_strategy",
+        "title": "Milestone-Based Achievement Path",
+        "description": "What if we break this into 6 exciting milestones? Each success builds momentum!",
+        "details": {
+          "milestones": [
+            {
+              "milestone_number": 1,
+              "target_amount": 500.0,
+              "percentage": 10.0,
+              "celebration": "Small treat - you're building momentum!",
+              "motivation_message": "$500 - The hardest part is starting, and you've done it!"
+            },
+            {
+              "milestone_number": 2,
+              "target_amount": 1250.0,
+              "percentage": 25.0,
+              "celebration": "Small treat - you're building momentum!",
+              "motivation_message": "$1,250 - The hardest part is starting, and you've done it!"
+            },
+            {
+              "milestone_number": 3,
+              "target_amount": 2500.0,
+              "percentage": 50.0,
+              "celebration": "Nice dinner out - you're halfway there!",
+              "motivation_message": "$2,500 - Halfway there! The momentum is building."
+            },
+            {
+              "milestone_number": 4,
+              "target_amount": 3750.0,
+              "percentage": 75.0,
+              "celebration": "Weekend getaway - you're in the home stretch!",
+              "motivation_message": "$3,750 - Three quarters done! You can see the finish line."
+            },
+            {
+              "milestone_number": 5,
+              "target_amount": 4500.0,
+              "percentage": 90.0,
+              "celebration": "Something special - victory is within reach!",
+              "motivation_message": "$4,500 - So close you can taste it! Final push!"
+            },
+            {
+              "milestone_number": 6,
+              "target_amount": 5000.0,
+              "percentage": 100.0,
+              "celebration": "FULL CELEBRATION - you achieved your goal!",
+              "motivation_message": "$5,000 - GOAL ACHIEVED! You absolute legend!"
+            }
+          ],
+          "celebration_plan": "Small reward for each milestone hit",
+          "motivation": "Psychological wins keep you motivated"
+        },
+        "ai_confidence": 0.9,
+        "emotional_appeal": "achievement_focused"
+      },
+      {
+        "idea_type": "automation_strategy",
+        "title": "Set-It-And-Forget-It Consistency",
+        "description": "How about we automate $417/month so you never have to think about it?",
+        "details": {
+          "monthly_amount": 416.6666666666667,
+          "automation_benefits": "Removes decision fatigue and emotional trading",
+          "flexibility": "Can adjust based on income changes"
+        },
+        "ai_confidence": 0.8,
+        "emotional_appeal": "security_focused"
+      }
+    ],
+    "user_responses": [],
+    "consensus_reached": false,
+    "next_steps": []
+  }
+]

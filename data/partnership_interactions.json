@@ -1,0 +1,30 @@
+[
+  {
+    "timestamp": "2025-07-26T14:40:26.148487",
+    "goal_id": "goal_1753555226_dream_vacation_to_japan",
+    "user_engagement": {
+      "enthusiasm_level": "high",
+      "question_count": 2,
+      "exclamation_count": 1,
+      "positive_words": 2,
+      "uncertainty_words": 1
+    },
+    "ai_response_type": "celebratory",
+    "partnership_strength_after": 0.5,
+    "next_step": "implementation_planning"
+  },
+  {
+    "timestamp": "2025-07-26T14:41:13.061930",
+    "goal_id": "goal_1753555273_dream_vacation_to_japan",
+    "user_engagement": {
+      "enthusiasm_level": "high",
+      "question_count": 2,
+      "exclamation_count": 1,
+      "positive_words": 2,
+      "uncertainty_words": 1
+    },
+    "ai_response_type": "celebratory",
+    "partnership_strength_after": 0.5,
+    "next_step": "implementation_planning"
+  }
+]

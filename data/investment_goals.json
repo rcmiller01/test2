@@ -47,5 +47,45 @@
       75
     ],
     "contributions": []
+  },
+  "goal_1753555226_dream_vacation_to_japan": {
+    "goal_id": "goal_1753555226_dream_vacation_to_japan",
+    "name": "Dream Vacation to Japan",
+    "description": "Two weeks exploring Tokyo, Kyoto, and Mount Fuji with cherry blossoms",
+    "target_amount": 5000.0,
+    "current_amount": 0.0,
+    "goal_type": "vacation",
+    "target_date": null,
+    "status": "active",
+    "created_at": 1753555226.141054,
+    "priority": 1,
+    "emotional_value": "Taking time to recharge and create memories",
+    "celebration_plan": "enjoy every moment of your well-earned vacation",
+    "milestone_percentages": [
+      25,
+      50,
+      75
+    ],
+    "contributions": []
+  },
+  "goal_1753555273_dream_vacation_to_japan": {
+    "goal_id": "goal_1753555273_dream_vacation_to_japan",
+    "name": "Dream Vacation to Japan",
+    "description": "Two weeks exploring Tokyo, Kyoto, and Mount Fuji with cherry blossoms",
+    "target_amount": 5000.0,
+    "current_amount": 0.0,
+    "goal_type": "vacation",
+    "target_date": null,
+    "status": "active",
+    "created_at": 1753555273.0534496,
+    "priority": 1,
+    "emotional_value": "Taking time to recharge and create memories",
+    "celebration_plan": "enjoy every moment of your well-earned vacation",
+    "milestone_percentages": [
+      25,
+      50,
+      75
+    ],
+    "contributions": []
   }
 }
