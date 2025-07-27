@@ -21,3 +21,8 @@ class MoodInflection:
         elif mood == "sad":
             prefix = "\U0001F614 "  # pensive face
         return f"{prefix}{text}"
+
+    def integrate_dynamic_tone(self, text: str, emotion: str, intensity: float) -> str:
+        """Integrate dynamic tone adjustments into text."""
+        tone_prefix = f"[{emotion.upper()} - Intensity: {intensity:.1f}] "
+        return f"{tone_prefix}{text}"

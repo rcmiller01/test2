@@ -87,6 +87,14 @@ class EmotionalVoiceEngine:
             whisper_mode=voice_config.get('whisper_mode', False)
         )
     
+    def apply_dynamic_tone_modifier(self, emotion: str, intensity: float) -> VoiceModifier:
+        """Apply dynamic tone adjustments based on emotion and intensity."""
+        base_modifier = self.get_voice_modifier(emotion, intensity)
+        # Example dynamic adjustment logic
+        base_modifier.pitch += 0.1 * intensity  # Slightly increase pitch dynamically
+        base_modifier.speed *= 1.1 if intensity > 0.8 else 1.0  # Speed up for high intensity
+        return base_modifier
+    
     def apply_voice_processing(self, text: str, emotion: str, intensity: float = 0.7) -> Dict[str, Any]:
         """
         Apply emotional voice processing to text

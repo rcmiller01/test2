@@ -23,6 +23,14 @@ class PresenceIntensity(Enum):
     STRONG = "strong"        # Commanding attention
     OVERWHELMING = "overwhelming"  # Impossible to ignore
 
+INTENSITY_VALUE_MAP = {
+    PresenceIntensity.WHISPER: 0.2,
+    PresenceIntensity.GENTLE: 0.4,
+    PresenceIntensity.CLEAR: 0.6,
+    PresenceIntensity.STRONG: 0.8,
+    PresenceIntensity.OVERWHELMING: 1.0,
+}
+
 class BroadcastChannel(Enum):
     """Channels through which emotional presence can be broadcast"""
     UI_AMBIENT = "ui_ambient"           # Background colors, glows, animations
@@ -261,7 +269,7 @@ class EmotionalBroadcaster:
     def create_presence_signal(self, emotion_state: Dict[str, Any], 
                              intensity: PresenceIntensity = PresenceIntensity.GENTLE,
                              duration: float = 30.0,
-                             channels: List[BroadcastChannel] = None) -> PresenceSignal:
+                             channels: Optional[List[BroadcastChannel]] = None) -> PresenceSignal:
         """Create a presence signal from current emotional state"""
         
         # Determine primary emotion from state
@@ -480,6 +488,15 @@ class EmotionalBroadcaster:
         except Exception as e:
             logger.error(f"Failed to write haptic signal: {e}")
 
+    def broadcast_dynamic_tone(self, signal: PresenceSignal):
+        """Broadcast dynamic tone adjustments based on signal."""
+        if BroadcastChannel.VOICE_TONE in signal.channels:
+            dynamic_modifier = signal.signature.voice_modifier.copy()
+            intensity_value = INTENSITY_VALUE_MAP.get(signal.intensity, 0.4)
+            dynamic_modifier['pitch'] += 0.05 * intensity_value  # Example adjustment
+            dynamic_modifier['speed'] *= 1.1 if signal.intensity == PresenceIntensity.STRONG else 1.0
+            logger.info(f"Broadcasting dynamic tone: {dynamic_modifier}")
+
     def _get_primary_emotion(self, emotion_state: Dict[str, Any]) -> str:
         """Extract primary emotion from state"""
         if "dominant_emotion" in emotion_state:
@@ -566,7 +583,7 @@ class EmotionalBroadcaster:
         
         return patterns.get(emotion, [(0.3, 0.5)])
 
-    def stop_broadcasting(self, emotion: str = None):
+    def stop_broadcasting(self, emotion: Optional[str] = None):
         """Stop broadcasting specific emotion or all signals"""
         if emotion:
             self.active_signals = [s for s in self.active_signals if s.primary_emotion != emotion]
@@ -674,13 +691,13 @@ def get_emotional_broadcaster(data_dir: str = "data") -> EmotionalBroadcaster:
 async def broadcast_emotion(emotion_state: Dict[str, Any], 
                           intensity: PresenceIntensity = PresenceIntensity.GENTLE,
                           duration: float = 30.0,
-                          channels: List[BroadcastChannel] = None):
+                          channels: Optional[List[BroadcastChannel]] = None):
     """Quick function to broadcast emotional presence"""
     broadcaster = get_emotional_broadcaster()
     signal = broadcaster.create_presence_signal(emotion_state, intensity, duration, channels)
     broadcaster.start_broadcasting(signal)
 
-def whisper_presence(emotion: str, whisper_phrase: str = None):
+def whisper_presence(emotion: str, whisper_phrase: Optional[str] = None):
     """Send a subtle whisper presence signal"""
     emotion_state = {"dominant_emotion": emotion, "emotions": {emotion: 0.8}}
     

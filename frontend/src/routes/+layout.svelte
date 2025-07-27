@@ -45,6 +45,7 @@
 	import { getAllTags, getChatList } from '$lib/apis/chats';
 	import NotificationToast from '$lib/components/NotificationToast.svelte';
 	import AppSidebar from '$lib/components/app/AppSidebar.svelte';
+	import ThreadSidebar from '$lib/components/Sidebar.svelte';
 	import { chatCompletion } from '$lib/apis/openai';
 
 	import { beforeNavigate } from '$app/navigation';
@@ -63,6 +64,10 @@
 
 	let loaded = false;
 	let tokenTimer = null;
+	
+	// Thread management state
+	let isThreadSidebarCollapsed = false;
+	let currentThreadId = null;
 
 	const BREAKPOINT = 768;
 
@@ -460,6 +465,32 @@
 			location.href = res?.redirect_url ?? '/auth';
 		}
 	};
+	
+	// Thread management functions
+	const handleThreadSelected = async (event) => {
+		const { thread } = event.detail;
+		currentThreadId = thread.id;
+		
+		// Switch thread via API
+		try {
+			const response = await fetch('/api/webui/switch-thread', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ thread_id: thread.id })
+			});
+			
+			if (response.ok) {
+				const result = await response.json();
+				console.log('Switched to thread:', result);
+			}
+		} catch (error) {
+			console.error('Error switching thread:', error);
+		}
+	};
+	
+	const handleSidebarToggle = (event) => {
+		isThreadSidebarCollapsed = event.detail.collapsed;
+	};
 
 	onMount(async () => {
 		if (typeof window !== 'undefined' && window.applyTheme) {
@@ -657,13 +688,30 @@
 	{#if $isApp}
 		<div class="flex flex-row h-screen">
 			<AppSidebar />
+			<ThreadSidebar 
+				bind:isCollapsed={isThreadSidebarCollapsed}
+				{currentThreadId}
+				on:threadSelected={handleThreadSelected}
+				on:sidebarToggle={handleSidebarToggle}
+			/>
 
-			<div class="w-full flex-1 max-w-[calc(100%-4.5rem)]">
+			<div class="w-full flex-1">
 				<slot />
 			</div>
 		</div>
 	{:else}
-		<slot />
+		<div class="flex flex-row h-screen">
+			<ThreadSidebar 
+				bind:isCollapsed={isThreadSidebarCollapsed}
+				{currentThreadId}
+				on:threadSelected={handleThreadSelected}
+				on:sidebarToggle={handleSidebarToggle}
+			/>
+			
+			<div class="w-full flex-1">
+				<slot />
+			</div>
+		</div>
 	{/if}
 {/if}
 
