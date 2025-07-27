@@ -8,10 +8,17 @@ system to provide seamless ambient storytelling.
 
 import asyncio
 import time
+import json
 from typing import Dict, List, Optional, Any, Callable
 from datetime import datetime, timedelta
 from dataclasses import dataclass
 import logging
+import random
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../reflection")))
+from emotion_reflector import EmotionReflector
+from memory_writer import log_memory_entry
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +52,7 @@ class NarrativeAgency:
         self.current_emotion = "neutral"
         self.current_intensity = 0.5
         self.monitoring_active = False
+        self.last_interaction_time = datetime.now()
         
         # Narrative queue
         self.pending_narratives: List[NarrativeEvent] = []
@@ -54,10 +62,17 @@ class NarrativeAgency:
         self.min_idle_time_minutes = 15
         self.max_daily_narratives = 5
         self.longing_threshold = 0.6
+        self.emotion_drift_thresholds = {
+            "melancholy": "loneliness",
+            "content": "boredom"
+        }
         
         # Callbacks for delivery
         self.delivery_callbacks: Dict[str, Callable] = {}
         
+        # Initialize Emotion Reflector
+        self.emotion_reflector = EmotionReflector()
+    
     def set_dependencies(self, dream_module=None, memory_manager=None, emotional_broadcaster=None):
         """Set module dependencies"""
         if dream_module:
@@ -75,6 +90,7 @@ class NarrativeAgency:
     def update_user_activity(self):
         """Update the last user activity timestamp"""
         self.last_user_activity = datetime.now()
+        self.last_interaction_time = datetime.now()
     
     def update_emotional_state(self, emotion: str, intensity: float):
         """Update current emotional state"""
@@ -444,6 +460,37 @@ class NarrativeAgency:
         """Clear all pending narratives"""
         self.pending_narratives.clear()
         logger.info("Cleared all pending narratives")
+    
+    def check_idle_and_emotion_drift(self):
+        """Check for inactivity and emotion drift to trigger narratives."""
+        idle_time = datetime.now() - self.last_interaction_time
+        if idle_time > timedelta(minutes=10):
+            current_emotion = self.emotion_reflector.get_current_emotion()
+            drifted_emotion = self.emotion_drift_thresholds.get(current_emotion)
+            if drifted_emotion:
+                self.trigger_narrative(drifted_emotion)
+
+    def trigger_narrative(self, emotion: str):
+        """Trigger a narrative based on the given emotion."""
+        try:
+            with open("init_messages.json", "r") as f:
+                messages = json.load(f)
+            message = messages.get(emotion, "Let's talk about something.")
+            log_memory_entry({
+                "event": "narrative_trigger",
+                "emotion": emotion,
+                "message": message,
+                "timestamp": datetime.now().isoformat()
+            })
+            print(f"Triggered narrative: {message}")
+        except Exception as e:
+            print(f"Error triggering narrative: {e}")
+
+    def amplify_narrative_based_on_needs(self, narrative: str) -> str:
+        """Amplify narrative intensity based on unmet needs."""
+        if hasattr(self.emotion_reflector, 'unmet_needs_tracker'):
+            return self.emotion_reflector.unmet_needs_tracker.amplify_narrative(narrative)
+        return narrative
 
 # Global instance
 narrative_agency = None
@@ -454,9 +501,6 @@ def get_narrative_agency() -> NarrativeAgency:
     if narrative_agency is None:
         narrative_agency = NarrativeAgency()
     return narrative_agency
-
-# Missing import
-import random
 
 if __name__ == "__main__":
     """Test the narrative agency"""

@@ -72,6 +72,9 @@ class EmotionReflector:
         self.interaction_history = self._load_interaction_history()
         self.reflection_history = self._load_reflection_history()
         self.emotional_patterns = self._load_emotional_patterns()
+        
+        # Desire score
+        self.desire_score: float = 0.0  # Initialize desire score
     
     def _load_interaction_history(self) -> List[EmotionalEvent]:
         """Load interaction history from file"""
@@ -130,12 +133,30 @@ class EmotionReflector:
         
         logger.info(f"Logged emotional event: {event_type} - {symbol} ({emotional_state})")
     
+    def _update_desire_score(self, events: List[EmotionalEvent]):
+        """
+        Update the desire score based on recent events.
+        """
+        if not events:
+            self.desire_score += 0.1  # Increment desire score if no events
+        else:
+            for event in events:
+                if event.event_type in ["satisfying_interaction", "symbolic_ritual"]:
+                    self.desire_score = max(0.0, self.desire_score - 0.5)  # Decay desire score
+    
+    def _apply_desire_to_mood(self, mood_vector: Dict[str, float]):
+        """
+        Adjust the mood vector based on the current desire score.
+        """
+        mood_vector["desire"] = self.desire_score
+    
     def run_daily_reflection(self) -> ReflectionSummary:
         """Main daily reflection process - analyzes and adjusts all emotional configurations"""
         logger.info("🌙 Starting daily emotional reflection...")
         
         # Get recent interactions (last 24 hours)
         recent_events = self._get_recent_events(hours=24)
+        self._update_desire_score(recent_events)
         
         if not recent_events:
             logger.info("No recent emotional events to analyze")
