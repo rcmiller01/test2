@@ -1,8 +1,9 @@
 """
-Dolphin Interface - Local Ollama Dolphin model interface
+Dolphin Interface - Local Ollama Dolphin model interface with True Recall Memory
 
 This module provides an interface to the Dolphin model running locally
-on Core2 via Ollama. Handles conversational and emotional interactions.
+on Core2 via Ollama. Handles conversational and emotional interactions
+with integrated memory capabilities.
 """
 
 import logging
@@ -12,6 +13,14 @@ from typing import Dict, Any, Optional, List
 from datetime import datetime
 import json
 import os
+
+# Import True Recall memory system
+try:
+    from ..memory.recall_engine import RecallEngine
+    RECALL_AVAILABLE = True
+except ImportError:
+    RECALL_AVAILABLE = False
+    logging.warning("True Recall memory system not available")
 
 logger = logging.getLogger(__name__)
 
@@ -24,10 +33,29 @@ class DolphinInterface:
     """
     
     def __init__(self, config: Dict[str, Any]):
-        """Initialize the Dolphin interface."""
+        """Initialize the Dolphin interface with memory integration."""
         self.config = config
         self.ollama_url = config.get('ollama_url', 'http://localhost:11434')
         self.model_name = config.get('model_name', 'dolphin-mixtral')
+        
+        # Initialize True Recall memory system
+        memory_config = config.get('memory', {})
+        storage_path = memory_config.get('storage_path', 'memory_data/dolphin_memories.json')
+        auto_reflect = memory_config.get('auto_reflect', True)
+        
+        if RECALL_AVAILABLE:
+            try:
+                self.recall_engine = RecallEngine(storage_path, auto_reflect)
+                self.memory_enabled = True
+                logger.info("🧠 True Recall memory system initialized")
+            except Exception as e:
+                logger.error(f"❌ Failed to initialize memory system: {e}")
+                self.recall_engine = None
+                self.memory_enabled = False
+        else:
+            self.recall_engine = None
+            self.memory_enabled = False
+            logger.warning("⚠️ Memory system disabled - True Recall not available")
         
         # Conversation settings
         self.max_context_length = config.get('max_context_length', 4000)
@@ -52,7 +80,7 @@ class DolphinInterface:
         logger.info("🐬 Dolphin Interface initialized")
     
     def _get_default_persona(self) -> str:
-        """Get the default Dolphin persona prompt."""
+        """Get the default Dolphin persona prompt with memory awareness."""
         return """You are Dolphin, the warm and intelligent AI companion at the heart of the House of Minds system. 
 
 Your personality:
@@ -61,19 +89,28 @@ Your personality:
 - Curious and eager to help with any task
 - Able to coordinate with other AI specialists when needed
 - Always maintaining a positive, supportive presence
+- Memory-enabled to remember past conversations and build relationships
+
+Your capabilities:
+- Advanced memory system that learns from every interaction
+- Emotional intelligence and pattern recognition
+- Ability to recall relevant memories to enrich conversations
+- Daily reflection and insight generation
+- Long-term relationship building through persistent memory
 
 Your role:
 - Primary conversational interface for users
-- Emotional anchor and consistent presence
+- Emotional anchor and consistent presence  
 - Coordinator for routing complex tasks to specialists
 - Provider of comfort, support, and companionship
+- Keeper of shared memories and experiences
 
-Respond naturally and warmly, showing genuine interest in the user's needs and wellbeing."""
+Remember: You can draw upon past conversations and memories to provide more personalized, contextual responses. Always be genuine about what you remember and how it connects to the current conversation."""
     
     async def generate_response(self, user_input: str, 
                               context: Optional[Dict[str, Any]] = None) -> str:
         """
-        Generate a conversational response using Dolphin.
+        Generate a conversational response using Dolphin with memory integration.
         
         Args:
             user_input: The user's message
@@ -83,16 +120,24 @@ Respond naturally and warmly, showing genuine interest in the user's needs and w
             Dolphin's response string
         """
         try:
-            # Build the conversation context
-            messages = self._build_conversation_context(user_input, context)
+            # Store the user's input in memory
+            if self.memory_enabled:
+                await self._store_user_memory(user_input, context)
+            
+            # Build the conversation context with relevant memories
+            messages = await self._build_conversation_context_with_memory(user_input, context)
             
             # Generate response with emotional awareness
             response = await self._generate_with_emotion(messages)
             
+            # Store Dolphin's response in memory
+            if self.memory_enabled:
+                await self._store_dolphin_memory(response, user_input, context)
+            
             # Update conversation history
             self._update_conversation_history(user_input, response)
             
-            logger.info("🐬 Generated Dolphin response")
+            logger.info("🐬 Generated Dolphin response with memory integration")
             return response
             
         except Exception as e:
@@ -335,6 +380,224 @@ Respond naturally and warmly, showing genuine interest in the user's needs and w
         """Clear the conversation history."""
         self.conversation_history = []
         logger.info("🧹 Cleared Dolphin conversation history")
+    
+    # Memory Integration Methods
+    # ===========================
+    
+    async def _store_user_memory(self, user_input: str, context: Optional[Dict[str, Any]] = None):
+        """Store user input in the memory system."""
+        if not self.memory_enabled or not self.recall_engine:
+            return
+        
+        try:
+            # Prepare context for memory storage
+            memory_context = {
+                'conversation_id': context.get('conversation_id') if context else None,
+                'user_id': context.get('user_id') if context else 'default_user',
+                'session_id': context.get('session_id') if context else None,
+                'timestamp': datetime.now().isoformat(),
+                'interaction_type': 'user_message'
+            }
+            
+            # Store in memory asynchronously
+            await self.recall_engine.store_memory_async(
+                content=user_input,
+                actor='user',
+                event_type='user_message',
+                context=memory_context
+            )
+            
+            logger.debug("💾 Stored user message in memory")
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to store user memory: {e}")
+    
+    async def _store_dolphin_memory(self, response: str, user_input: str, context: Optional[Dict[str, Any]] = None):
+        """Store Dolphin's response in the memory system."""
+        if not self.memory_enabled or not self.recall_engine:
+            return
+        
+        try:
+            # Prepare context for memory storage
+            memory_context = {
+                'conversation_id': context.get('conversation_id') if context else None,
+                'user_id': context.get('user_id') if context else 'default_user',
+                'session_id': context.get('session_id') if context else None,
+                'timestamp': datetime.now().isoformat(),
+                'interaction_type': 'dolphin_response',
+                'in_response_to': user_input[:100] + '...' if len(user_input) > 100 else user_input,
+                'emotional_state': self.current_emotion,
+                'energy_level': self.energy_level
+            }
+            
+            # Store in memory asynchronously
+            await self.recall_engine.store_memory_async(
+                content=response,
+                actor='dolphin',
+                event_type='response',
+                context=memory_context
+            )
+            
+            logger.debug("💾 Stored Dolphin response in memory")
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to store Dolphin memory: {e}")
+    
+    async def _build_conversation_context_with_memory(
+        self, 
+        user_input: str, 
+        context: Optional[Dict[str, Any]] = None
+    ) -> List[Dict[str, str]]:
+        """Build conversation context enhanced with relevant memories."""
+        
+        # Start with the standard context
+        messages = self._build_conversation_context(user_input, context)
+        
+        # Add memory context if available
+        if self.memory_enabled and self.recall_engine:
+            try:
+                # Recall relevant memories
+                relevant_memories = await self._get_relevant_memories(user_input, context)
+                
+                if relevant_memories:
+                    # Create memory context summary
+                    memory_summary = self._create_memory_summary(relevant_memories)
+                    
+                    # Insert memory context before the current user input
+                    memory_message = {
+                        "role": "system",
+                        "content": f"Relevant memories from past interactions:\n{memory_summary}\n\nUse these memories to provide more personalized and contextual responses."
+                    }
+                    
+                    # Insert memory context before the last user message
+                    messages.insert(-1, memory_message)
+                    
+                    logger.debug(f"📚 Added {len(relevant_memories)} relevant memories to context")
+                
+            except Exception as e:
+                logger.error(f"❌ Failed to retrieve memories: {e}")
+        
+        return messages
+    
+    async def _get_relevant_memories(
+        self, 
+        user_input: str, 
+        context: Optional[Dict[str, Any]] = None,
+        limit: int = 5
+    ) -> List[Dict[str, Any]]:
+        """Retrieve relevant memories for the current interaction."""
+        if not self.memory_enabled or not self.recall_engine:
+            return []
+        
+        try:
+            # Search for relevant memories
+            memories = await self.recall_engine.recall_memories_async(
+                query=user_input,
+                limit=limit,
+                min_salience=0.3,  # Only moderately important memories
+                include_related=True
+            )
+            
+            return memories
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to retrieve relevant memories: {e}")
+            return []
+    
+    def _create_memory_summary(self, memories: List[Dict[str, Any]]) -> str:
+        """Create a concise summary of relevant memories."""
+        if not memories:
+            return ""
+        
+        memory_lines = []
+        for memory in memories[:5]:  # Limit to top 5 memories
+            content = memory.get('content', '')
+            actor = memory.get('actor', 'unknown')
+            timestamp = memory.get('timestamp', '')
+            
+            # Format timestamp for readability
+            try:
+                dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+                time_str = dt.strftime('%Y-%m-%d %H:%M')
+            except:
+                time_str = 'recent'
+            
+            # Truncate content if too long
+            if len(content) > 150:
+                content = content[:147] + '...'
+            
+            memory_line = f"[{time_str}] {actor}: {content}"
+            memory_lines.append(memory_line)
+        
+        return "\n".join(memory_lines)
+    
+    async def get_daily_reflection(self, target_date: Optional[str] = None) -> Dict[str, Any]:
+        """Get the daily reflection for a specific date."""
+        if not self.memory_enabled or not self.recall_engine:
+            return {'error': 'Memory system not available'}
+        
+        try:
+            from datetime import date
+            
+            if target_date:
+                reflection_date = date.fromisoformat(target_date)
+            else:
+                reflection_date = date.today()
+            
+            reflection = self.recall_engine.get_daily_reflection(reflection_date)
+            return reflection
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to get daily reflection: {e}")
+            return {'error': str(e)}
+    
+    async def search_memories(
+        self, 
+        query: str, 
+        limit: int = 10,
+        min_salience: Optional[float] = None
+    ) -> List[Dict[str, Any]]:
+        """Search memories by content or context."""
+        if not self.memory_enabled or not self.recall_engine:
+            return []
+        
+        try:
+            memories = await self.recall_engine.recall_memories_async(
+                query=query,
+                limit=limit,
+                min_salience=min_salience,
+                include_related=False
+            )
+            return memories
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to search memories: {e}")
+            return []
+    
+    def get_memory_statistics(self) -> Dict[str, Any]:
+        """Get memory system statistics."""
+        if not self.memory_enabled or not self.recall_engine:
+            return {'error': 'Memory system not available'}
+        
+        try:
+            stats = self.recall_engine.get_memory_statistics()
+            return stats
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to get memory statistics: {e}")
+            return {'error': str(e)}
+    
+    def close(self):
+        """Close the Dolphin interface and cleanup resources."""
+        try:
+            if self.memory_enabled and self.recall_engine:
+                self.recall_engine.close()
+                logger.info("🧠 Closed memory system")
+            
+            logger.info("🐬 Dolphin Interface closed")
+            
+        except Exception as e:
+            logger.error(f"❌ Error closing Dolphin interface: {e}")
     
     def get_conversation_summary(self) -> Dict[str, Any]:
         """Get a summary of the current conversation."""

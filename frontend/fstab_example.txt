@@ -1,6 +1,0 @@
-
-# Example NFS mount from GPU node (Node 2)
-# Add this to /etc/fstab on Node 1
-
-192.168.1.102:/mnt/media   /mnt/media   nfs   defaults   0 0
-192.168.1.102:/mnt/models  /mnt/models  nfs   defaults   0 0
