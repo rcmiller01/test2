@@ -1,1 +1,0 @@
-# STT Route Placeholder

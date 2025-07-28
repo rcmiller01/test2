@@ -1,1 +1,0 @@
-# Ritual Listener Placeholder
