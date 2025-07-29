@@ -25,20 +25,20 @@ export default function App() {
     const initializeApp = async () => {
       try {
         // Get system status
-        const statusRes = await axios.get('http://localhost:8000/api/status');
+        const statusRes = await axios.get('http://192.168.50.234:5000/api/status');
         setStatus(statusRes.data);
         
         // Get available handlers
-        const handlersRes = await axios.get('http://localhost:8000/api/handlers');
+        const handlersRes = await axios.get('http://192.168.50.234:5000/api/handlers');
         setHandlers(handlersRes.data.handlers);
         
         // Get available personas
-        const personasRes = await axios.get('http://localhost:8000/api/personas');
+        const personasRes = await axios.get('http://192.168.50.234:5000/api/personas');
         setPersonas(Object.entries(personasRes.data.personas));
         setCurrentPersona(personasRes.data.current_persona);
         
         // Get real-time analytics
-        const analyticsRes = await axios.get('http://localhost:8000/api/analytics/realtime');
+        const analyticsRes = await axios.get('http://192.168.50.234:5000/api/analytics/realtime');
         setAnalytics(analyticsRes.data);
         
       } catch (err) {
@@ -51,7 +51,7 @@ export default function App() {
     // Set up periodic status updates
     const interval = setInterval(async () => {
       try {
-        const analyticsRes = await axios.get('http://localhost:8000/api/analytics/realtime');
+        const analyticsRes = await axios.get('http://192.168.50.234:5000/api/analytics/realtime');
         setAnalytics(analyticsRes.data);
       } catch (err) {
         // Silently handle polling errors
@@ -63,7 +63,7 @@ export default function App() {
 
   const handlePersonaChange = async (personaId) => {
     try {
-      await axios.post(`http://localhost:8000/api/personas/${personaId}`);
+      await axios.post(`http://192.168.50.234:5000/api/personas/${personaId}`);
       setCurrentPersona(personaId);
       
       // Add system message about persona change
@@ -93,7 +93,7 @@ export default function App() {
     setMessages(prev => [...prev, userMessage]);
     
     try {
-      const res = await axios.post('http://localhost:8000/api/chat', {
+      const res = await axios.post('http://192.168.50.234:5000/api/chat', {
         message,
         session_id: sessionId,
         persona: currentPersona,
@@ -138,7 +138,7 @@ export default function App() {
     setError('');
     if (sessionId) {
       try {
-        await axios.delete(`http://localhost:8000/api/memory/session/${sessionId}`);
+        await axios.delete(`http://192.168.50.234:5000/api/memory/session/${sessionId}`);
         setSessionId(null);
       } catch (err) {
         console.error('Error clearing session:', err);
@@ -148,7 +148,7 @@ export default function App() {
 
   const flushMemory = async () => {
     try {
-      await axios.post('http://localhost:8000/api/memory/flush');
+      await axios.post('http://192.168.50.234:5000/api/memory/flush');
       setMessages(prev => [...prev, {
         role: 'system',
         content: '🧠 Short-term memory has been flushed',
@@ -162,7 +162,7 @@ export default function App() {
 
   const exportAnalytics = async () => {
     try {
-      const res = await axios.get('http://localhost:8000/api/logs/export');
+      const res = await axios.get('http://192.168.50.234:5000/api/logs/export');
       alert(`Analytics exported to: ${res.data.export_path}`);
     } catch (err) {
       setError('Failed to export analytics');

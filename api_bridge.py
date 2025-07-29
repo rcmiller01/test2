@@ -33,7 +33,7 @@ app = FastAPI(
 # Configure CORS for Core1 frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],  # React dev servers
+    allow_origins=["http://192.168.50.234:3000", "http://192.168.50.234:5173", "http://localhost:3000", "http://localhost:5173"],  # React dev servers
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

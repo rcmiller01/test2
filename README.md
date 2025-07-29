@@ -35,11 +35,11 @@ A sophisticated AI orchestration platform that intelligently routes conversation
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   React Frontend │────│  Node.js Proxy  │────│ Dolphin Backend │
-│                 │    │   (Port 5000)   │    │   (Port 8000)   │
-│  • Persona UI   │    │                 │    │                 │
-│  • Memory View  │    │  • Session Mgmt │    │ • AI Routing    │
-│  • Analytics    │    │  • API Proxy    │    │ • Memory Sys    │
-│  • Chat Interface│    │  • Health Check │    │ • Analytics     │
+│ (192.168.50.234)│    │ (192.168.50.234)│    │(192.168.50.159) │
+│  • Persona UI   │    │   (Port 5000)   │    │   (Port 8000)   │
+│  • Memory View  │    │                 │    │                 │
+│  • Analytics    │    │  • Session Mgmt │    │ • AI Routing    │
+│  • Chat Interface│    │  • API Proxy    │    │ • Memory Sys    │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
                                                         │
                                               ┌─────────┼─────────┐
@@ -77,13 +77,13 @@ Create `.env` file in the root directory:
 ```env
 # Dolphin Backend Configuration
 DOLPHIN_PORT=8000
-OLLAMA_URL=http://localhost:11434
+OLLAMA_URL=http://192.168.50.159:11434
 
 # Optional: Cloud AI Integration
 OPENROUTER_KEY=your_openrouter_key_here
 
 # Optional: n8n Integration
-N8N_URL=http://localhost:5678
+N8N_URL=http://192.168.50.159:5678
 ```
 
 ### 3. Start the System
@@ -107,10 +107,10 @@ npm run dev
 ```
 
 ### 4. Access the System
-- **Frontend UI**: http://localhost:3000 (or 5173 for Vite)
-- **API Gateway**: http://localhost:5000
-- **Dolphin Backend**: http://localhost:8000
-- **Health Check**: http://localhost:5000/health
+- **Frontend UI**: http://192.168.50.234:3000 (or 5173 for Vite)
+- **API Gateway**: http://192.168.50.234:5000
+- **Dolphin Backend**: http://192.168.50.159:8000
+- **Health Check**: http://192.168.50.234:5000/health
 ## 🎭 Using Personas
 
 ### Built-in Personas
@@ -259,7 +259,7 @@ POST /api/system/cleanup?days_to_keep=30
 ```env
 NODE_ENV=production
 DOLPHIN_PORT=8000
-OLLAMA_URL=http://localhost:11434
+OLLAMA_URL=http://192.168.50.159:11434
 OPENROUTER_KEY=sk-or-v1-your-production-key
 LOG_LEVEL=INFO
 ```
@@ -287,17 +287,17 @@ LOG_LEVEL=INFO
 # Check Python dependencies
 pip install -r requirements.txt
 
-# Verify Ollama is running
-curl http://localhost:11434/api/tags
+# Verify Ollama is running on core2
+curl http://192.168.50.159:11434/api/tags
 ```
 
 **Frontend connection errors:**
 ```bash
-# Check backend status
-curl http://localhost:8000/api/status
+# Check backend status on core2
+curl http://192.168.50.159:8000/api/status
 
-# Verify Node.js server
-curl http://localhost:5000/health
+# Verify Node.js server on core1
+curl http://192.168.50.234:5000/health
 ```
 
 **Memory/Analytics issues:**
