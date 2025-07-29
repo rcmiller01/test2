@@ -958,6 +958,331 @@ async def get_autopilot_integration_status():
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Failed to get integration status: {str(e)}")
 
+# Quantization Control Endpoints - Frontend Integration
+@app.post("/api/quantization/start")
+async def start_quant_loop():
+    """Start quantization loop via bootloader (Frontend control)"""
+    try:
+        import subprocess
+        import os
+        from datetime import datetime
+        
+        # Get bootloader path from environment or use default
+        bootloader_path = os.getenv('QUANT_BOOTLOADER_PATH', 'autopilot_bootloader.py')
+        
+        # Check if bootloader is already running
+        result = subprocess.run([
+            "python", bootloader_path, "--status"
+        ], capture_output=True, text=True, timeout=10)
+        
+        if result.returncode == 0:
+            import json
+            lines = result.stdout.strip().split('\n')
+            json_lines = [line for line in lines if line.startswith('{')]
+            if json_lines:
+                status_data = json.loads(json_lines[-1])
+                bootloader_running = status_data.get('bootloader', {}).get('running', False)
+                autopilot_running = status_data.get('autopilot', {}).get('running', False)
+                
+                if autopilot_running:
+                    # Log the manual trigger attempt
+                    if orchestrator.analytics_logger:
+                        orchestrator.analytics_logger.log_custom_event("Quant Loop", {
+                            "initiated_by": "manual/api",
+                            "time": datetime.now().isoformat(),
+                            "status": "already_running",
+                            "trigger_source": "frontend"
+                        })
+                    return {
+                        "status": "already_running",
+                        "message": "Quantization loop is already running",
+                        "bootloader_running": bootloader_running,
+                        "autopilot_running": autopilot_running
+                    }
+        
+        # Start the bootloader with immediate launch
+        process = subprocess.Popen([
+            "python", bootloader_path, "--launch-now"
+        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.DEVNULL)
+        
+        # Log the successful trigger
+        if orchestrator.analytics_logger:
+            orchestrator.analytics_logger.log_custom_event("Quant Loop", {
+                "initiated_by": "manual/api",
+                "time": datetime.now().isoformat(),
+                "status": "started",
+                "trigger_source": "frontend",
+                "bootloader_path": bootloader_path,
+                "process_id": process.pid
+            })
+        
+        return {
+            "status": "started",
+            "message": "Quantization loop started successfully",
+            "bootloader_pid": process.pid,
+            "trigger_time": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        # Log the error
+        if orchestrator.analytics_logger:
+            orchestrator.analytics_logger.log_custom_event("Quant Loop", {
+                "initiated_by": "manual/api",
+                "time": datetime.now().isoformat(),
+                "status": "error",
+                "trigger_source": "frontend",
+                "error": str(e)
+            })
+        
+        raise HTTPException(status_code=500, detail=f"Failed to start quantization loop: {str(e)}")
+
+@app.get("/api/quantization/status")
+async def quant_status():
+    """Get current quantization loop status"""
+    try:
+        import subprocess
+        import json
+        import os
+        from pathlib import Path
+        
+        bootloader_path = os.getenv('QUANT_BOOTLOADER_PATH', 'autopilot_bootloader.py')
+        
+        # Get bootloader status
+        result = subprocess.run([
+            "python", bootloader_path, "--status"
+        ], capture_output=True, text=True, timeout=30)
+        
+        status_response = {
+            "timestamp": datetime.now().isoformat(),
+            "bootloader_available": result.returncode == 0,
+            "quantization_running": False,
+            "bootloader_running": False,
+            "system_metrics": {},
+            "last_log_entries": [],
+            "error": None
+        }
+        
+        if result.returncode == 0:
+            # Parse bootloader status - reconstruct JSON from multiple lines
+            lines = result.stdout.strip().split('\n')
+            
+            # Find the start and end of JSON block
+            json_start = -1
+            json_end = -1
+            for i, line in enumerate(lines):
+                if line.strip() == '{':
+                    json_start = i
+                elif line.strip() == '}' and json_start != -1:
+                    json_end = i
+                    break
+            
+            if json_start != -1 and json_end != -1:
+                try:
+                    # Reconstruct the JSON from multiple lines
+                    json_lines = lines[json_start:json_end+1]
+                    json_string = '\n'.join(json_lines)
+                    
+                    print(f"DEBUG: Reconstructed JSON: {json_string[:200]}...")
+                    
+                    status_data = json.loads(json_string)
+                    
+                    status_response.update({
+                        "quantization_running": status_data.get('autopilot', {}).get('running', False),
+                        "bootloader_running": status_data.get('bootloader', {}).get('running', False),
+                        "system_metrics": status_data.get('system', {}),
+                        "bootloader_info": status_data.get('bootloader', {}),
+                        "conditions": status_data.get('conditions', {})
+                    })
+                except json.JSONDecodeError as e:
+                    print(f"DEBUG: JSON parsing error: {str(e)}")
+                    print(f"DEBUG: Trying to parse: {json_string}")
+                    status_response["error"] = f"JSON parsing error: {str(e)}"
+            else:
+                print(f"DEBUG: Could not find complete JSON block in output")
+                print(f"DEBUG: Lines: {lines}")
+                status_response["error"] = "Could not find complete JSON block in bootloader output"
+        else:
+            status_response["error"] = result.stderr
+        
+        # Get recent log entries from bootloader log
+        try:
+            log_file = Path("bootloader.log")
+            if log_file.exists():
+                with open(log_file, 'r', encoding='utf-8', errors='ignore') as f:
+                    lines = f.readlines()
+                    # Get last 5 log entries
+                    recent_lines = [line.strip() for line in lines[-5:] if line.strip()]
+                    status_response["last_log_entries"] = recent_lines
+        except Exception:
+            pass  # Ignore log reading errors
+        
+        # Get autopilot integration status
+        try:
+            integration_result = subprocess.run([
+                "python", "emotion_quant_autopilot/quant_autopilot.py",
+                "--config", "emotion_quant_autopilot/autopilot_config.json",
+                "integration"
+            ], capture_output=True, text=True, timeout=15)
+            
+            if integration_result.returncode == 0:
+                status_response["integration_status"] = "available"
+                if "fully_integrated" in integration_result.stdout.lower():
+                    status_response["integration_level"] = "full"
+                elif "[ok]" in integration_result.stdout.lower():
+                    status_response["integration_level"] = "partial"
+                else:
+                    status_response["integration_level"] = "basic"
+            else:
+                status_response["integration_status"] = "error"
+                status_response["integration_error"] = integration_result.stderr
+                
+        except Exception as e:
+            status_response["integration_status"] = "unavailable"
+            status_response["integration_error"] = str(e)
+        
+        return status_response
+        
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Failed to get quantization status: {str(e)}")
+
+@app.post("/api/quantization/stop")
+async def stop_quant_loop():
+    """Stop quantization loop"""
+    try:
+        import subprocess
+        import os
+        from datetime import datetime
+        
+        bootloader_path = os.getenv('QUANT_BOOTLOADER_PATH', 'autopilot_bootloader.py')
+        
+        # Stop the bootloader and any running autopilot processes
+        result = subprocess.run([
+            "python", bootloader_path, "--stop"
+        ], capture_output=True, text=True, timeout=30)
+        
+        # Log the stop action
+        if orchestrator.analytics_logger:
+            orchestrator.analytics_logger.log_custom_event("Quant Loop", {
+                "initiated_by": "manual/api",
+                "time": datetime.now().isoformat(),
+                "status": "stopped",
+                "trigger_source": "frontend",
+                "stop_output": result.stdout
+            })
+        
+        return {
+            "status": "stopped",
+            "message": "Quantization loop stop command sent",
+            "output": result.stdout,
+            "stop_time": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        # Log the error
+        if orchestrator.analytics_logger:
+            orchestrator.analytics_logger.log_custom_event("Quant Loop", {
+                "initiated_by": "manual/api", 
+                "time": datetime.now().isoformat(),
+                "status": "stop_error",
+                "trigger_source": "frontend",
+                "error": str(e)
+            })
+        
+        raise HTTPException(status_code=500, detail=f"Failed to stop quantization loop: {str(e)}")
+
+@app.get("/api/quantization/history")
+async def quant_history(limit: Optional[int] = 50):
+    """Get quantization loop history and performance metrics"""
+    try:
+        from quant_tracking import load_results, get_performance_summary
+        
+        # Load recent results
+        results = load_results(limit=limit)
+        
+        # Get performance summary
+        summary = get_performance_summary()
+        
+        # Convert results to JSON-serializable format
+        history_data = []
+        for result in results:
+            data = result.dict()
+            data['timestamp'] = result.timestamp.isoformat()
+            history_data.append(data)
+        
+        return {
+            "summary": summary,
+            "history": history_data,
+            "total_results": len(history_data),
+            "tracking_enabled": True
+        }
+        
+    except ImportError:
+        raise HTTPException(
+            status_code=503, 
+            detail="Quantization tracking module not available. Please install dependencies."
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Failed to load quantization history: {str(e)}"
+        )
+
+@app.get("/api/quantization/performance")
+async def quant_performance():
+    """Get detailed quantization performance analytics"""
+    try:
+        from quant_tracking import get_performance_summary, get_tracker
+        
+        tracker = get_tracker()
+        summary = get_performance_summary()
+        
+        # Get additional analytics
+        recent_results = tracker.load_results(limit=20)
+        
+        # Calculate trend analysis
+        if len(recent_results) >= 10:
+            recent_scores = [r.emotional_score for r in recent_results[-10:]]
+            older_scores = [r.emotional_score for r in recent_results[-20:-10]]
+            
+            recent_avg = sum(recent_scores) / len(recent_scores)
+            older_avg = sum(older_scores) / len(older_scores)
+            trend_change = ((recent_avg - older_avg) / older_avg) * 100 if older_avg > 0 else 0
+            
+            summary["trend_analysis"] = {
+                "recent_average": recent_avg,
+                "previous_average": older_avg,
+                "percent_change": trend_change,
+                "trend_direction": "improving" if trend_change > 5 else "declining" if trend_change < -5 else "stable"
+            }
+        
+        # Model quality distribution
+        if recent_results:
+            quality_buckets = {"excellent": 0, "good": 0, "fair": 0, "poor": 0}
+            for result in recent_results:
+                if result.emotional_score >= 0.9:
+                    quality_buckets["excellent"] += 1
+                elif result.emotional_score >= 0.8:
+                    quality_buckets["good"] += 1
+                elif result.emotional_score >= 0.6:
+                    quality_buckets["fair"] += 1
+                else:
+                    quality_buckets["poor"] += 1
+            
+            summary["quality_distribution"] = quality_buckets
+        
+        return summary
+        
+    except ImportError:
+        raise HTTPException(
+            status_code=503, 
+            detail="Quantization tracking module not available"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Failed to get performance analytics: {str(e)}"
+        )
+
 # Connectivity Management Endpoints
 @app.get("/api/connectivity/status")
 async def get_connectivity_status():

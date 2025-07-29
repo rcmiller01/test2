@@ -4,6 +4,8 @@ Periodically reviews session history and generates symbolic/semantic summaries
 with self-reflection capabilities for the Dolphin AI Orchestrator v2.0
 """
 
+from __future__ import annotations
+
 import asyncio
 import json
 import time
@@ -466,7 +468,6 @@ def initialize_reflection_engine(memory_system, analytics_logger):
 # ----------------------------
 # Memory Pattern Reflection Engine
 # ----------------------------
-from __future__ import annotations
 import hashlib
 import pandas as pd
 from textblob import TextBlob

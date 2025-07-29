@@ -18,6 +18,17 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, asdict
 
+# Import quantization tracking
+try:
+    from quant_tracking import (
+        QuantLoopResult, save_loop_result, 
+        eval_emotion, eval_fluency, get_tracker
+    )
+    TRACKING_AVAILABLE = True
+except ImportError as e:
+    logging.warning(f"Quantization tracking not available: {e}")
+    TRACKING_AVAILABLE = False
+
 # Fix Windows console encoding
 if sys.platform == 'win32':
     try:
@@ -299,7 +310,7 @@ class AutopilotBootloader:
         return False
     
     def launch_autopilot(self) -> bool:
-        """Launch the quantization autopilot"""
+        """Launch the quantization autopilot with tracking"""
         try:
             autopilot_script = self.config.get('autopilot_script_path', 'emotion_quant_autopilot/quant_autopilot.py')
             autopilot_config = self.config.get('autopilot_config_path', 'emotion_quant_autopilot/autopilot_config.json')
@@ -312,6 +323,10 @@ class AutopilotBootloader:
                 self.logger.error(f"Autopilot config not found: {autopilot_config}")
                 return False
             
+            # Generate unique loop ID for tracking
+            loop_start_time = datetime.now()
+            loop_id = f"loop_{loop_start_time.strftime('%Y%m%d_%H%M%S')}_{self.launch_count + 1}"
+            
             # Launch autopilot as background process
             cmd = [
                 sys.executable, autopilot_script,
@@ -319,7 +334,10 @@ class AutopilotBootloader:
                 'start'
             ]
             
-            self.logger.info(f"Launching autopilot: {' '.join(cmd)}")
+            self.logger.info(f"Launching autopilot: {' '.join(cmd)} (Loop ID: {loop_id})")
+            
+            # Start system monitoring for this loop
+            start_metrics = self.get_system_metrics()
             
             self.autopilot_process = subprocess.Popen(
                 cmd,
@@ -332,6 +350,16 @@ class AutopilotBootloader:
             self.logger.info(f"Autopilot launched successfully (PID: {self.autopilot_process.pid})")
             self.logger.info(f"Total launches: {self.launch_count}")
             
+            # Start background thread to monitor and track this quantization loop
+            if TRACKING_AVAILABLE:
+                tracking_thread = threading.Thread(
+                    target=self._track_quantization_loop,
+                    args=(loop_id, loop_start_time, start_metrics),
+                    daemon=True
+                )
+                tracking_thread.start()
+                self.logger.info(f"Started tracking thread for loop {loop_id}")
+            
             return True
             
         except Exception as e:
@@ -339,6 +367,126 @@ class AutopilotBootloader:
             self.last_error = str(e)
             self.logger.error(f"Failed to launch autopilot: {e}")
             return False
+    
+    def _track_quantization_loop(self, loop_id: str, start_time: datetime, start_metrics: SystemMetrics):
+        """Track a quantization loop and record results"""
+        if not TRACKING_AVAILABLE:
+            return
+        
+        try:
+            self.logger.info(f"Tracking quantization loop {loop_id}")
+            
+            # Wait for the autopilot process to complete
+            error_count = 0
+            peak_memory = start_metrics.memory_percent
+            cpu_samples = [start_metrics.cpu_percent]
+            
+            while self.autopilot_process and self.autopilot_process.poll() is None:
+                time.sleep(30)  # Check every 30 seconds
+                
+                try:
+                    current_metrics = self.get_system_metrics()
+                    peak_memory = max(peak_memory, current_metrics.memory_percent)
+                    cpu_samples.append(current_metrics.cpu_percent)
+                except Exception as e:
+                    error_count += 1
+                    self.logger.warning(f"Error getting metrics during tracking: {e}")
+            
+            # Process completed, calculate duration
+            end_time = datetime.now()
+            duration_seconds = (end_time - start_time).total_seconds()
+            
+            # Get process exit code
+            exit_code = self.autopilot_process.returncode if self.autopilot_process else -1
+            
+            self.logger.info(f"Loop {loop_id} completed in {duration_seconds:.1f}s with exit code {exit_code}")
+            
+            # Look for generated model files to evaluate
+            model_path = self._find_latest_model_file()
+            model_name = f"autopilot-{loop_id}"
+            
+            # Evaluate model quality if model file found
+            emotional_score = 0.5  # Default fallback
+            token_quality = 0.5    # Default fallback
+            size_mb = 0.0
+            
+            if model_path and Path(model_path).exists():
+                self.logger.info(f"Evaluating model: {model_path}")
+                emotional_score = eval_emotion(model_path)
+                token_quality = eval_fluency(model_path)
+                size_mb = Path(model_path).stat().st_size / (1024 * 1024)  # Convert to MB
+                model_name = Path(model_path).stem
+            else:
+                self.logger.warning(f"No model file found for loop {loop_id}")
+                error_count += 1
+            
+            # Determine if loop passed quality thresholds
+            tracker = get_tracker()
+            passed_threshold = tracker.should_accept_loop(emotional_score, token_quality)
+            
+            # Create and save tracking result
+            result = QuantLoopResult(
+                loop_id=loop_id,
+                model_name=model_name,
+                quant_format="q4_K_M",  # Default format, could be configurable
+                size_mb=size_mb,
+                emotional_score=emotional_score,
+                token_quality=token_quality,
+                passed_threshold=passed_threshold,
+                timestamp=start_time,
+                duration_seconds=duration_seconds,
+                error_count=error_count,
+                memory_peak_mb=peak_memory,
+                cpu_avg_percent=sum(cpu_samples) / len(cpu_samples) if cpu_samples else 0,
+                sentiment_variance=abs(emotional_score - 0.7) if emotional_score > 0 else 0,
+                coherence_score=token_quality * 0.9,  # Approximation based on token quality
+                creativity_index=min(0.95, emotional_score * 1.1)  # Creativity correlates with emotion
+            )
+            
+            # Save the result
+            success = save_loop_result(result)
+            
+            if success:
+                self.logger.info(
+                    f"Saved tracking result for {loop_id}: "
+                    f"emotional={emotional_score:.3f}, token={token_quality:.3f}, "
+                    f"passed={passed_threshold}, duration={duration_seconds:.1f}s"
+                )
+            else:
+                self.logger.error(f"Failed to save tracking result for {loop_id}")
+                
+        except Exception as e:
+            self.logger.error(f"Error tracking quantization loop {loop_id}: {e}")
+    
+    def _find_latest_model_file(self) -> Optional[str]:
+        """Find the most recently created model file"""
+        try:
+            # Common model file patterns and locations
+            search_patterns = [
+                "*.gguf",
+                "*.bin", 
+                "*.safetensors",
+                "models/*.gguf",
+                "output/*.gguf",
+                "emotion_quant_autopilot/*.gguf"
+            ]
+            
+            latest_file = None
+            latest_time = 0
+            
+            for pattern in search_patterns:
+                for model_file in Path('.').glob(pattern):
+                    if model_file.is_file():
+                        mtime = model_file.stat().st_mtime
+                        if mtime > latest_time:
+                            latest_time = mtime
+                            latest_file = str(model_file)
+            
+            return latest_file
+            
+        except Exception as e:
+            self.logger.warning(f"Error finding model files: {e}")
+            return None
     
     def update_status(self, metrics: SystemMetrics):
         """Update bootloader status file"""
