@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, Optional, List, Tuple
 from pathlib import Path
 import hashlib
+import os
 import re
 from collections import defaultdict
 
@@ -35,6 +36,10 @@ class MemorySystem:
         self.short_term_memory = self._load_short_term()
         self.long_term_memory = self._load_long_term()
         self.current_session_id = None
+
+        allowed = os.getenv("ALLOWED_PERSONAS", "")
+        self.authorized_personas = [p.strip().lower() for p in allowed.split(',') if p.strip()]
+        self.persona_token = os.getenv("PERSONA_TOKEN", "")
         
         # Sentiment keywords for basic analysis
         self.positive_keywords = {
@@ -48,8 +53,16 @@ class MemorySystem:
             'worried', 'anxious', 'stressed', 'terrible', 'awful', 'bad',
             'horrible', 'hate', 'disgusted', 'depressed', 'lonely', 'scared'
         }
-        
+
         logger.info("🧠 Memory System initialized")
+
+    def _is_authorized(self, persona: Optional[str], token: Optional[str]) -> bool:
+        """Check if a persona is authorized to access memory"""
+        if token and token == self.persona_token:
+            return True
+        if persona:
+            return persona.lower() in self.authorized_personas
+        return False
     
     def _load_short_term(self) -> Dict[str, Any]:
         """Load short-term memory from file"""
@@ -131,9 +144,14 @@ class MemorySystem:
         logger.info(f"New session created: {session_id}")
         return session_id
     
-    def add_message(self, session_id: str, message: str, role: str, 
-                   handler: Optional[str] = None, metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def add_message(self, session_id: str, message: str, role: str,
+                   handler: Optional[str] = None, metadata: Optional[Dict[str, Any]] = None,
+                   persona: Optional[str] = None, persona_token: Optional[str] = None) -> Dict[str, Any]:
         """Add a message to session memory with sentiment analysis"""
+
+        if not self._is_authorized(persona, persona_token):
+            logger.warning("Unauthorized memory write attempt")
+            return {}
         
         # Ensure session exists
         if session_id not in self.short_term_memory["active_sessions"]:
@@ -231,8 +249,13 @@ class MemorySystem:
         
         self._save_long_term()
     
-    def get_session_context(self, session_id: str, last_n_messages: int = 10) -> Dict[str, Any]:
+    def get_session_context(self, session_id: str, last_n_messages: int = 10,
+                            persona: Optional[str] = None, persona_token: Optional[str] = None) -> Dict[str, Any]:
         """Get recent context for a session"""
+
+        if not self._is_authorized(persona, persona_token):
+            logger.warning("Unauthorized memory read attempt")
+            return {"messages": [], "context": {}, "sentiment_trend": 0.0}
         if session_id not in self.short_term_memory["active_sessions"]:
             return {"messages": [], "context": {}, "sentiment_trend": 0.0}
         

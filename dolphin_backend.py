@@ -29,6 +29,7 @@ from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from persona_filter import apply_persona_filter
 
 # Load environment variables from .env file
 try:
@@ -210,7 +211,7 @@ class DolphinOrchestrator:
             # Return primary model as last resort (will fail if not available)
             return self.primary_model
     
-    async def process_chat_request(self, request: ChatRequest) -> ChatResponse:
+    async def process_chat_request(self, request: ChatRequest, persona_token: Optional[str] = None) -> ChatResponse:
         """
         Enhanced chat processing with personality, memory, and analytics
         """
@@ -228,7 +229,9 @@ class DolphinOrchestrator:
             session_id = request.session_id or self.memory_system.create_session()
             
             # Get session context
-            session_context = self.memory_system.get_session_context(session_id)
+            session_context = self.memory_system.get_session_context(
+                session_id, persona=current_persona["name"], persona_token=persona_token
+            )
             
             # Enhance context with memory
             enhanced_context = {
@@ -261,17 +264,22 @@ class DolphinOrchestrator:
                 response_text = await self.handle_kimi_fallback(formatted_message, enhanced_context)
             else:  # DOLPHIN
                 response_text = await self.handle_dolphin_request(formatted_message, enhanced_context)
+
+            # Apply unified persona filter
+            response_text = apply_persona_filter(response_text, current_persona["name"])
             
             # Add messages to memory
             self.memory_system.add_message(
-                session_id, request.message, "user", 
-                metadata={"persona": current_persona["name"], "request_id": request_id}
+                session_id, request.message, "user",
+                metadata={"persona": current_persona["name"], "request_id": request_id},
+                persona=current_persona["name"], persona_token=persona_token
             )
             
             self.memory_system.add_message(
-                session_id, response_text, "assistant", 
-                handler=route["handler"], 
-                metadata={"reasoning": route["reasoning"], "request_id": request_id}
+                session_id, response_text, "assistant",
+                handler=route["handler"],
+                metadata={"reasoning": route["reasoning"], "request_id": request_id},
+                persona=current_persona["name"], persona_token=persona_token
             )
             
             # Calculate performance metrics
@@ -487,9 +495,10 @@ orchestrator = DolphinOrchestrator()
 
 # Enhanced API endpoints
 @app.post("/api/chat", response_model=ChatResponse)
-async def chat_endpoint(request: ChatRequest):
+async def chat_endpoint(req: Request, chat: ChatRequest):
     """Enhanced chat endpoint with personality, memory, and analytics"""
-    return await orchestrator.process_chat_request(request)
+    token = req.headers.get("persona-token")
+    return await orchestrator.process_chat_request(chat, persona_token=token)
 
 @app.get("/api/status")
 async def status_endpoint():
