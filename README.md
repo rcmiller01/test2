@@ -35,7 +35,7 @@ A sophisticated AI orchestration platform that intelligently routes conversation
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   React Frontend │────│  Node.js Proxy  │────│ Dolphin Backend │
-│ (192.168.50.234)│    │ (192.168.50.234)│    │(192.168.50.159) │
+│   (localhost)   │    │   (localhost)   │    │   (localhost)   │
 │  • Persona UI   │    │   (Port 5000)   │    │   (Port 8000)   │
 │  • Memory View  │    │                 │    │                 │
 │  • Analytics    │    │  • Session Mgmt │    │ • AI Routing    │
@@ -77,13 +77,15 @@ Create `.env` file in the root directory:
 ```env
 # Dolphin Backend Configuration
 DOLPHIN_PORT=8000
-OLLAMA_URL=http://192.168.50.159:11434
+OLLAMA_URL=http://localhost:11434
 
 # Optional: Cloud AI Integration
 OPENROUTER_KEY=your_openrouter_key_here
 
 # Optional: n8n Integration
+
 N8N_URL=http://192.168.50.159:5678
+
 # Frontend Gateway URL
 VITE_GATEWAY_URL=http://localhost:5000
 # Allowed Origins for Gateway
@@ -113,7 +115,9 @@ npm run dev
 ### 4. Access the System
 - **Frontend UI**: http://localhost:3000 (or 5173 for Vite)
 - **API Gateway**: `http://localhost:5000` (configurable via `VITE_GATEWAY_URL`)
+
 - **Dolphin Backend**: http://192.168.50.159:8000
+
 - **Health Check**: `http://localhost:5000/health`
 ## 🎭 Using Personas
 
@@ -263,7 +267,7 @@ POST /api/system/cleanup?days_to_keep=30
 ```env
 NODE_ENV=production
 DOLPHIN_PORT=8000
-OLLAMA_URL=http://192.168.50.159:11434
+OLLAMA_URL=http://localhost:11434
 OPENROUTER_KEY=sk-or-v1-your-production-key
 LOG_LEVEL=INFO
 ```
@@ -282,7 +286,7 @@ LOG_LEVEL=INFO
 - Set up monitoring with Prometheus/Grafana
 - Use a reverse proxy like Nginx
 
-## � Troubleshooting
+## 🛠️ Troubleshooting
 
 ### Common Issues
 
@@ -292,16 +296,16 @@ LOG_LEVEL=INFO
 pip install -r requirements.txt
 
 # Verify Ollama is running on core2
-curl http://192.168.50.159:11434/api/tags
+curl http://localhost:11434/api/tags
 ```
 
 **Frontend connection errors:**
 ```bash
 # Check backend status on core2
-curl http://192.168.50.159:8000/api/status
+curl http://localhost:8000/api/status
 
 # Verify Node.js server on core1
-curl http://192.168.50.234:5000/health
+curl http://localhost:5000/health
 ```
 
 **Memory/Analytics issues:**
@@ -320,7 +324,7 @@ export LOG_LEVEL=DEBUG
 python dolphin_backend.py
 ```
 
-## � Contributing
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -335,7 +339,7 @@ python dolphin_backend.py
 - Update documentation for API changes
 - Ensure backward compatibility
 
-## � License
+## 📜 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
