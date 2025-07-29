@@ -462,3 +462,112 @@ def initialize_reflection_engine(memory_system, analytics_logger):
     global reflection_engine
     reflection_engine = ReflectionEngine(memory_system, analytics_logger)
     return reflection_engine
+
+# ----------------------------
+# Memory Pattern Reflection Engine
+# ----------------------------
+from __future__ import annotations
+import hashlib
+import pandas as pd
+from textblob import TextBlob
+try:
+    import nltk
+    from nltk.sentiment import SentimentIntensityAnalyzer
+    _nltk_available = True
+except Exception:
+    _nltk_available = False
+
+from insight_schema import Insight
+import pattern_utils
+
+class MemoryPatternReflectionEngine:
+    """Engine that analyzes stored memories during idle cycles."""
+
+    def __init__(self, memory_system, insight_logger=None, persona_instruction_manager=None, sentiment_analysis=None):
+        self.memory_system = memory_system
+        self.insight_logger = insight_logger
+        self.persona_instruction_manager = persona_instruction_manager
+        self.sentiment_analysis = sentiment_analysis
+        self.last_batch_hash = None
+        self._stop = False
+        self._sia = SentimentIntensityAnalyzer() if _nltk_available else None
+
+    def stop(self):
+        self._stop = True
+
+    def _hash_batch(self, memories: list) -> str:
+        ids = [m.get('id') or m.get('memory_id') for m in memories]
+        return hashlib.md5(json.dumps(ids, sort_keys=True).encode()).hexdigest()
+
+    def _get_emotion(self, text: str) -> Dict[str, float]:
+        if self.sentiment_analysis and hasattr(self.sentiment_analysis, 'get_emotion_vector'):
+            return self.sentiment_analysis.get_emotion_vector(text)
+        blob = TextBlob(text)
+        valence = float(blob.sentiment.polarity)
+        arousal = self._sia.polarity_scores(text)['compound'] if self._sia else 0.0
+        return {'valence': valence, 'arousal': arousal}
+
+    def run_reflection(self, n: int = 200) -> List[Insight]:
+        if self._stop:
+            return []
+        memories = self.memory_system.get_recent_memories(n=n, filter='salient')
+        if not memories:
+            return []
+        batch_hash = self._hash_batch(memories)
+        if batch_hash == self.last_batch_hash:
+            print(f"[ReflectionEngine] Skipping reflection for unchanged batch {batch_hash}")
+            return []
+        self.last_batch_hash = batch_hash
+
+        df = pd.DataFrame(memories)
+        if 'text' not in df.columns:
+            df['text'] = df.get('content', '')
+        df['emotion'] = df['text'].apply(self._get_emotion)
+        df['valence'] = df['emotion'].apply(lambda e: e['valence'])
+        df['arousal'] = df['emotion'].apply(lambda e: e['arousal'])
+
+        grouped = pattern_utils.group_memories(df.to_dict('records'), ['context', 'tone'])
+        insights: List[Insight] = []
+
+        for group_key, group_df in grouped.items():
+            avg_valence = group_df['valence'].mean()
+            avg_arousal = group_df['arousal'].mean()
+            if len(group_df) < 4:
+                continue
+            insight_type = 'positive_pattern' if avg_valence > 0.3 else 'negative_pattern' if avg_valence < -0.3 else 'neutral_pattern'
+            if insight_type == 'negative_pattern' and len(group_df) >= 5:
+                insight_type = 'emotional_fatigue'
+            intensity = min(abs(avg_valence), 1.0)
+            insight = Insight(
+                type=insight_type,
+                context=str(group_key),
+                emotion_vector={'valence': avg_valence, 'arousal': avg_arousal},
+                details=f'{len(group_df)} related memories',
+                intensity=float(intensity)
+            )
+            insights.append(insight)
+
+        # Emotional shift over time
+        smoothed = pattern_utils.smooth_series(df['valence'], window=5)
+        shift = pattern_utils.emotional_shift(list(smoothed))
+        if abs(shift) > 0.5:
+            shift_type = 'positive_shift' if shift > 0 else 'negative_shift'
+            insights.append(
+                Insight(
+                    type=shift_type,
+                    context='overall',
+                    emotion_vector={'valence': shift, 'arousal': 0.0},
+                    details='Emotion trend over recent memories',
+                    intensity=abs(shift)
+                )
+            )
+
+        # Log and propagate
+        for ins in insights:
+            if self.insight_logger:
+                self.insight_logger.save(ins)
+            if self.persona_instruction_manager and ins.intensity > 0.8:
+                self.persona_instruction_manager.evolve_persona(ins)
+
+        print(f"[ReflectionEngine] Batch {batch_hash} produced {len(insights)} insights")
+        return insights
