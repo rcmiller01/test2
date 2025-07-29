@@ -28,7 +28,7 @@ from typing import Dict, Any, Optional, List
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from persona_filter import apply_persona_filter
 
 # Load environment variables from .env file
@@ -92,6 +92,18 @@ class ChatResponse(BaseModel):
     session_id: str
     persona_used: str
     judgment: Optional[Dict[str, Any]] = None
+
+class PreferenceVoteSchema(BaseModel):
+    prompt: str
+    response_a: str
+    response_b: str
+    winner: str
+
+    @validator('winner')
+    def validate_winner(cls, v):
+        if v not in ('a', 'b'):
+            raise ValueError("winner must be 'a' or 'b'")
+        return v
 
 class TaskRoute(BaseModel):
     task_type: str
@@ -705,6 +717,20 @@ async def export_analytics():
     """Export comprehensive analytics"""
     export_path = orchestrator.analytics_logger.export_analytics()
     return {"export_path": export_path}
+
+# Emotion Eval Mode - preference voting endpoint
+@app.post("/api/vote_preference")
+async def vote_preference(vote: PreferenceVoteSchema):
+    """Record a user preference vote between two responses."""
+    vote_data = vote.dict()
+    vote_data["timestamp"] = datetime.now().isoformat()
+    try:
+        stats = orchestrator.analytics_logger.log_preference_vote(vote_data)
+        logger.info(f"Preference vote recorded: winner {vote.winner}")
+        return {"success": True, "stats": stats}
+    except Exception as e:
+        logger.error(f"Failed to record preference vote: {e}")
+        raise HTTPException(status_code=500, detail="Failed to record vote")
 
 # System Management Endpoints
 @app.post("/api/system/cleanup")
