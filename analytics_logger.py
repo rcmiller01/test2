@@ -31,6 +31,7 @@ class AnalyticsLogger:
         self.analytics_file = self.logs_dir / "analytics_summary.json"
         self.route_map_file = self.logs_dir / "routing_map.jsonl"
         self.custom_events_file = self.logs_dir / "custom_events.jsonl"
+        self.preference_votes_file = self.logs_dir / "emotion_votes.jsonl"
         
         # In-memory buffers for real-time analytics
         self.recent_requests = deque(maxlen=1000)  # Last 1000 requests
@@ -49,6 +50,9 @@ class AnalyticsLogger:
             "avg_sentiment": 0.0,
             "error_rate": 0.0
         })
+
+        # Preference vote tracking
+        self.vote_counts = {"a": 0, "b": 0, "total": 0}
         
         logger.info("📊 Analytics Logger initialized")
     
@@ -172,6 +176,26 @@ class AnalyticsLogger:
         }
         self._append_to_jsonl(self.custom_events_file, entry)
         return entry
+
+    def log_preference_vote(self, vote: Dict[str, Any]) -> Dict[str, Any]:
+        """Record an Emotion Eval preference vote."""
+        self._append_to_jsonl(self.preference_votes_file, vote)
+        winner = vote.get("winner")
+        if winner in ("a", "b"):
+            self.vote_counts[winner] += 1
+            self.vote_counts["total"] += 1
+        return self.get_preference_stats()
+
+    def get_preference_stats(self) -> Dict[str, Any]:
+        """Get current preference vote statistics."""
+        total = self.vote_counts["total"]
+        return {
+            "total": total,
+            "a_wins": self.vote_counts["a"],
+            "b_wins": self.vote_counts["b"],
+            "a_percent": round(self.vote_counts["a"] / total * 100, 2) if total else 0.0,
+            "b_percent": round(self.vote_counts["b"] / total * 100, 2) if total else 0.0,
+        }
     
     def get_real_time_stats(self) -> Dict[str, Any]:
         """Get real-time analytics summary"""

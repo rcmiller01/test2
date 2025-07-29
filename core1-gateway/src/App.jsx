@@ -3,7 +3,9 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import ComparisonVote from './ComparisonVote.jsx';
+
+import EmotionEval from './EmotionEval.jsx';
+
 
 const API_BASE = import.meta.env.VITE_GATEWAY_URL || 'http://localhost:5000';
 
@@ -339,6 +341,13 @@ export default function App() {
             </div>
           </div>
         )}
+
+        {/* Emotion Evaluation Example */}
+        <EmotionEval
+          prompt="How do you comfort someone who's grieving?"
+          responseA="I'm here. Not to fix the pain, but to sit with you in it."
+          responseB="You shouldn't be sad. Everything happens for a reason."
+        />
 
         {/* Chat Messages */}
         <div className="bg-gray-800 rounded-lg p-4 h-96 overflow-y-auto mb-4 space-y-3">
