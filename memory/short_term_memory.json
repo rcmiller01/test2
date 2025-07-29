@@ -1,0 +1,67 @@
+{
+  "active_sessions": {
+    "test_qa_session": {
+      "session_id": "test_qa_session",
+      "created_at": "2025-07-28T21:36:01.298914",
+      "messages": [
+        {
+          "timestamp": "2025-07-28T21:36:01.299689",
+          "role": "user",
+          "content": "I need help organizing my daily tasks. What's your advice?",
+          "handler": null,
+          "sentiment_score": 0.0,
+          "emotion_tags": [],
+          "metadata": {
+            "persona": "Coach",
+            "request_id": "1753752958982_8277"
+          }
+        },
+        {
+          "timestamp": "2025-07-28T21:36:01.300186",
+          "role": "assistant",
+          "content": "I'm having trouble accessing my local processing. Error: Cannot connect to host localhost:11434 ssl:default [The remote computer refused the network connection]",
+          "handler": "DOLPHIN",
+          "sentiment_score": 0.0,
+          "emotion_tags": [],
+          "metadata": {
+            "reasoning": "Default fallback",
+            "request_id": "1753752958982_8277"
+          }
+        }
+      ],
+      "context": {},
+      "sentiment_history": [
+        {
+          "timestamp": "2025-07-28T21:36:01.299689",
+          "score": 0.0,
+          "tags": []
+        },
+        {
+          "timestamp": "2025-07-28T21:36:01.300186",
+          "score": 0.0,
+          "tags": []
+        }
+      ],
+      "persona_used": "companion",
+      "status": "active"
+    }
+  },
+  "recent_interactions": [
+    {
+      "session_id": "test_qa_session",
+      "timestamp": "2025-07-28T21:36:01.299689",
+      "role": "user",
+      "preview": "I need help organizing my daily tasks. What's your advice?",
+      "sentiment": 0.0
+    },
+    {
+      "session_id": "test_qa_session",
+      "timestamp": "2025-07-28T21:36:01.300186",
+      "role": "assistant",
+      "preview": "I'm having trouble accessing my local processing. Error: Cannot connect to host localhost:11434 ssl:...",
+      "sentiment": 0.0
+    }
+  ],
+  "current_context": {},
+  "last_updated": "2025-07-28T21:36:01.300194"
+}

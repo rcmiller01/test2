@@ -1,0 +1,2 @@
+{"timestamp": "2025-07-28T21:36:01.300592", "request_id": "1753752958982_8277", "handler": "DOLPHIN", "latency_seconds": 4.63, "success": true, "token_usage": {}, "error_message": null}
+{"timestamp": "2025-07-28T21:36:01.301562", "request_id": "1753752958982_8277", "handler": "ERROR", "latency_seconds": 4.631, "success": false, "token_usage": {}, "error_message": "'total_messages'"}
