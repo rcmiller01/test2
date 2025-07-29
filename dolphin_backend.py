@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Dolphin Backend - AI Orchestration Server v2.1
+Dolphin Backend - AI Orchestration Server v2.0
 
 Enhanced multi-server architecture with:
 - Personality System: User-selectable AI personas
@@ -9,8 +9,7 @@ Enhanced multi-server architecture with:
 - Agent Awareness: Real-time status monitoring
 
 Architecture:
-- llama2-uncensored (primary) handles general conversation and routing decisions
-- mistral:7b-instruct-q4_K_M (fallback) for local processing backup
+- Dolphin handles general conversation and routing decisions
 - Heavy coding tasks → OpenRouter (GPT-4/Claude)
 - Utilities (email/calendar) → n8n agents
 - Analytics fallback → Kimi K2 (when OpenRouter unavailable)
@@ -73,15 +72,6 @@ except ImportError as e:
     logger.warning(f"⚠️ Some advanced features unavailable: {e}")
     ADVANCED_FEATURES_AVAILABLE = False
 
-# Import persona manifest system
-try:
-    from utils.persona_loader import load_persona, load_all_personas, PersonaManifest
-    PERSONA_MANIFESTS_AVAILABLE = True
-    logger.info("✅ Persona manifest system imported successfully")
-except ImportError as e:
-    logger.warning(f"⚠️ Persona manifest system unavailable: {e}")
-    PERSONA_MANIFESTS_AVAILABLE = False
-
 # Enhanced Pydantic models
 class ChatRequest(BaseModel):
     message: str
@@ -130,36 +120,10 @@ class DolphinOrchestrator:
         self.primary_model = os.getenv('PRIMARY_MODEL', 'llama2-uncensored')
         self.fallback_model = os.getenv('FALLBACK_MODEL', 'mistral:7b-instruct-q4_K_M')
         
-        # Model routing table
-        self.ROUTING_TABLE = {
-            "companion": "llama2-uncensored",       # Primary conversational model
-            "fallback": "mistral:7b-instruct-q4_K_M",  # Local fallback model
-            "planner": "kimi-k2-q4_0",             # Keep if available (future expansion)
-            "utility": "n8n",                      # External service
-            "cloud": "openrouter"                  # Cloud fallback (Claude/GPT-4)
-        }
-        
         # Initialize enhanced systems
         self.personality_system = PersonalitySystem()
         self.memory_system = MemorySystem()
         self.analytics_logger = AnalyticsLogger()
-        
-        # Load persona manifests
-        self.persona_manifests = {}
-        if PERSONA_MANIFESTS_AVAILABLE:
-            try:
-                self.persona_manifests = load_all_personas("personas")
-                logger.info(f"✅ Loaded {len(self.persona_manifests)} persona manifests")
-                
-                # Load the companion manifest specifically
-                if 'companion' in self.persona_manifests:
-                    companion_manifest = self.persona_manifests['companion']
-                    logger.info(f"🤖 Companion persona configured with {companion_manifest.primary_model}")
-                else:
-                    logger.warning("⚠️ Companion persona manifest not found")
-                    
-            except Exception as e:
-                logger.error(f"❌ Failed to load persona manifests: {e}")
         
         # Initialize advanced features v2.1
         self.reflection_engine = None
@@ -206,71 +170,6 @@ class DolphinOrchestrator:
         except Exception as e:
             logger.error(f"❌ Error initializing advanced features: {e}")
             # Continue without advanced features if initialization fails
-
-    async def get_persona_model(self, persona_name: str = "companion") -> str:
-        """
-        Get the appropriate model for a persona based on manifest configuration and availability.
-        
-        Args:
-            persona_name: Name of the persona (default: "companion")
-            
-        Returns:
-            str: The model name to use for this persona
-        """
-        # Check if we have a manifest for this persona
-        if persona_name.lower() in self.persona_manifests:
-            manifest = self.persona_manifests[persona_name.lower()]
-            
-            # Try primary model first
-            primary_model = manifest.primary_model
-            if await self._is_model_available(primary_model):
-                logger.info(f"🎭 Using primary model {primary_model} for persona {persona_name}")
-                return primary_model
-            
-            # Try fallback model
-            fallback_model = manifest.fallback_model
-            if fallback_model and await self._is_model_available(fallback_model):
-                logger.info(f"🔄 Using fallback model {fallback_model} for persona {persona_name}")
-                return fallback_model
-                
-            logger.warning(f"⚠️ Neither primary nor fallback models available for {persona_name}")
-        
-        # Fall back to routing table or default models
-        if persona_name.lower() in self.ROUTING_TABLE:
-            routing_model = self.ROUTING_TABLE[persona_name.lower()]
-            if await self._is_model_available(routing_model):
-                return routing_model
-        
-        # Final fallback to system defaults
-        if await self._is_model_available(self.primary_model):
-            return self.primary_model
-        elif await self._is_model_available(self.fallback_model):
-            return self.fallback_model
-        else:
-            logger.error("❌ No available models found!")
-            return self.primary_model  # Return anyway, let Ollama handle the error
-
-    async def _is_model_available(self, model_name: str) -> bool:
-        """
-        Check if a specific model is available in Ollama.
-        
-        Args:
-            model_name: Name of the model to check
-            
-        Returns:
-            bool: True if model is available, False otherwise
-        """
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"{self.ollama_url}/api/tags", timeout=aiohttp.ClientTimeout(total=5)) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        available_models = [model["name"] for model in data.get("models", [])]
-                        return model_name in available_models
-        except Exception as e:
-            logger.warning(f"⚠️ Could not check model availability: {e}")
-            
-        return False
         
     async def get_available_model(self, preferred_model: Optional[str] = None) -> str:
         """
@@ -310,30 +209,6 @@ class DolphinOrchestrator:
             logger.error(f"Error checking available models: {e}")
             # Return primary model as last resort (will fail if not available)
             return self.primary_model
-    
-    async def check_model_availability(self) -> Dict[str, bool]:
-        """Check availability of required models"""
-        model_status = {
-            "primary_model": False,
-            "fallback_model": False,
-            "any_available": False
-        }
-        
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"{self.ollama_url}/api/tags") as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        available_models = [model["name"] for model in data.get("models", [])]
-                        
-                        model_status["primary_model"] = self.primary_model in available_models
-                        model_status["fallback_model"] = self.fallback_model in available_models
-                        model_status["any_available"] = len(available_models) > 0
-                        
-        except Exception as e:
-            logger.error(f"Error checking model availability: {e}")
-            
-        return model_status
     
     async def process_chat_request(self, request: ChatRequest) -> ChatResponse:
         """
@@ -385,9 +260,7 @@ class DolphinOrchestrator:
             elif route["handler"] == "KIMI_K2":
                 response_text = await self.handle_kimi_fallback(formatted_message, enhanced_context)
             else:  # DOLPHIN
-                # Pass the current persona to the dolphin handler
-                persona_name = current_persona.get("id", "companion")
-                response_text = await self.handle_dolphin_request(formatted_message, enhanced_context, persona_name)
+                response_text = await self.handle_dolphin_request(formatted_message, enhanced_context)
             
             # Add messages to memory
             self.memory_system.add_message(
@@ -512,18 +385,11 @@ Respond in JSON format:
             else:
                 return TaskRoute(task_type="conversation", handler="DOLPHIN", confidence=0.6, reasoning="Default fallback")
 
-    async def handle_dolphin_request(self, message: str, context: Optional[Dict] = None, persona: str = "companion") -> str:
+    async def handle_dolphin_request(self, message: str, context: Optional[Dict] = None) -> str:
         """Handle requests with local LLM directly"""
         try:
-            # Get the appropriate model for this persona
-            model_to_use = await self.get_persona_model(persona)
-            
-            # Generate system prompt based on persona manifest
-            system_prompt = ""
-            if persona.lower() in self.persona_manifests:
-                manifest = self.persona_manifests[persona.lower()]
-                system_prompt = manifest.get_system_prompt()
-                message = f"{system_prompt}\n\nUser: {message}\nAssistant:"
+            # Get the best available model
+            model_to_use = await self.get_available_model()
             
             async with aiohttp.ClientSession() as session:
                 payload = {
@@ -1001,7 +867,7 @@ async def search_private_memories(query: Optional[str] = None, category: Optiona
         raise HTTPException(status_code=403, detail="Private memories are locked")
     
     results = orchestrator.private_memory_manager.search_private_memories(
-        query=query or "", category=category or "", limit=limit
+        query=query, category=category, limit=limit
     )
     return {"results": results, "count": len(results)}
 
