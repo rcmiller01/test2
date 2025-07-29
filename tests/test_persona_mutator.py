@@ -39,4 +39,5 @@ class TestPersonaMutator(unittest.TestCase):
         self.assertIn("generation", mutated)
 
 if __name__ == "__main__":
+
     unittest.main()
