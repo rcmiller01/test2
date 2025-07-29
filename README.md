@@ -55,7 +55,7 @@ A sophisticated AI orchestration platform that intelligently routes conversation
 ### Prerequisites
 - Node.js 18+ and npm
 - Python 3.9+ with pip
-- Ollama with Dolphin-Mixtral model
+- Ollama with llama2-uncensored and mistral:7b-instruct-q4_K_M models
 - (Optional) OpenRouter API key for cloud AI
 
 ### 1. Install Dependencies
