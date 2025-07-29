@@ -476,3 +476,8 @@ class MemorySystem:
             info["session_id"] = latest_id
             return info
         return None
+
+    def search_recent_events(self, limit: int = 5) -> List[Dict[str, Any]]:
+        """Return the most recent memory interactions."""
+        interactions = self.short_term_memory.get("recent_interactions", [])
+        return interactions[-limit:]
