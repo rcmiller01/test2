@@ -14,19 +14,17 @@ class JudgeAgent:
         self.persona_manager = PersonaInstructionManager(manifesto_path)
         self.memory_system = MemorySystem(memory_dir)
 
-    def evaluate(self, session_id: str, content: str) -> Dict[str, float]:
-        """Evaluate content with persona and memory context."""
-        context = self.memory_system.get_session_context(session_id)
-        active_persona = self.persona_manager.active_persona
-        recent_memories = self.memory_system.search_recent_events(limit=5)
-
-        persona_score = self.score_persona(content, active_persona)
-        memory_score = self.score_memory(content, recent_memories)
-
+    def evaluate(self, response: str, session_context: dict) -> dict:
+        persona = session_context.get("persona", "unknown")
+        length_score = min(len(response) / 100, 1.0)
+        persona_alignment = 1.0 if persona.lower() in response.lower() else 0.5
+        relevance = 1.0 if session_context.get("session_context") else 0.8
+        overall = round((length_score + persona_alignment + relevance) / 3, 2)
         return {
-            "persona_score": persona_score,
-            "memory_score": memory_score,
-            "sentiment_trend": context.get("sentiment_trend", 0.0),
+            "length_score": round(length_score, 2),
+            "persona_alignment": round(persona_alignment, 2),
+            "relevance": round(relevance, 2),
+            "overall": overall
         }
 
     @staticmethod
