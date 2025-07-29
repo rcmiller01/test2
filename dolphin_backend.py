@@ -87,7 +87,6 @@ class ChatResponse(BaseModel):
     timestamp: str
     session_id: str
     persona_used: str
-    timestamp: str
 
 class TaskRoute(BaseModel):
     task_type: str
