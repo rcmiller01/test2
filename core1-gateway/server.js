@@ -9,7 +9,9 @@ const PORT = process.env.PORT || 5000;
 const DOLPHIN_BACKEND = process.env.DOLPHIN_BACKEND || 'http://localhost:8000';
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS || '*';
 
-app.use(cors({ origin: ALLOWED_ORIGINS.split(',').map(o => o.trim()) }));
+
+app.use(cors({ origin: ALLOWED_ORIGINS.split(',') }));
+
 app.use(express.json());
 
 // Enhanced session management

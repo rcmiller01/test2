@@ -83,7 +83,9 @@ OLLAMA_URL=http://localhost:11434
 OPENROUTER_KEY=your_openrouter_key_here
 
 # Optional: n8n Integration
-N8N_URL=http://localhost:5678
+
+N8N_URL=http://192.168.50.159:5678
+
 # Frontend Gateway URL
 VITE_GATEWAY_URL=http://localhost:5000
 # Allowed Origins for Gateway
@@ -113,7 +115,9 @@ npm run dev
 ### 4. Access the System
 - **Frontend UI**: http://localhost:3000 (or 5173 for Vite)
 - **API Gateway**: `http://localhost:5000` (configurable via `VITE_GATEWAY_URL`)
-- **Dolphin Backend**: http://localhost:8000
+
+- **Dolphin Backend**: http://192.168.50.159:8000
+
 - **Health Check**: `http://localhost:5000/health`
 ## 🎭 Using Personas
 
