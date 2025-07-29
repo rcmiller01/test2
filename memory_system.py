@@ -450,3 +450,29 @@ class MemorySystem:
                     })
         
         return results[:20]  # Limit results
+
+    def get_last_memory_session(self) -> Optional[Dict[str, Any]]:
+        """Return context for the most recently active session."""
+        sessions = self.short_term_memory.get("active_sessions", {})
+        latest_id = None
+        latest_time = None
+
+        for sid, sess in sessions.items():
+            ts = sess.get("messages", [])
+            if ts:
+                timestamp = ts[-1].get("timestamp", sess.get("created_at"))
+            else:
+                timestamp = sess.get("created_at")
+            try:
+                dt = datetime.fromisoformat(timestamp)
+            except Exception:
+                continue
+            if not latest_time or dt > latest_time:
+                latest_time = dt
+                latest_id = sid
+
+        if latest_id:
+            info = self.get_session_context(latest_id)
+            info["session_id"] = latest_id
+            return info
+        return None
