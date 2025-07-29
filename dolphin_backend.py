@@ -838,6 +838,126 @@ async def disable_reflection_engine():
     orchestrator.reflection_engine.stop_background_reflection()
     return {"status": "disabled"}
 
+# Autopilot Bootloader Integration Endpoints
+@app.get("/api/autopilot/bootloader/status")
+async def get_bootloader_status():
+    """Get current autopilot bootloader status"""
+    try:
+        import subprocess
+        import json
+        
+        result = subprocess.run([
+            "python", "autopilot_bootloader.py", "--status"
+        ], capture_output=True, text=True, timeout=30)
+        
+        if result.returncode == 0:
+            # Parse the JSON output from the status command
+            lines = result.stdout.strip().split('\n')
+            json_lines = [line for line in lines if line.startswith('{')]
+            if json_lines:
+                status_data = json.loads(json_lines[-1])
+                return status_data
+            else:
+                return {"error": "Could not parse bootloader status"}
+        else:
+            return {"error": f"Bootloader status check failed: {result.stderr}"}
+            
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Failed to get bootloader status: {str(e)}")
+
+@app.post("/api/autopilot/bootloader/start")
+async def start_bootloader():
+    """Start the autopilot bootloader in background"""
+    try:
+        import subprocess
+        
+        # Check if bootloader is already running
+        result = subprocess.run([
+            "python", "autopilot_bootloader.py", "--status"
+        ], capture_output=True, text=True, timeout=10)
+        
+        if result.returncode == 0:
+            import json
+            lines = result.stdout.strip().split('\n')
+            json_lines = [line for line in lines if line.startswith('{')]
+            if json_lines:
+                status_data = json.loads(json_lines[-1])
+                if status_data.get('bootloader', {}).get('running'):
+                    return {"status": "already_running", "message": "Bootloader is already active"}
+        
+        # Start bootloader as background process
+        process = subprocess.Popen([
+            "python", "autopilot_bootloader.py"
+        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.DEVNULL)
+        
+        return {
+            "status": "started", 
+            "message": "Bootloader started successfully",
+            "pid": process.pid
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to start bootloader: {str(e)}")
+
+@app.post("/api/autopilot/bootloader/stop")
+async def stop_bootloader():
+    """Stop the autopilot bootloader"""
+    try:
+        import subprocess
+        
+        result = subprocess.run([
+            "python", "autopilot_bootloader.py", "--stop"
+        ], capture_output=True, text=True, timeout=30)
+        
+        return {
+            "status": "stopped",
+            "message": "Bootloader stop command sent",
+            "output": result.stdout
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to stop bootloader: {str(e)}")
+
+@app.post("/api/autopilot/bootloader/launch-now")
+async def launch_autopilot_now():
+    """Launch autopilot immediately (bypass normal conditions)"""
+    try:
+        import subprocess
+        
+        result = subprocess.run([
+            "python", "autopilot_bootloader.py", "--launch-now"
+        ], capture_output=True, text=True, timeout=60)
+        
+        return {
+            "status": "launched" if result.returncode == 0 else "failed",
+            "message": result.stdout if result.returncode == 0 else result.stderr,
+            "return_code": result.returncode
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to launch autopilot: {str(e)}")
+
+@app.get("/api/autopilot/integration/status")
+async def get_autopilot_integration_status():
+    """Get autopilot integration status"""
+    try:
+        import subprocess
+        
+        result = subprocess.run([
+            "python", "emotion_quant_autopilot/quant_autopilot.py",
+            "--config", "emotion_quant_autopilot/autopilot_config.json",
+            "integration"
+        ], capture_output=True, text=True, timeout=30)
+        
+        return {
+            "status": "success" if result.returncode == 0 else "error",
+            "output": result.stdout,
+            "error": result.stderr if result.returncode != 0 else None
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Failed to get integration status: {str(e)}")
+
 # Connectivity Management Endpoints
 @app.get("/api/connectivity/status")
 async def get_connectivity_status():
