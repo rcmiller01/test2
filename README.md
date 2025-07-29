@@ -84,6 +84,10 @@ OPENROUTER_KEY=your_openrouter_key_here
 
 # Optional: n8n Integration
 N8N_URL=http://192.168.50.159:5678
+# Frontend Gateway URL
+VITE_GATEWAY_URL=http://localhost:5000
+# Allowed Origins for Gateway
+ALLOWED_ORIGINS=http://localhost:3000
 ```
 
 ### 3. Start the System
@@ -107,10 +111,10 @@ npm run dev
 ```
 
 ### 4. Access the System
-- **Frontend UI**: http://192.168.50.234:3000 (or 5173 for Vite)
-- **API Gateway**: http://192.168.50.234:5000
+- **Frontend UI**: http://localhost:3000 (or 5173 for Vite)
+- **API Gateway**: `http://localhost:5000` (configurable via `VITE_GATEWAY_URL`)
 - **Dolphin Backend**: http://192.168.50.159:8000
-- **Health Check**: http://192.168.50.234:5000/health
+- **Health Check**: `http://localhost:5000/health`
 ## 🎭 Using Personas
 
 ### Built-in Personas
