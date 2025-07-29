@@ -1,0 +1,1 @@
+export { EmotionEvalVote } from './EmotionEvalVote';
