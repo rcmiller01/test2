@@ -133,6 +133,7 @@ class MemorySystem:
             "messages": [],
             "context": {},
             "sentiment_history": [],
+            "judgments": [],
             "persona_used": "companion",
             "status": "active"
         }
@@ -248,7 +249,31 @@ class MemorySystem:
             patterns[tag]["recent_scores"] = patterns[tag]["recent_scores"][-20:]
         
         self._save_long_term()
-    
+
+    def add_judgment(self, session_id: str, judgment: Dict[str, Any],
+                     persona: Optional[str] = None, persona_token: Optional[str] = None) -> None:
+        """Store a judgment entry for later introspection."""
+
+        if not self._is_authorized(persona, persona_token):
+            logger.warning("Unauthorized memory write attempt")
+            return
+
+        if session_id not in self.short_term_memory["active_sessions"]:
+            self.create_session(session_id)
+
+        session = self.short_term_memory["active_sessions"][session_id]
+        if "judgments" not in session:
+            session["judgments"] = []
+
+        session["judgments"].append({
+            "timestamp": datetime.now().isoformat(),
+            **judgment
+        })
+
+        # Keep only last 20 judgments
+        session["judgments"] = session["judgments"][-20:]
+        self._save_short_term()
+
     def get_session_context(self, session_id: str, last_n_messages: int = 10,
                             persona: Optional[str] = None, persona_token: Optional[str] = None) -> Dict[str, Any]:
         """Get recent context for a session"""

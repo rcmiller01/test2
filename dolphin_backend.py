@@ -48,6 +48,7 @@ from memory_system import MemorySystem
 from analytics_logger import AnalyticsLogger
 from handler_registry import handler_registry, HandlerState
 from fallback_personas import get as get_fallback_persona
+from judge_agent import JudgeAgent
 
 # Configure logging
 logging.basicConfig(
@@ -90,6 +91,7 @@ class ChatResponse(BaseModel):
     timestamp: str
     session_id: str
     persona_used: str
+    judgment: Optional[Dict[str, Any]] = None
 
 class TaskRoute(BaseModel):
     task_type: str
@@ -180,6 +182,23 @@ class DolphinOrchestrator:
     def _on_handler_status_change(self, status: Dict[str, Any]) -> None:
         """Callback for connectivity status changes."""
         logger.info(f"Handler status updated: {status.get('current_mode')}")
+
+    async def _record_judgment(self, session_id: str, judgment: Dict[str, Any],
+                               persona: str, persona_token: Optional[str], request_id: str) -> None:
+        """Store judgment in memory and analytics without blocking main flow."""
+        try:
+            self.memory_system.add_judgment(
+                session_id,
+                judgment,
+                persona=persona,
+                persona_token=persona_token,
+            )
+            self.analytics_logger.log_custom_event(
+                "judgment",
+                {"session_id": session_id, "judgment": judgment, "persona": persona, "request_id": request_id},
+            )
+        except Exception as e:
+            logger.error(f"Error recording judgment: {e}")
         
     async def get_available_model(self, preferred_model: Optional[str] = None) -> str:
         """
@@ -290,6 +309,22 @@ class DolphinOrchestrator:
                 metadata={"reasoning": route["reasoning"], "request_id": request_id},
                 persona=current_persona["name"], persona_token=persona_token
             )
+
+            # Evaluate response with JudgeAgent
+            judge = JudgeAgent()
+            judgment = judge.evaluate(
+                response_text,
+                {
+                    "session_context": session_context,
+                    "persona": current_persona["name"],
+                    "session_id": session_id,
+                },
+            )
+
+            # Store judgment asynchronously
+            asyncio.create_task(
+                self._record_judgment(session_id, judgment, current_persona["name"], persona_token, request_id)
+            )
             
             # Calculate performance metrics
             latency = time.time() - start_time
@@ -312,7 +347,8 @@ class DolphinOrchestrator:
                 },
                 timestamp=datetime.now().isoformat(),
                 session_id=session_id,
-                persona_used=current_persona["name"]
+                persona_used=current_persona["name"],
+                judgment=judgment
             )
             
             return response
@@ -334,7 +370,8 @@ class DolphinOrchestrator:
                 metadata={"error": str(e), "timestamp": datetime.now().isoformat()},
                 timestamp=datetime.now().isoformat(),
                 session_id=request.session_id or "unknown",
-                persona_used=self.personality_system.get_current_persona()["name"]
+                persona_used=self.personality_system.get_current_persona()["name"],
+                judgment=None
             )
         
     async def classify_task(self, message: str, context: Optional[Dict] = None) -> TaskRoute:
