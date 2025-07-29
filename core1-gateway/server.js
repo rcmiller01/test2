@@ -139,7 +139,8 @@ const apiEndpoints = [
   { path: '/api/logs/search', method: 'GET' },
   { path: '/api/logs/export', method: 'GET' },
   { path: '/api/system/cleanup', method: 'POST' },
-  { path: '/api/system/health', method: 'GET' }
+  { path: '/api/system/health', method: 'GET' },
+  { path: '/api/vote_preference', method: 'POST' }
 ];
 
 // Create proxy routes
