@@ -450,3 +450,20 @@ class MemorySystem:
                     })
         
         return results[:20]  # Limit results
+
+    def get_recent_memories(self, limit: int = 100) -> List[Dict[str, Any]]:
+        """Return the most recent memory interactions.
+
+        Parameters
+        ----------
+        limit : int, optional
+            Maximum number of memory events to fetch, by default 100.
+
+        Returns
+        -------
+        List[Dict[str, Any]]
+            The latest memory entries ordered from oldest to newest within the
+            provided limit.
+        """
+        recent = self.short_term_memory.get("recent_interactions", [])
+        return recent[-limit:]
