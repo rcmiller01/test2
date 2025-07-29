@@ -6,6 +6,8 @@ with the House of Minds Python backend, providing a unified API interface.
 """
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks
+import aiosqlite
+import os
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, List, Optional, Any
@@ -41,6 +43,31 @@ app.add_middleware(
 
 # Global House of Minds instance
 house_of_minds = None
+PREFERENCE_DB_PATH = os.getenv("PREFERENCE_DB_PATH", "data/preference_votes.db")
+
+async def init_preference_db():
+    async with aiosqlite.connect(PREFERENCE_DB_PATH) as db:
+        await db.execute(
+            """
+            CREATE TABLE IF NOT EXISTS preference_votes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                input TEXT NOT NULL,
+                response_a TEXT NOT NULL,
+                response_b TEXT NOT NULL,
+                winner TEXT NOT NULL,
+                timestamp TEXT NOT NULL
+            )
+            """
+        )
+        await db.commit()
+
+async def store_preference_vote(vote: "PreferenceVote"):
+    async with aiosqlite.connect(PREFERENCE_DB_PATH) as db:
+        await db.execute(
+            "INSERT INTO preference_votes (input, response_a, response_b, winner, timestamp) VALUES (?, ?, ?, ?, ?)",
+            (vote.input, vote.response_a, vote.response_b, vote.winner, datetime.now().isoformat()),
+        )
+        await db.commit()
 
 # Pydantic models
 class ChatRequest(BaseModel):
@@ -70,12 +97,19 @@ class StatusResponse(BaseModel):
     available_models: Dict[str, List[str]]
     active_handlers: List[str]
 
+class PreferenceVote(BaseModel):
+    input: str
+    response_a: str
+    response_b: str
+    winner: str
+
 @app.on_event("startup")
 async def startup_event():
     """Initialize House of Minds system on startup."""
     global house_of_minds
     try:
         house_of_minds = HouseOfMinds()
+        await init_preference_db()
         logger.info("🧠 House of Minds API Bridge initialized")
     except Exception as e:
         logger.error(f"Failed to initialize House of Minds: {e}")
@@ -304,6 +338,16 @@ async def search_memories(
     except Exception as e:
         logger.error(f"Memory search error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/vote_preference")
+async def vote_preference(vote: PreferenceVote):
+    """Store a human preference vote."""
+    try:
+        await store_preference_vote(vote)
+        return {"message": "Vote recorded"}
+    except Exception as e:
+        logger.error(f"Preference vote error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to record vote")
 
 @app.get("/api/reflection")
 async def get_daily_reflection(user_id: str = "default_user"):

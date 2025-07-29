@@ -46,6 +46,7 @@ from pathlib import Path
 from personality_system import PersonalitySystem
 from memory_system import MemorySystem
 from analytics_logger import AnalyticsLogger
+from utils.preference_vote_store import PreferenceVoteStore
 from handler_registry import handler_registry, HandlerState
 from fallback_personas import get as get_fallback_persona
 from judge_agent import JudgeAgent
@@ -111,6 +112,13 @@ class TaskRoute(BaseModel):
     reasoning: str
     handler: str
 
+
+class PreferenceVoteRequest(BaseModel):
+    prompt: str
+    response_a: str
+    response_b: str
+    winner: str  # 'a' or 'b'
+
 # FastAPI app
 app = FastAPI(title="Dolphin AI Backend", version="1.0.0")
 
@@ -140,6 +148,7 @@ class DolphinOrchestrator:
         self.personality_system = PersonalitySystem()
         self.memory_system = MemorySystem()
         self.analytics_logger = AnalyticsLogger()
+        self.preference_vote_store = PreferenceVoteStore()
         
         # Initialize advanced features v2.1
         self.reflection_engine = None
@@ -718,6 +727,7 @@ async def export_analytics():
     export_path = orchestrator.analytics_logger.export_analytics()
     return {"export_path": export_path}
 
+
 # Emotion Eval Mode - preference voting endpoint
 @app.post("/api/vote_preference")
 async def vote_preference(vote: PreferenceVoteSchema):
@@ -793,6 +803,7 @@ async def system_health():
 @app.on_event("startup")
 async def startup_event():
     """Initialize advanced features on startup"""
+    await orchestrator.preference_vote_store.initialize()
     await orchestrator.initialize_advanced_features()
 
 # =============================================================================
