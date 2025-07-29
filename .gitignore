@@ -121,3 +121,7 @@ unified_companion*.log
 # OS
 .DS_Store
 Thumbs.db
+
+# Emotion optimizer logs
+logs/emotion_trace.jsonl
+
