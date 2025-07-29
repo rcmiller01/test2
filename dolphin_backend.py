@@ -46,6 +46,8 @@ from pathlib import Path
 from personality_system import PersonalitySystem
 from memory_system import MemorySystem
 from analytics_logger import AnalyticsLogger
+from handler_registry import handler_registry, HandlerState
+from fallback_personas import get as get_fallback_persona
 
 # Configure logging
 logging.basicConfig(
@@ -146,17 +148,21 @@ class DolphinOrchestrator:
             # Initialize Reflection Engine
             self.reflection_engine = ReflectionEngine(self.memory_system, self.analytics_logger)
             
-            # Initialize Connectivity Manager
-            self.connectivity_manager = ConnectivityManager(self.analytics_logger)
-            
-            # Initialize Private Memory Manager
-            self.private_memory_manager = PrivateMemoryManager()
-            
-            # Initialize Persona Instruction Manager
-            self.persona_instruction_manager = PersonaInstructionManager()
-            
             # Initialize Mirror Mode Manager
             self.mirror_mode_manager = MirrorModeManager(self.analytics_logger)
+
+            # Initialize Connectivity Manager
+            self.connectivity_manager = ConnectivityManager(
+                self.analytics_logger,
+                on_status_change=self._on_handler_status_change,
+                mirror_mode_manager=self.mirror_mode_manager,
+            )
+
+            # Initialize Private Memory Manager
+            self.private_memory_manager = PrivateMemoryManager()
+
+            # Initialize Persona Instruction Manager
+            self.persona_instruction_manager = PersonaInstructionManager()
             
             # Initialize System Metrics Collector
             self.metrics_collector = MetricsCollector(self.analytics_logger)
@@ -164,12 +170,16 @@ class DolphinOrchestrator:
             # Start background services
             asyncio.create_task(self.reflection_engine.start_background_reflection())
             asyncio.create_task(self.connectivity_manager.start_monitoring())
-            
+
             logger.info("✅ All advanced v2.1 features initialized successfully")
-            
+
         except Exception as e:
             logger.error(f"❌ Error initializing advanced features: {e}")
             # Continue without advanced features if initialization fails
+
+    def _on_handler_status_change(self, status: Dict[str, Any]) -> None:
+        """Callback for connectivity status changes."""
+        logger.info(f"Handler status updated: {status.get('current_mode')}")
         
     async def get_available_model(self, preferred_model: Optional[str] = None) -> str:
         """
@@ -793,6 +803,23 @@ async def get_connectivity_notification():
     if not orchestrator.connectivity_manager:
         return None
     return orchestrator.connectivity_manager.get_ui_notification()
+
+# Additional endpoints for handler status updates and fallback alerts
+@app.post("/api/update-handler-status")
+async def update_handler_status(handler: str, status: str):
+    """Update handler status from frontend/admin."""
+    try:
+        handler_registry.update(handler, HandlerState(status))
+        return {"handler": handler, "status": status}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/api/fallback-alert")
+async def fallback_alert():
+    """Notify UI that system entered emergency persona mode."""
+    # In real implementation this would push websocket event
+    return {"status": "alerted"}
 
 # Private Memory Endpoints
 @app.post("/api/private-memory/unlock")

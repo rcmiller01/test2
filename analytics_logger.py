@@ -30,6 +30,7 @@ class AnalyticsLogger:
         self.performance_log_file = self.logs_dir / "performance_metrics.jsonl"
         self.analytics_file = self.logs_dir / "analytics_summary.json"
         self.route_map_file = self.logs_dir / "routing_map.jsonl"
+        self.custom_events_file = self.logs_dir / "custom_events.jsonl"
         
         # In-memory buffers for real-time analytics
         self.recent_requests = deque(maxlen=1000)  # Last 1000 requests
@@ -161,6 +162,16 @@ class AnalyticsLogger:
                 f.write(json.dumps(data) + '\n')
         except Exception as e:
             logger.error(f"Error writing to log file {file_path}: {e}")
+
+    def log_custom_event(self, event_type: str, data: Dict[str, Any]):
+        """Record a custom analytics event"""
+        entry = {
+            "timestamp": datetime.now().isoformat(),
+            "event": event_type,
+            "data": data,
+        }
+        self._append_to_jsonl(self.custom_events_file, entry)
+        return entry
     
     def get_real_time_stats(self) -> Dict[str, Any]:
         """Get real-time analytics summary"""

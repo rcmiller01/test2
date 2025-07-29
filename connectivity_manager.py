@@ -8,9 +8,12 @@ import asyncio
 import aiohttp
 import time
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Callable
 from dataclasses import dataclass
 from enum import Enum
+from pathlib import Path
+
+from handler_registry import handler_registry, HandlerState
 
 class ConnectivityMode(Enum):
     ONLINE = "online"
@@ -36,8 +39,13 @@ class ConnectivityManager:
     for cloud-based AI services and external integrations
     """
     
-    def __init__(self, analytics_logger):
+    def __init__(self, analytics_logger, *, on_status_change: Optional[Callable[[Dict[str, Any]], None]] = None, mirror_mode_manager: Any = None):
         self.analytics_logger = analytics_logger
+        self.on_status_change = on_status_change
+        self.mirror_mode_manager = mirror_mode_manager
+
+        self.log_file = Path("logs/connectivity.log")
+        self.log_file.parent.mkdir(exist_ok=True)
         
         # Service endpoints to monitor
         self.services = {
@@ -65,7 +73,7 @@ class ConnectivityManager:
         }
         
         # Configuration
-        self.check_interval = 120  # 2 minutes
+        self.check_interval = 30  # seconds
         self.timeout = 10  # 10 seconds
         self.failure_threshold = 3  # Consider offline after 3 consecutive failures
         
@@ -74,15 +82,21 @@ class ConnectivityManager:
         self.forced_offline = False
         self.last_mode_change = datetime.now()
         self.is_monitoring = False
-        
+        self.emergency_mode = False
+
         # History
         self.connectivity_history = []
         self.uptime_stats = {}
+
+    def _log(self, message: str) -> None:
+        with open(self.log_file, "a", encoding="utf-8") as f:
+            f.write(f"{datetime.now().isoformat()} - {message}\n")
         
     async def start_monitoring(self):
         """Start continuous connectivity monitoring"""
         self.is_monitoring = True
         print("🌤️ Connectivity Manager: Starting monitoring...")
+        self._log("Monitoring started")
         
         # Initial check
         await self._check_all_services()
@@ -100,6 +114,7 @@ class ConnectivityManager:
         """Stop connectivity monitoring"""
         self.is_monitoring = False
         print("⏹️ Connectivity Manager: Stopped monitoring")
+        self._log("Monitoring stopped")
     
     async def _check_all_services(self):
         """Check all registered services concurrently"""
@@ -113,6 +128,7 @@ class ConnectivityManager:
     
     async def _check_service(self, service_id: str, service: ServiceStatus):
         """Check individual service availability"""
+        prev_available = service.is_available
         try:
             start_time = time.time()
             
@@ -159,6 +175,13 @@ class ConnectivityManager:
                 'consecutive_failures': service.consecutive_failures
             }
         )
+
+        previous_available = prev_available
+
+        if (not service.is_available and service.consecutive_failures >= self.failure_threshold and previous_available):
+            await self._on_service_down(service_id)
+        elif service.is_available and not previous_available:
+            await self._on_service_restored(service_id)
         
         print(f"🔍 {service.name}: {'✅' if service.is_available else '❌'} "
               f"({service.response_time:.2f}s)")
@@ -196,6 +219,28 @@ class ConnectivityManager:
         if stats['last_24h']:
             available_count = sum(1 for entry in stats['last_24h'] if entry['available'])
             service.uptime_percentage = (available_count / len(stats['last_24h'])) * 100
+
+    async def _on_service_down(self, service_id: str) -> None:
+        """Handle service becoming unavailable."""
+        self._log(f"Service {service_id} marked offline")
+        handler_registry.update(service_id, HandlerState.OFFLINE)
+        if self.mirror_mode_manager:
+            try:
+                self.mirror_mode_manager.add_mirror_reflection(
+                    "Service outage detected",
+                    {"service": service_id}
+                )
+            except Exception:
+                pass
+        if self.on_status_change:
+            self.on_status_change(self.get_status_summary())
+
+    async def _on_service_restored(self, service_id: str) -> None:
+        """Handle service restoration."""
+        self._log(f"Service {service_id} back online")
+        handler_registry.update(service_id, HandlerState.ONLINE)
+        if self.on_status_change:
+            self.on_status_change(self.get_status_summary())
     
     async def _update_connectivity_mode(self):
         """Update overall connectivity mode based on service status"""
@@ -231,6 +276,8 @@ class ConnectivityManager:
             old_mode = self.current_mode
             self.current_mode = new_mode
             self.last_mode_change = datetime.now()
+
+            self.emergency_mode = new_mode == ConnectivityMode.OFFLINE
             
             # Log mode change
             self.analytics_logger.log_custom_event(
@@ -242,7 +289,11 @@ class ConnectivityManager:
                 }
             )
             
+            self._log(f"Connectivity mode changed: {old_mode.value if old_mode else 'unknown'} -> {new_mode.value}")
             print(f"🌤️ Connectivity mode changed: {old_mode.value if old_mode else 'unknown'} → {new_mode.value}")
+
+            if self.on_status_change:
+                self.on_status_change(self.get_status_summary())
             
             # Add to history
             self.connectivity_history.append({
@@ -288,6 +339,7 @@ class ConnectivityManager:
             'disable_n8n': not self.services['n8n'].is_available,
             'use_kimi_fallback': True,  # Always available as local fallback
             'prefer_local': self.current_mode in [ConnectivityMode.OFFLINE, ConnectivityMode.DEGRADED],
+            'emergency_persona': self.emergency_mode,
             'service_status': {
                 service_id: {
                     'available': service.is_available,
@@ -338,6 +390,7 @@ class ConnectivityManager:
         return {
             'current_mode': self.current_mode.value,
             'forced_offline': self.forced_offline,
+            'emergency_mode': self.emergency_mode,
             'last_mode_change': self.last_mode_change.isoformat(),
             'services': {
                 service_id: {
@@ -372,8 +425,8 @@ def get_connectivity_manager():
     """Get the global connectivity manager instance"""
     return connectivity_manager
 
-def initialize_connectivity_manager(analytics_logger):
+def initialize_connectivity_manager(analytics_logger, **kwargs):
     """Initialize the global connectivity manager"""
     global connectivity_manager
-    connectivity_manager = ConnectivityManager(analytics_logger)
+    connectivity_manager = ConnectivityManager(analytics_logger, **kwargs)
     return connectivity_manager
