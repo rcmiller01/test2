@@ -2,6 +2,7 @@
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
+const fs = require('fs');
 require('dotenv').config();
 
 const app = express();
@@ -17,6 +18,7 @@ app.use(express.json());
 // Enhanced session management
 let sessionCounter = 0;
 const sessions = new Map();
+const logStream = fs.createWriteStream('./logs/persona_routing.log', { flags: 'a' });
 
 function generateSessionId() {
   return `session_${Date.now()}_${++sessionCounter}`;
@@ -89,6 +91,9 @@ app.post('/api/chat', async (req, res) => {
       persona_used: aiResponse.persona_used,
       timestamp: aiResponse.timestamp
     });
+
+    const logLine = `[${new Date().toISOString()}] [${sessionId}] [Persona: ${aiResponse.persona_used}] [Handler: ${aiResponse.handler}]\n`;
+    logStream.write(logLine);
 
     console.log(`✅ [${aiResponse.handler}] Response received (${aiResponse.persona_used})`);
 

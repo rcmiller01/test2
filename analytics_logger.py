@@ -29,6 +29,7 @@ class AnalyticsLogger:
         self.routing_log_file = self.logs_dir / "routing_decisions.jsonl"
         self.performance_log_file = self.logs_dir / "performance_metrics.jsonl"
         self.analytics_file = self.logs_dir / "analytics_summary.json"
+        self.route_map_file = self.logs_dir / "routing_map.jsonl"
         
         # In-memory buffers for real-time analytics
         self.recent_requests = deque(maxlen=1000)  # Last 1000 requests
@@ -75,11 +76,35 @@ class AnalyticsLogger:
         
         # Write to log file
         self._append_to_jsonl(self.routing_log_file, log_entry)
+
+        # Update route map for transparency
+        self.log_route_map(
+            log_entry["context"].get("session_id"),
+            request_data.get("message", ""),
+            routing_result.get("handler"),
+            persona,
+            routing_result.get("confidence")
+        )
         
         # Add to recent requests
         self.recent_requests.append(log_entry)
-        
+
         return log_entry["request_id"]
+
+    def log_route_map(self, session_id: str, input_text: str, routed_to: str,
+                       persona: str, confidence: float):
+        """Log simplified routing map for transparency"""
+
+        entry = {
+            "timestamp": datetime.now().isoformat(),
+            "session_id": session_id,
+            "input": input_text[:200],
+            "routed_to": routed_to,
+            "persona": persona,
+            "confidence": confidence,
+        }
+
+        self._append_to_jsonl(self.route_map_file, entry)
     
     def log_performance_metrics(self, request_id: str, handler: str, 
                               latency: float, success: bool, 
