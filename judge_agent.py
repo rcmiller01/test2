@@ -65,4 +65,3 @@ class JudgeAgent:
             if content_words.intersection(words):
                 match_count += 1
         return match_count / len(memories)
-
