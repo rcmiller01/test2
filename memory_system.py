@@ -451,19 +451,28 @@ class MemorySystem:
         
         return results[:20]  # Limit results
 
-    def get_recent_memories(self, limit: int = 100) -> List[Dict[str, Any]]:
-        """Return the most recent memory interactions.
+    def get_last_memory_session(self) -> Optional[Dict[str, Any]]:
+        """Return context for the most recently active session."""
+        sessions = self.short_term_memory.get("active_sessions", {})
+        latest_id = None
+        latest_time = None
 
-        Parameters
-        ----------
-        limit : int, optional
-            Maximum number of memory events to fetch, by default 100.
+        for sid, sess in sessions.items():
+            ts = sess.get("messages", [])
+            if ts:
+                timestamp = ts[-1].get("timestamp", sess.get("created_at"))
+            else:
+                timestamp = sess.get("created_at")
+            try:
+                dt = datetime.fromisoformat(timestamp)
+            except Exception:
+                continue
+            if not latest_time or dt > latest_time:
+                latest_time = dt
+                latest_id = sid
 
-        Returns
-        -------
-        List[Dict[str, Any]]
-            The latest memory entries ordered from oldest to newest within the
-            provided limit.
-        """
-        recent = self.short_term_memory.get("recent_interactions", [])
-        return recent[-limit:]
+        if latest_id:
+            info = self.get_session_context(latest_id)
+            info["session_id"] = latest_id
+            return info
+        return None

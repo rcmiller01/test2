@@ -10,6 +10,9 @@ from typing import Dict, List, Optional, Any, Union
 from dataclasses import dataclass
 from enum import Enum
 
+from mirror_log import MirrorLog
+from self_report import create_self_report, SelfReport
+
 class MirrorType(Enum):
     REASONING = "reasoning"      # Why I chose this approach
     EMOTIONAL = "emotional"     # How I perceived your emotional state
@@ -35,8 +38,21 @@ class MirrorModeManager:
     to AI responses through meta-commentary
     """
     
-    def __init__(self, analytics_logger=None):
+    def __init__(self, analytics_logger=None,
+                 memory_system=None,
+                 sentiment_analysis=None,
+                 persona_manager=None,
+                 reflection_engine=None,
+                 response_context=None):
         self.analytics_logger = analytics_logger
+        self.memory_system = memory_system
+        self.sentiment_analysis = sentiment_analysis
+        self.persona_manager = persona_manager
+        self.reflection_engine = reflection_engine
+        self.response_context = response_context
+        self.mirror_log = MirrorLog()
+        self.last_report: Optional[SelfReport] = None
+        self.badge_triggered = False
         
         # Configuration
         self.is_enabled = False
@@ -203,8 +219,12 @@ class MirrorModeManager:
                             context: Dict[str, Any],
                             mirror_types: Optional[List[MirrorType]] = None) -> str:
         """Add mirror reflection to a response"""
-        
+
         if not self.is_enabled:
+            return original_response
+
+        if context.get('is_streaming'):
+            # Avoid generating reflections while a response is actively streaming
             return original_response
         
         # Determine which mirror types to include
@@ -233,15 +253,18 @@ class MirrorModeManager:
         # Store reflections for analytics
         for reflection in reflections:
             self.reflection_history.append(reflection)
-            
+
             session_id = context.get('session_id', 'default')
             if session_id not in self.session_reflections:
                 self.session_reflections[session_id] = []
             self.session_reflections[session_id].append(reflection)
-        
+
         # Keep history manageable
         self.reflection_history = self.reflection_history[-100:]
-        
+
+        # Generate and log self-report
+        self._generate_self_report(mirrored_response, context)
+
         return mirrored_response
     
     def _should_include_reflection(self, mirror_type: MirrorType, context: Dict[str, Any]) -> bool:
@@ -457,6 +480,53 @@ class MirrorModeManager:
             }
             for r in session_reflections
         ]
+
+    def _generate_self_report(self, response_text: str, context: Dict[str, Any]):
+        """Create a SelfReport from the latest response and context."""
+        report = create_self_report(
+            response_text,
+            memory_system=self.memory_system,
+            sentiment_analysis=self.sentiment_analysis,
+            persona_manager=self.persona_manager,
+            reflection_engine=self.reflection_engine,
+            response_context=self.response_context,
+        )
+        self.last_report = report
+        self.mirror_log.append(report.dict())
+        self.badge_triggered = self.mirror_intensity > 0.7
+        return report
+
+    def get_last_self_report(self) -> Dict[str, Any]:
+        """Return the most recent self-report as a dictionary."""
+        if self.last_report:
+            return self.last_report.dict()
+        return {}
+
+    def search_log(self, pattern: str, limit: int = 20) -> List[Dict[str, Any]]:
+        """Search mirror log entries for a pattern."""
+        return self.mirror_log.search(pattern, limit)
+
+    def get_last_self_report_styled(self) -> str:
+        """Return the last self-report formatted for display."""
+        report = self.get_last_self_report()
+        if not report:
+            return "No self-report available."
+        emotion = report.get("emotion", {})
+        val = emotion.get("valence", 0.0)
+        ar = emotion.get("arousal", 0.0)
+        lines = [
+            f"🪞 **Mirror Report** ({report.get('timestamp')})",
+            f"Persona: {report.get('persona', 'N/A')}",
+            f"Emotion → valence {val:+.2f}, arousal {ar:+.2f}",
+        ]
+        motivations = report.get("motivation")
+        if motivations:
+            lines.append("Motivation: " + ", ".join(motivations))
+        factors = report.get("decision_factors")
+        if factors:
+            lines.append("Factors: " + ", ".join(factors))
+        lines.append(f"Confidence: {report.get('confidence', 0.0):.2f}")
+        return "\n".join(lines)
     
     def clear_reflection_history(self, session_id: Optional[str] = None):
         """Clear reflection history"""
@@ -476,8 +546,15 @@ def get_mirror_mode_manager():
     """Get the global mirror mode manager instance"""
     return mirror_mode_manager
 
-def initialize_mirror_mode_manager(analytics_logger=None):
-    """Initialize the global mirror mode manager"""
+def initialize_mirror_mode_manager(analytics_logger=None, **deps):
+    """Initialize the global mirror mode manager with optional dependencies."""
     global mirror_mode_manager
-    mirror_mode_manager = MirrorModeManager(analytics_logger)
+    mirror_mode_manager = MirrorModeManager(
+        analytics_logger,
+        memory_system=deps.get("memory_system"),
+        sentiment_analysis=deps.get("sentiment_analysis"),
+        persona_manager=deps.get("persona_manager"),
+        reflection_engine=deps.get("reflection_engine"),
+        response_context=deps.get("response_context"),
+    )
     return mirror_mode_manager
