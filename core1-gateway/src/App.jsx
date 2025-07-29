@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import ComparisonVote from './ComparisonVote.jsx';
 
 const API_BASE = import.meta.env.VITE_GATEWAY_URL || 'http://localhost:5000';
 
