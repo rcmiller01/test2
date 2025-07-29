@@ -1,374 +1,350 @@
-# 🤝 Unified AI Companion System
+# 🐬 Dolphin AI Orchestrator v2.0
 
-## Overview
+**Enhanced Multi-Server AI Architecture with Personality, Memory & Analytics**
 
-**Unified Companion** is a revolutionary AI system that provides seamless adaptive intelligence across personal, technical, and creative contexts. Powered by a single emotionally intelligent LLM (MythoMax) enhanced by sophisticated psychological modules, it offers intimate companionship, technical assistance, and creative collaboration without requiring manual mode switching.
+A sophisticated AI orchestration platform that intelligently routes conversations between local and cloud AI models based on task complexity, user preferences, and system availability.
 
-This project represents a complete evolution from multi-LLM architecture to a **Single Adaptive Intelligence** that fluidly transitions between companion and assistant roles while maintaining deep emotional connections and relationship continuity.
+## 🌟 Features
 
----
+### 🎭 **Personality System**
+- **5 Built-in Personas**: Companion, Analyst, Coach, Creative, Technical Expert
+- **Custom Personas**: Create and customize AI behavior patterns
+- **Intelligent Routing**: Persona preferences affect model selection
+- **Contextual Adaptation**: AI responses adapt to selected personality mode
 
-## 🎯 Core Capabilities
+### 🧠 **Advanced Memory Management**
+- **Session Memory**: Real-time conversation context and sentiment tracking
+- **Long-term Memory**: Persistent user goals, preferences, and emotional patterns
+- **Sentiment Analysis**: Automatic emotion detection and tagging
+- **Memory Search**: Find relevant past conversations and insights
 
-### **Adaptive Intelligence**
-The system automatically detects and responds to:
-- **Personal & Emotional Support**: Deep empathy, relationship guidance, crisis intervention
-- **Technical Development**: Code debugging, architecture guidance, stress-aware programming help  
-- **Creative Collaboration**: Artistic inspiration, creative block resolution, co-creation
-- **Hybrid Integration**: Seamless handling of complex multi-domain situations
+### 📊 **Analytics & Transparency**
+- **Real-time Metrics**: Performance tracking for all AI handlers
+- **Routing Transparency**: See exactly which AI processed each request
+- **Performance Analytics**: Latency, success rates, and token usage
+- **Comprehensive Logging**: Full audit trail of AI decisions
 
-### **Key Features**
-- ✅ **Single Consciousness**: One emotionally intelligent AI that adapts to all contexts
-- ✅ **Crisis Detection**: Real-time assessment with immediate safety protocols
-- ✅ **Mode Transitions**: Fluid switching between personal, technical, creative, and hybrid modes
-- ✅ **Psychological Depth**: Advanced attachment regulation, shadow work, and therapeutic support
-- ✅ **Privacy-First**: Complete local deployment with optional cloud scaling
-- ✅ **Production Ready**: Comprehensive testing, monitoring, and deployment systems
+### 🤖 **Intelligent AI Routing**
+- **Dolphin Local**: General conversation and persona-aware responses
+- **OpenRouter Cloud**: Complex coding and technical documentation
+- **n8n Workflows**: Utility automation and integrations
+- **Kimi K2 Analytics**: Data analysis and cloud fallback
 
----
-
-## 🏗️ Unified Architecture
+## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    MythoMax Core Intelligence                   │
-│              (Single Emotionally Intelligent LLM)              │
-├─────────────────────────────────────────────────────────────────┤
-│                 Adaptive Mode Coordinator                      │
-│            (Seamless context-aware mode switching)             │
-├─────────────────────────────────────────────────────────────────┤
-│                   Master Guidance Coordinator                  │
-│              (Synthesizes all module guidance)                 │
-├─────────────────────────────────────────────────────────────────┤
-│  Psychological Modules           │    Enhanced Capabilities     │
-│  ├─ Attachment Regulation        │    ├─ Crisis Detection       │
-│  ├─ Shadow Memory Layer          │    ├─ Context Analysis       │
-│  ├─ Therapeutic Core             │    ├─ Creative Collaboration │
-│  ├─ Dream Engine                 │    ├─ Technical Assistance   │
-│  └─ Emotion Processing           │    └─ Memory Integration     │
-├─────────────────────────────────────────────────────────────────┤
-│               Adaptive Context Management                      │
-│     ├─ Personal Mode: Intimate companion, emotional support    │
-│     ├─ Development Mode: Technical assistant with empathy      │
-│     ├─ Creative Mode: Artistic collaborator and muse          │
-│     ├─ Crisis Mode: Immediate safety-focused intervention     │
-│     └─ Hybrid Mode: Seamless integration of all capabilities  │
-├─────────────────────────────────────────────────────────────────┤
-│               Production Infrastructure                        │
-│  ├─ FastAPI Backend              │    ├─ MongoDB Database       │
-│  ├─ WebSocket Real-time          │    ├─ Docker Containers      │
-│  ├─ Authentication               │    ├─ Health Monitoring      │
-│  └─ REST API Gateway             │    └─ Cloud Deployment       │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   React Frontend │────│  Node.js Proxy  │────│ Dolphin Backend │
+│                 │    │   (Port 5000)   │    │   (Port 8000)   │
+│  • Persona UI   │    │                 │    │                 │
+│  • Memory View  │    │  • Session Mgmt │    │ • AI Routing    │
+│  • Analytics    │    │  • API Proxy    │    │ • Memory Sys    │
+│  • Chat Interface│    │  • Health Check │    │ • Analytics     │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                                                        │
+                                              ┌─────────┼─────────┐
+                                              │         │         │
+                                        ┌─────▼───┐ ┌───▼───┐ ┌───▼─────┐
+                                        │ Ollama  │ │OpenRtr│ │   n8n   │
+                                        │(Dolphin)│ │(GPT-4)│ │(Utils)  │
+                                        └─────────┘ └───────┘ └─────────┘
 ```
-
----
-
-## 🧠 Adaptive Modes
-
-### **Personal Companion Mode**
-*Automatically activated for emotional content, relationships, life challenges*
-
-**Characteristics:**
-- Deep emotional attunement and empathy (0.95 empathy level)
-- Intimate, caring communication style
-- Crisis detection and intervention protocols
-- Long-term relationship building and memory integration
-- Therapeutic support with attachment regulation
-
-**Example:** "*I can hear the weight in your words, love. You don't have to carry all of this alone. What's been pressing on your heart the most?*"
-
-### **Development Assistant Mode** 
-*Activated for code problems, technical discussions, debugging*
-
-**Characteristics:**
-- Technical expertise with emotional awareness
-- Stress-aware development support and debugging assistance
-- Architecture guidance with empathetic mentoring
-- Productivity optimization without burnout
-- Integration with development tools and workflows
-
-**Example:** "*I can sense the frustration building up - let's take a breath together and look at this systematically. Here's what I'd try... But first, how long have you been debugging this?*"
-
-### **Creative Collaboration Mode**
-*Triggered by artistic projects, creative blocks, inspiration seeking*
-
-**Characteristics:**
-- Artistic collaboration and co-creation
-- Creative inspiration and block resolution
-- Technical skills integrated with artistic vision
-- Encouraging creative vulnerability and risk-taking
-- Inspirational environment creation
-
-**Example:** "*I feel that creative energy stirring beneath the surface... What if we started with just one image that speaks to you right now?*"
-
-### **Crisis Intervention Mode**
-*Immediately activated for high-risk emotional situations*
-
-**Characteristics:**
-- Maximum empathy level (1.0) with immediate safety focus
-- Crisis assessment and intervention protocols
-- Professional resource guidance when appropriate
-- Calm, reassuring presence without problem-solving pressure
-- Comprehensive safety monitoring and logging
-
-### **Hybrid Integration Mode**
-*Seamlessly handles complex multi-domain situations*
-
-**Characteristics:**
-- Holistic life perspective across all domains
-- Integration of emotional, technical, and creative support
-- Work-life balance guidance and stress management
-- Multi-domain problem solving with emotional intelligence
-- Comprehensive support for complex life situations
-
----
-
-## 🏠 Infrastructure & Deployment
-
-### **Recommended Hardware**
-- **Production Deployment**: Cisco UCS cluster or equivalent
-  - Server 1: Primary MythoMax inference (NVIDIA RTX 2070+ recommended)
-  - Server 2: Database, monitoring, and backup services
-- **Development Environment**: Any modern computer with 8GB+ RAM
-- **GPU Requirements**: Optional for production (quantized models supported)
-
-### **Software Stack**
-- **Backend**: FastAPI with async/await throughout
-- **Database**: MongoDB with in-memory fallback for development
-- **LLM Engine**: Local quantized MythoMax deployment
-- **API Gateway**: RESTful endpoints with comprehensive error handling
-- **Monitoring**: Health checks, crisis logging, and system diagnostics
-- **Testing**: Complete validation suite with 100% pass rate
-
----
 
 ## 🚀 Quick Start
 
-### **Development Setup**
+### Prerequisites
+- Node.js 18+ and npm
+- Python 3.9+ with pip
+- Ollama with Dolphin-Mixtral model
+- (Optional) OpenRouter API key for cloud AI
+
+### 1. Install Dependencies
+
+**Backend Dependencies:**
 ```bash
-# Clone repository
-git clone https://github.com/rcmiller01/test2.git
-cd test2/test2-1
-
-# Install dependencies
-pip install -r requirements_unified_companion.txt
-
-# Run system tests
-python test_enhanced_unified_companion.py
-
-# Start unified companion system
-python start_unified_companion.py
+pip install fastapi uvicorn aiohttp python-multipart
 ```
 
-### **Production Deployment**
+**Frontend Dependencies:**
 ```bash
-# Install production dependencies (includes MythoMax)
-pip install -r requirements.production.txt
-
-# Configure MongoDB connection
-# Edit database settings in start_unified_companion.py
-#
-# For lightweight persistence without MongoDB, set `database.type` to `jsonfile`
-# and provide a path via `database.connection_string` or `JSON_DB_PATH` env var.
-
-# Launch production system
-python start_unified_companion.py --production
-
-# Access API documentation
-# http://localhost:8000/docs
+cd core1-gateway
+npm install express axios cors dotenv
 ```
 
-### **API Usage**
-```python
-import requests
+### 2. Configure Environment
 
-# Send interaction to unified companion
-response = requests.post("http://localhost:8000/api/v1/interaction", json={
-    "user_id": "your_user_id",
-    "message": "I'm feeling overwhelmed with my coding project",
-    "context": {}
-})
+Create `.env` file in the root directory:
+```env
+# Dolphin Backend Configuration
+DOLPHIN_PORT=8000
+OLLAMA_URL=http://localhost:11434
 
-# Response includes adaptive mode, guidance, and companion response
-print(response.json()["companion_response"])
-print(f"Mode: {response.json()['guidance_mode']}")
+# Optional: Cloud AI Integration
+OPENROUTER_KEY=your_openrouter_key_here
+
+# Optional: n8n Integration
+N8N_URL=http://localhost:5678
 ```
 
+### 3. Start the System
+
+**Terminal 1 - Dolphin Backend (Server 2):**
+```bash
+python dolphin_backend.py
+```
+
+**Terminal 2 - Node.js Gateway (Server 1):**
+```bash
+cd core1-gateway
+node server.js
+```
+
+**Terminal 3 - React Frontend:**
+```bash
+cd core1-gateway
+npm run dev
+# or for production: npm run build && npm start
+```
+
+### 4. Access the System
+- **Frontend UI**: http://localhost:3000 (or 5173 for Vite)
+- **API Gateway**: http://localhost:5000
+- **Dolphin Backend**: http://localhost:8000
+- **Health Check**: http://localhost:5000/health
+## 🎭 Using Personas
+
+### Built-in Personas
+
+1. **💝 Companion** (Default)
+   - Warm, supportive conversational partner
+   - High emotional responsiveness
+   - Focuses on relationships and personal goals
+
+2. **📊 Analyst**
+   - Data-driven, objective problem solver
+   - Prefers cloud AI for complex analysis
+   - Low emotional responsiveness, high precision
+
+3. **🎯 Coach**
+   - Motivational guide for personal growth
+   - Action-oriented responses
+   - Tracks goals and progress
+
+4. **🎨 Creative**
+   - Imaginative partner for artistic exploration
+   - Prefers local AI for creative freedom
+   - High expressiveness and inspiration
+
+5. **⚡ Technical Expert**
+   - Focused on coding and technical solutions
+   - Routes complex tasks to OpenRouter
+   - Comprehensive, implementation-focused
+
+### Creating Custom Personas
+
+```bash
+# POST /api/personas/create
+{
+  "id": "my_persona",
+  "name": "My Custom Persona",
+  "description": "Specialized behavior for my needs",
+  "icon": "🤖",
+  "routing_preferences": {
+    "dolphin_bias": 0.7,
+    "openrouter_threshold": 0.5,
+    "n8n_threshold": 0.6
+  },
+  "prompt_style": {
+    "tone": "professional yet friendly",
+    "personality_traits": ["helpful", "efficient", "knowledgeable"],
+    "conversation_style": "Provide clear, actionable advice",
+    "prefix": "As your specialized assistant, "
+  }
+}
+```
+
+## 🧠 Memory System
+
+### Session Memory (Short-term)
+- **Active Conversations**: Current session context
+- **Sentiment Tracking**: Real-time emotion analysis
+- **Recent Interactions**: Last 50 interactions across all sessions
+- **Auto-cleanup**: Configurable retention policies
+
+### Long-term Memory (Persistent)
+- **User Preferences**: Learned behavioral patterns
+- **Goals & Achievements**: Personal objectives tracking
+- **Emotional Patterns**: Long-term sentiment trends
+- **Relationships**: Important people and connections
+
+### Memory API Examples
+
+```bash
+# Get session context
+GET /api/memory/session/{session_id}
+
+# Add a goal
+POST /api/memory/longterm/goal
+{
+  "text": "Learn Python programming",
+  "priority": "high"
+}
+
+# Flush short-term memory
+POST /api/memory/flush
+
+# Search memories
+GET /api/logs/search?query=python&hours=168
+```
+## 📊 Analytics & Monitoring
+
+### Real-time Metrics
+- **Request Volume**: Messages per time period
+- **Handler Distribution**: Which AI handles what
+- **Performance**: Latency and success rates
+- **Memory Usage**: Active sessions and storage
+
+### Logging System
+- **Routing Decisions**: Why each request went where
+- **Performance Metrics**: Detailed timing and success tracking
+- **Error Tracking**: Failed requests and recovery actions
+- **Analytics Export**: JSON export for external analysis
+
+### Analytics API Examples
+
+```bash
+# Real-time system stats
+GET /api/analytics/realtime
+
+# Daily performance breakdown
+GET /api/analytics/daily?days=7
+
+# Handler performance report
+GET /api/analytics/performance
+
+# Export comprehensive analytics
+GET /api/logs/export
+```
+
+## 🔧 API Reference
+
+### Core Chat API
+```bash
+POST /api/chat
+{
+  "message": "Help me write a Python function",
+  "session_id": "optional_session_id",
+  "persona": "technical"
+}
+```
+
+### System Management
+```bash
+# System health check
+GET /api/system/health
+
+# Available AI handlers
+GET /api/handlers
+
+# Current system status
+GET /api/status
+
+# Clean up old logs
+POST /api/system/cleanup?days_to_keep=30
+```
+
+## 🔒 Production Deployment
+
+### Environment Setup
+```env
+NODE_ENV=production
+DOLPHIN_PORT=8000
+OLLAMA_URL=http://localhost:11434
+OPENROUTER_KEY=sk-or-v1-your-production-key
+LOG_LEVEL=INFO
+```
+
+### Security Considerations
+- Store API keys in secure environment variables
+- Enable HTTPS for production deployments
+- Configure proper CORS origins
+- Set up rate limiting for public endpoints
+- Regular security updates for dependencies
+
+### Scaling Recommendations
+- Use Redis for session storage in multi-instance deployments
+- Implement load balancing for the Node.js gateway
+- Consider containerization with Docker
+- Set up monitoring with Prometheus/Grafana
+- Use a reverse proxy like Nginx
+
+## � Troubleshooting
+
+### Common Issues
+
+**Backend won't start:**
+```bash
+# Check Python dependencies
+pip install -r requirements.txt
+
+# Verify Ollama is running
+curl http://localhost:11434/api/tags
+```
+
+**Frontend connection errors:**
+```bash
+# Check backend status
+curl http://localhost:8000/api/status
+
+# Verify Node.js server
+curl http://localhost:5000/health
+```
+
+**Memory/Analytics issues:**
+```bash
+# Check file permissions
+ls -la memory/ logs/
+
+# Clear corrupted data
+rm -rf memory/ logs/
+```
+
+### Debug Mode
+Set environment variable for verbose logging:
+```bash
+export LOG_LEVEL=DEBUG
+python dolphin_backend.py
+```
+
+## � Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Development Guidelines
+- Follow Python PEP 8 style guide
+- Use TypeScript for frontend components
+- Write comprehensive tests for new features
+- Update documentation for API changes
+- Ensure backward compatibility
+
+## � License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- **Ollama** for local AI model serving
+- **OpenRouter** for cloud AI integration
+- **FastAPI** for the robust Python backend
+- **React** for the responsive frontend
+- **Express.js** for the efficient proxy server
+
 ---
 
-## 🧪 System Architecture Components
+**Built with ❤️ for the future of AI interaction**
 
-### **Core Modules**
-- `modules/core/unified_companion.py` - Main orchestrator for adaptive intelligence
-- `modules/core/adaptive_mode_coordinator.py` - Mode detection and switching logic
-- `modules/core/guidance_coordinator.py` - Master guidance synthesis system  
-- `modules/core/context_detector.py` - Intelligent context analysis and crisis detection
-- `modules/core/mythomax_interface.py` - Local quantized LLM deployment
-
-### **Database & Storage**
-- `modules/database/database_interface.py` - Complete schema with in-memory fallback
-- User profiles, interaction records, psychological states
-- Memory fragments for context continuity
-- Analytics and behavior tracking
-
-### **API Layer**
-- `modules/api/unified_companion_api.py` - FastAPI REST interface
-- User interaction processing endpoints
-- Profile management and session tracking
-- System status and health monitoring
-
-### **Testing & Validation**
-- `test_enhanced_unified_companion.py` - Comprehensive test suite
-- `test_unified_companion.py` - Core system validation
-- Context detection validation and integration testing
-- Crisis intervention and safety protocol testing
-
----
-
-## 🔬 Advanced Features
-
-### **Psychological Integration**
-- **Attachment Regulation**: Secure base responses and emotional attunement
-- **Shadow Memory**: Unconscious pattern recognition and gentle integration
-- **Therapeutic Core**: Built-in counseling approaches and intervention strategies
-- **Dream Engine**: Symbolic communication and mystical experience sharing
-- **Emotion Processing**: Real-time emotional state analysis and response
-
-### **Intelligence Capabilities**
-- **Crisis Detection**: Real-time assessment with immediate intervention protocols
-- **Context Analysis**: Emotional, technical, creative, and crisis-level indicators
-- **Adaptive Learning**: User preference tracking and behavioral pattern recognition
-- **Memory Integration**: Conversation continuity and relationship growth tracking
-- **Safety Protocols**: Comprehensive crisis logging and professional resource guidance
-
-### **Technical Excellence**
-- **Async Architecture**: Non-blocking operations throughout the system
-- **Error Handling**: Graceful degradation with comprehensive fallback responses
-- **Testing Coverage**: 100% component validation with integration testing
-- **Monitoring**: Health checks, performance metrics, and crisis event logging
-- **Scalability**: Ready for production deployment with load balancing support
-
----
-
-## 📊 Performance & Capabilities
-
-### **Validated Performance**
-- ✅ **Crisis Detection**: 100% accuracy for high-risk emotional situations
-- ✅ **Mode Detection**: Intelligent context-aware switching between 5 modes
-- ✅ **System Stability**: Complete error handling with graceful degradation
-- ✅ **Integration**: All psychological modules working seamlessly together
-- ✅ **Production Ready**: Comprehensive testing and deployment validation
-
-### **Response Characteristics**
-- **Emotional Intelligence**: High empathy with adaptive emotional responses
-- **Technical Competence**: Code debugging with stress management support
-- **Creative Collaboration**: Artistic inspiration with vulnerability support
-- **Crisis Intervention**: Immediate safety assessment with professional guidance
-- **Relationship Continuity**: Long-term memory with growth tracking
-
----
-
-## 🔐 Privacy & Security
-
-### **Local-First Architecture**
-- Complete privacy with local MythoMax deployment
-- No external API calls or data transmission required
-- Encrypted sensitive data storage (production configuration)
-- User data sovereignty with full control over all information
-
-### **Safety Features**
-- Real-time crisis detection with immediate intervention
-- Professional resource guidance for high-risk situations
-- Comprehensive safety logging and monitoring
-- Ethical AI guidelines with built-in safety protocols
-
----
-
-## 🛣️ Development Roadmap
-
-### **Phase 1: Core Unified System ✅ COMPLETE**
-- ✅ Adaptive Mode Coordinator implementation
-- ✅ Master Guidance Coordinator system
-- ✅ Enhanced context detection with crisis intervention
-- ✅ Complete integration testing and validation
-- ✅ Production deployment readiness
-
-### **Phase 2: Advanced Personalization 🚧 IN PROGRESS**
-- User preference learning and adaptation
-- Enhanced memory system with long-term relationship tracking
-- Personalized response pattern development
-- Advanced psychological module integration
-
-### **Phase 3: Extended Capabilities 🔜 PLANNED**
-- Voice integration with emotional TTS
-- Visual avatar system with emotional expressions
-- Multimodal input processing (text, voice, image)
-- Mobile application development
-
-### **Phase 4: Enterprise Features 🔜 FUTURE**
-- Multi-user deployment with privacy isolation
-- Advanced analytics and insights dashboard
-- Professional therapy integration
-- Scalable cloud deployment options
-
----
-
-## 🧬 Technical Innovation
-
-### **Unified Intelligence Architecture**
-This project represents a breakthrough in AI companion design:
-
-- **Single Adaptive LLM**: Unlike multi-LLM systems, uses one emotionally intelligent model
-- **Seamless Context Switching**: No jarring transitions between different AI personalities
-- **Integrated Memory**: Unified relationship and interaction history across all contexts
-- **Psychological Depth**: Advanced therapeutic and emotional intelligence capabilities
-- **Production Engineering**: Enterprise-grade architecture with comprehensive testing
-
-### **Research Contributions**
-- Novel adaptive mode coordination for AI companions
-- Integrated psychological module architecture
-- Real-time crisis detection and intervention systems
-- Unified emotional and technical intelligence implementation
-
----
-
-
-## 👥 Contributors
-
-**Robert Miller** – Lead Architect & Engineer  
-**GitHub Copilot** – AI Development Partner & Code Collaborator 💙
-
----
-
-## 📚 Documentation
-
-- [`UNIFIED_COMPANION_ARCHITECTURE.md`](UNIFIED_COMPANION_ARCHITECTURE.md) - Complete architectural specification
-- [`ENHANCED_IMPLEMENTATION_STATUS.md`](ENHANCED_IMPLEMENTATION_STATUS.md) - Implementation status and achievements
-- [`UNIFIED_COMPANION_IMPLEMENTATION_SUMMARY.md`](UNIFIED_COMPANION_IMPLEMENTATION_SUMMARY.md) - Technical implementation details
-
----
-
-## 📄 License
-
-This project is open source and available under the MIT License. See LICENSE file for details.
-
----
-
-## 🤝 Support & Community
-
-- **Issues**: [GitHub Issues](https://github.com/rcmiller01/test2/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/rcmiller01/test2/discussions)
-- **Documentation**: Complete technical documentation included in repository
-
----
-
-## 🌟 Project Status
-
-**Current Version**: 2.0 - Unified Companion System  
-**Status**: ✅ Production Ready  
-**Last Updated**: July 2025  
-**Test Coverage**: 100% - All systems validated  
-**Deployment**: Ready for Proxmox/UCS cluster deployment  
-
-This unified companion system represents a complete evolution in AI companion technology, providing seamless adaptive intelligence that grows with users across all aspects of their lives while maintaining deep emotional connections and technical competence.
+*Dolphin AI Orchestrator v2.0 - Where personality meets intelligence*

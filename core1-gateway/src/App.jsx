@@ -1,5 +1,5 @@
-// Core1 Frontend — React + Tailwind for Dolphin Backend
-// Multi-server AI architecture with intelligent routing
+// Core1 Frontend — Enhanced React + Tailwind for Dolphin Backend v2.0
+// Multi-server AI architecture with personality system, memory management, and analytics
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -12,24 +12,73 @@ export default function App() {
   const [error, setError] = useState('');
   const [sessionId, setSessionId] = useState(null);
   const [handlers, setHandlers] = useState([]);
+  
+  // Enhanced state for new features
+  const [personas, setPersonas] = useState([]);
+  const [currentPersona, setCurrentPersona] = useState('companion');
+  const [analytics, setAnalytics] = useState(null);
+  const [memoryStatus, setMemoryStatus] = useState(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
-  // Check backend status on load
+  // Check backend status and load initial data
   useEffect(() => {
-    const checkStatus = async () => {
+    const initializeApp = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/status');
-        setStatus(res.data);
+        // Get system status
+        const statusRes = await axios.get('http://localhost:8000/api/status');
+        setStatus(statusRes.data);
         
         // Get available handlers
-        const handlersRes = await axios.get('http://localhost:5000/api/handlers');
+        const handlersRes = await axios.get('http://localhost:8000/api/handlers');
         setHandlers(handlersRes.data.handlers);
         
+        // Get available personas
+        const personasRes = await axios.get('http://localhost:8000/api/personas');
+        setPersonas(Object.entries(personasRes.data.personas));
+        setCurrentPersona(personasRes.data.current_persona);
+        
+        // Get real-time analytics
+        const analyticsRes = await axios.get('http://localhost:8000/api/analytics/realtime');
+        setAnalytics(analyticsRes.data);
+        
       } catch (err) {
-        setError('Backend not available. Please start the servers.');
+        setError('Backend not available. Please start the Dolphin server.');
       }
     };
-    checkStatus();
+    
+    initializeApp();
+    
+    // Set up periodic status updates
+    const interval = setInterval(async () => {
+      try {
+        const analyticsRes = await axios.get('http://localhost:8000/api/analytics/realtime');
+        setAnalytics(analyticsRes.data);
+      } catch (err) {
+        // Silently handle polling errors
+      }
+    }, 30000); // Update every 30 seconds
+    
+    return () => clearInterval(interval);
   }, []);
+
+  const handlePersonaChange = async (personaId) => {
+    try {
+      await axios.post(`http://localhost:8000/api/personas/${personaId}`);
+      setCurrentPersona(personaId);
+      
+      // Add system message about persona change
+      const systemMessage = {
+        role: 'system',
+        content: `🎭 Switched to ${personas.find(([id]) => id === personaId)?.[1]?.name || personaId} persona`,
+        handler: 'SYSTEM',
+        timestamp: new Date().toISOString()
+      };
+      setMessages(prev => [...prev, systemMessage]);
+      
+    } catch (err) {
+      setError('Failed to change persona');
+    }
+  };
 
   const handleSend = async () => {
     if (!message.trim()) return;
@@ -44,9 +93,10 @@ export default function App() {
     setMessages(prev => [...prev, userMessage]);
     
     try {
-      const res = await axios.post('http://localhost:5000/api/chat', {
+      const res = await axios.post('http://localhost:8000/api/chat', {
         message,
-        sessionId,
+        session_id: sessionId,
+        persona: currentPersona,
       });
       
       const response = res.data;
@@ -55,14 +105,16 @@ export default function App() {
         content: response.response,
         handler: response.handler,
         reasoning: response.reasoning,
-        timestamp: response.metadata?.timestamp || new Date().toISOString()
+        persona_used: response.persona_used,
+        metadata: response.metadata,
+        timestamp: response.timestamp
       };
       
       setMessages(prev => [...prev, aiMessage]);
       
       // Update session ID if not set
-      if (!sessionId && response.sessionId) {
-        setSessionId(response.sessionId);
+      if (!sessionId && response.session_id) {
+        setSessionId(response.session_id);
       }
       
     } catch (err) {
@@ -81,6 +133,42 @@ export default function App() {
     }
   };
 
+  const clearChat = async () => {
+    setMessages([]);
+    setError('');
+    if (sessionId) {
+      try {
+        await axios.delete(`http://localhost:8000/api/memory/session/${sessionId}`);
+        setSessionId(null);
+      } catch (err) {
+        console.error('Error clearing session:', err);
+      }
+    }
+  };
+
+  const flushMemory = async () => {
+    try {
+      await axios.post('http://localhost:8000/api/memory/flush');
+      setMessages(prev => [...prev, {
+        role: 'system',
+        content: '🧠 Short-term memory has been flushed',
+        handler: 'SYSTEM',
+        timestamp: new Date().toISOString()
+      }]);
+    } catch (err) {
+      setError('Failed to flush memory');
+    }
+  };
+
+  const exportAnalytics = async () => {
+    try {
+      const res = await axios.get('http://localhost:8000/api/logs/export');
+      alert(`Analytics exported to: ${res.data.export_path}`);
+    } catch (err) {
+      setError('Failed to export analytics');
+    }
+  };
+
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -88,50 +176,43 @@ export default function App() {
     }
   };
 
-  const clearChat = () => {
-    setMessages([]);
-    setError('');
-    if (sessionId) {
-      axios.delete(`http://localhost:5000/api/sessions/${sessionId}`)
-        .catch(err => console.error('Error clearing session:', err));
-      setSessionId(null);
-    }
-  };
-
-  const newSession = () => {
-    clearChat();
-    setSessionId(null);
-  };
-
   const getHandlerIcon = (handler) => {
-    switch(handler) {
-      case 'DOLPHIN': return '🐬';
-      case 'OPENROUTER': return '☁️';
-      case 'N8N': return '🔧';
-      case 'KIMI_K2': return '📊';
-      case 'ERROR': return '❌';
-      default: return '🤖';
-    }
+    const iconMap = {
+      'DOLPHIN': '🐬',
+      'OPENROUTER': '☁️',
+      'N8N': '🔧',
+      'KIMI_K2': '📊',
+      'SYSTEM': '⚙️',
+      'ERROR': '❌'
+    };
+    return iconMap[handler] || '🤖';
   };
 
   const getHandlerColor = (handler) => {
-    switch(handler) {
-      case 'DOLPHIN': return 'bg-blue-600';
-      case 'OPENROUTER': return 'bg-green-600';
-      case 'N8N': return 'bg-orange-600';
-      case 'KIMI_K2': return 'bg-purple-600';
-      case 'ERROR': return 'bg-red-600';
-      default: return 'bg-gray-600';
-    }
+    const colorMap = {
+      'DOLPHIN': 'bg-blue-600',
+      'OPENROUTER': 'bg-green-600',
+      'N8N': 'bg-orange-600',
+      'KIMI_K2': 'bg-purple-600',
+      'SYSTEM': 'bg-gray-600',
+      'ERROR': 'bg-red-600'
+    };
+    return colorMap[handler] || 'bg-gray-600';
+  };
+
+  const getPersonaIcon = (personaId) => {
+    const persona = personas.find(([id]) => id === personaId)?.[1];
+    return persona?.icon || '🤖';
   };
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-6 space-y-4">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold">🐬 Dolphin AI Gateway</h1>
-            <p className="text-gray-400 text-sm">Multi-server intelligent routing</p>
+            <h1 className="text-3xl font-bold">🐬 Dolphin AI Gateway v2.0</h1>
+            <p className="text-gray-400 text-sm">Personality • Memory • Analytics • Multi-server Routing</p>
           </div>
           <div className="flex items-center space-x-4">
             {status && (
@@ -151,18 +232,85 @@ export default function App() {
               </div>
             )}
             <button
-              onClick={newSession}
+              onClick={() => setShowAdvanced(!showAdvanced)}
               className="bg-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-600"
             >
-              New Session
-            </button>
-            <button
-              onClick={clearChat}
-              className="bg-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-600"
-            >
-              Clear Chat
+              {showAdvanced ? 'Hide Advanced' : 'Show Advanced'}
             </button>
           </div>
+        </div>
+
+        {/* Advanced Controls */}
+        {showAdvanced && (
+          <div className="bg-gray-800 rounded-lg p-4 mb-4 space-y-4">
+            <h3 className="text-lg font-semibold mb-2">🎛️ Advanced Controls</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Session Management */}
+              <div>
+                <h4 className="font-medium mb-2">Session</h4>
+                <div className="space-y-2">
+                  <button onClick={clearChat} className="w-full bg-blue-600 px-3 py-1 rounded text-sm hover:bg-blue-500">
+                    Clear Chat
+                  </button>
+                  <button onClick={flushMemory} className="w-full bg-red-600 px-3 py-1 rounded text-sm hover:bg-red-500">
+                    Flush Memory
+                  </button>
+                </div>
+              </div>
+              
+              {/* Analytics */}
+              <div>
+                <h4 className="font-medium mb-2">Analytics</h4>
+                {analytics && (
+                  <div className="text-xs space-y-1">
+                    <div>Requests: {analytics.recent_requests}</div>
+                    <div>Avg Latency: {analytics.performance?.avg_latency_seconds}s</div>
+                    <button onClick={exportAnalytics} className="w-full bg-purple-600 px-3 py-1 rounded text-sm hover:bg-purple-500">
+                      Export Data
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              {/* Memory Status */}
+              <div>
+                <h4 className="font-medium mb-2">Memory</h4>
+                {status?.backend_status?.memory && (
+                  <div className="text-xs space-y-1">
+                    <div>Sessions: {status.backend_status.memory.short_term.active_sessions}</div>
+                    <div>Messages: {status.backend_status.memory.short_term.total_messages}</div>
+                    <div>Goals: {status.backend_status.memory.long_term.goals_count}</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Persona Selection */}
+        <div className="bg-gray-800 rounded-lg p-4 mb-4">
+          <h3 className="text-sm font-semibold mb-3">🎭 AI Persona</h3>
+          <div className="flex flex-wrap gap-2">
+            {personas.map(([id, persona]) => (
+              <button
+                key={id}
+                onClick={() => handlePersonaChange(id)}
+                className={`px-3 py-2 rounded-lg text-sm transition-colors ${
+                  currentPersona === id 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-gray-700 hover:bg-gray-600'
+                }`}
+              >
+                {persona.icon} {persona.name}
+              </button>
+            ))}
+          </div>
+          {personas.find(([id]) => id === currentPersona) && (
+            <p className="text-xs text-gray-400 mt-2">
+              {personas.find(([id]) => id === currentPersona)[1].description}
+            </p>
+          )}
         </div>
 
         {error && (
@@ -178,10 +326,10 @@ export default function App() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
               {handlers.map((handler, idx) => (
                 <div key={idx} className="flex items-center space-x-2">
-                  <span>{getHandlerIcon(handler.name)}</span>
+                  <span>{handler.icon}</span>
                   <div>
                     <div className="font-medium">{handler.name}</div>
-                    <div className="text-gray-400">{handler.description}</div>
+                    <div className="text-gray-400">{handler.status}</div>
                   </div>
                 </div>
               ))}
@@ -193,10 +341,10 @@ export default function App() {
         <div className="bg-gray-800 rounded-lg p-4 h-96 overflow-y-auto mb-4 space-y-3">
           {messages.length === 0 ? (
             <div className="text-gray-400 text-center py-8">
-              <div className="text-2xl mb-2">🐬</div>
-              <div>Start a conversation with Dolphin AI...</div>
+              <div className="text-2xl mb-2">{getPersonaIcon(currentPersona)}</div>
+              <div>Start a conversation with {personas.find(([id]) => id === currentPersona)?.[1]?.name || 'Dolphin AI'}...</div>
               <div className="text-sm mt-2">
-                Messages are intelligently routed to the best AI handler
+                Messages are intelligently routed with personality-aware responses
               </div>
             </div>
           ) : (
@@ -211,7 +359,10 @@ export default function App() {
               >
                 <div className="font-semibold mb-1 flex items-center justify-between">
                   <span>
-                    {msg.role === 'user' ? '👤 You' : `${getHandlerIcon(msg.handler)} ${msg.handler || 'AI'}`}
+                    {msg.role === 'user' 
+                      ? '👤 You' 
+                      : `${getHandlerIcon(msg.handler)} ${msg.handler || 'AI'}${msg.persona_used ? ` (${msg.persona_used})` : ''}`
+                    }
                   </span>
                   {msg.timestamp && (
                     <span className="text-xs opacity-70">
@@ -225,13 +376,20 @@ export default function App() {
                     💭 {msg.reasoning}
                   </div>
                 )}
+                {msg.metadata && showAdvanced && (
+                  <div className="text-xs mt-2 opacity-60">
+                    📊 Confidence: {msg.metadata.confidence?.toFixed(2)} | 
+                    Latency: {msg.metadata.latency_seconds}s
+                    {msg.metadata.sentiment_trend && ` | Sentiment: ${msg.metadata.sentiment_trend.toFixed(2)}`}
+                  </div>
+                )}
               </div>
             ))
           )}
           {loading && (
             <div className="bg-gray-700 mr-8 p-3 rounded-lg">
               <div className="font-semibold mb-1 flex items-center space-x-2">
-                <span>🐬 Dolphin</span>
+                <span>{getPersonaIcon(currentPersona)} {personas.find(([id]) => id === currentPersona)?.[1]?.name || 'AI'}</span>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
               </div>
               <div className="text-sm opacity-80">
@@ -249,7 +407,7 @@ export default function App() {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Ask anything... Dolphin will route to the best AI handler"
+              placeholder={`Ask anything... ${personas.find(([id]) => id === currentPersona)?.[1]?.name || 'AI'} will route to the best handler`}
               rows="2"
             />
             <button
@@ -280,12 +438,12 @@ export default function App() {
               </div>
               
               <div className="text-gray-400">
-                Multi-server AI with intelligent routing
+                Enhanced AI with personality, memory & analytics
               </div>
             </div>
             
             {status?.backend_status && (
-              <div className="mt-2 text-xs text-gray-400 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="mt-2 text-xs text-gray-400 grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                   🐬 Dolphin: {status.backend_status.services?.ollama ? '✅' : '❌'}
                 </div>
@@ -293,7 +451,10 @@ export default function App() {
                   ☁️ OpenRouter: {status.backend_status.services?.openrouter_configured ? '✅' : '❌'}
                 </div>
                 <div>
-                  🔧 n8n: {status.backend_status.services?.n8n ? '✅' : '❌'}
+                  🧠 Memory: {status.backend_status.memory ? '✅' : '❌'}
+                </div>
+                <div>
+                  📊 Analytics: {status.backend_status.analytics ? '✅' : '❌'}
                 </div>
               </div>
             )}

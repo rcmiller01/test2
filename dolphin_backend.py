@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 """
-Dolphin Backend - AI Orchestration Server
+Dolphin Backend - AI Orchestration Server v2.0
 
-Multi-server architecture with Dolphin as the primary orchestrator:
+Enhanced multi-server architecture with:
+- Personality System: User-selectable AI personas
+- Memory System: Session & long-term memory with sentiment analysis
+- Analytics Logging: Comprehensive routing transparency & performance tracking
+- Agent Awareness: Real-time status monitoring
+
+Architecture:
 - Dolphin handles general conversation and routing decisions
 - Heavy coding tasks → OpenRouter (GPT-4/Claude)
 - Utilities (email/calendar) → n8n agents
@@ -15,15 +21,22 @@ Usage:
 import asyncio
 import json
 import logging
+import time
 from datetime import datetime
 from typing import Dict, Any, Optional, List
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import aiohttp
 import uvicorn
 import os
 from pathlib import Path
+
+# Import our enhanced systems
+from personality_system import PersonalitySystem
+from memory_system import MemorySystem
+from analytics_logger import AnalyticsLogger
 
 # Configure logging
 logging.basicConfig(
@@ -37,17 +50,35 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-# Pydantic models
+# Import advanced v2.1 features after logger is configured
+try:
+    from reflection_engine import ReflectionEngine
+    from connectivity_manager import ConnectivityManager
+    from private_memory import PrivateMemoryManager
+    from persona_instruction_manager import PersonaInstructionManager
+    from mirror_mode import MirrorModeManager
+    from system_metrics import MetricsCollector
+    ADVANCED_FEATURES_AVAILABLE = True
+    logger.info("✅ Advanced v2.1 features imported successfully")
+except ImportError as e:
+    logger.warning(f"⚠️ Some advanced features unavailable: {e}")
+    ADVANCED_FEATURES_AVAILABLE = False
+
+# Enhanced Pydantic models
 class ChatRequest(BaseModel):
     message: str
     context: Optional[Dict[str, Any]] = None
     session_id: Optional[str] = None
+    persona: Optional[str] = None
 
 class ChatResponse(BaseModel):
     response: str
     handler: str
     reasoning: str
     metadata: Dict[str, Any]
+    timestamp: str
+    session_id: str
+    persona_used: str
     timestamp: str
 
 class TaskRoute(BaseModel):
@@ -69,16 +100,174 @@ app.add_middleware(
 
 class DolphinOrchestrator:
     """
-    Main Dolphin orchestrator that routes tasks intelligently
+    Enhanced Dolphin orchestrator with personality, memory, and analytics
     """
     
     def __init__(self):
         self.ollama_url = os.getenv('OLLAMA_URL', 'http://localhost:11434')
         self.openrouter_key = os.getenv('OPENROUTER_KEY')
         self.n8n_url = os.getenv('N8N_URL', 'http://localhost:5678')
-        self.session_data = {}
         
-        logger.info("🐬 Dolphin Orchestrator initialized")
+        # Initialize enhanced systems
+        self.personality_system = PersonalitySystem()
+        self.memory_system = MemorySystem()
+        self.analytics_logger = AnalyticsLogger()
+        
+        # Initialize advanced features v2.1
+        self.reflection_engine = None
+        self.connectivity_manager = None
+        self.private_memory_manager = None
+        self.persona_instruction_manager = None
+        self.mirror_mode_manager = None
+        self.metrics_collector = None
+        
+        # Advanced features initialization will be called in startup
+        logger.info("🐬 Enhanced Dolphin Orchestrator v2.1 initialized - advanced features pending startup")
+    
+    async def initialize_advanced_features(self):
+        """Initialize all advanced v2.1 features"""
+        if not ADVANCED_FEATURES_AVAILABLE:
+            logger.warning("⚠️ Advanced features not available - skipping initialization")
+            return
+            
+        try:
+            # Initialize Reflection Engine
+            self.reflection_engine = ReflectionEngine(self.memory_system, self.analytics_logger)
+            
+            # Initialize Connectivity Manager
+            self.connectivity_manager = ConnectivityManager(self.analytics_logger)
+            
+            # Initialize Private Memory Manager
+            self.private_memory_manager = PrivateMemoryManager()
+            
+            # Initialize Persona Instruction Manager
+            self.persona_instruction_manager = PersonaInstructionManager()
+            
+            # Initialize Mirror Mode Manager
+            self.mirror_mode_manager = MirrorModeManager(self.analytics_logger)
+            
+            # Initialize System Metrics Collector
+            self.metrics_collector = MetricsCollector(self.analytics_logger)
+            
+            # Start background services
+            asyncio.create_task(self.reflection_engine.start_background_reflection())
+            asyncio.create_task(self.connectivity_manager.start_monitoring())
+            
+            logger.info("✅ All advanced v2.1 features initialized successfully")
+            
+        except Exception as e:
+            logger.error(f"❌ Error initializing advanced features: {e}")
+            # Continue without advanced features if initialization fails
+        
+    async def process_chat_request(self, request: ChatRequest) -> ChatResponse:
+        """
+        Enhanced chat processing with personality, memory, and analytics
+        """
+        start_time = time.time()
+        request_id = None
+        
+        try:
+            # Set persona if provided
+            if request.persona:
+                self.personality_system.set_persona(request.persona)
+            
+            current_persona = self.personality_system.get_current_persona()
+            
+            # Create or get session
+            session_id = request.session_id or self.memory_system.create_session()
+            
+            # Get session context
+            session_context = self.memory_system.get_session_context(session_id)
+            
+            # Enhance context with memory
+            enhanced_context = {
+                **(request.context or {}),
+                "session_context": session_context,
+                "persona": current_persona["name"],
+                "memory_focus": self.personality_system.get_memory_focus_areas()
+            }
+            
+            # Classify task with persona awareness
+            route = await self.classify_task(request.message, enhanced_context)
+            route = self.personality_system.adjust_routing_for_persona(route.__dict__)
+            
+            # Log routing decision
+            request_id = self.analytics_logger.log_routing_decision(
+                request.dict(), route, current_persona["name"]
+            )
+            
+            # Format prompt with persona
+            formatted_message = self.personality_system.format_prompt_with_persona(
+                request.message, enhanced_context
+            )
+            
+            # Route to appropriate handler
+            if route["handler"] == "OPENROUTER":
+                response_text = await self.handle_openrouter_request(formatted_message, enhanced_context)
+            elif route["handler"] == "N8N":
+                response_text = await self.handle_n8n_request(formatted_message, enhanced_context)
+            elif route["handler"] == "KIMI_K2":
+                response_text = await self.handle_kimi_fallback(formatted_message, enhanced_context)
+            else:  # DOLPHIN
+                response_text = await self.handle_dolphin_request(formatted_message, enhanced_context)
+            
+            # Add messages to memory
+            self.memory_system.add_message(
+                session_id, request.message, "user", 
+                metadata={"persona": current_persona["name"], "request_id": request_id}
+            )
+            
+            self.memory_system.add_message(
+                session_id, response_text, "assistant", 
+                handler=route["handler"], 
+                metadata={"reasoning": route["reasoning"], "request_id": request_id}
+            )
+            
+            # Calculate performance metrics
+            latency = time.time() - start_time
+            
+            # Log performance
+            self.analytics_logger.log_performance_metrics(
+                request_id, route["handler"], latency, True
+            )
+            
+            response = ChatResponse(
+                response=response_text,
+                handler=route["handler"],
+                reasoning=route["reasoning"],
+                metadata={
+                    "persona_applied": route.get("persona_applied", current_persona["name"]),
+                    "confidence": route["confidence"],
+                    "latency_seconds": round(latency, 3),
+                    "session_message_count": session_context["total_messages"] + 1,
+                    "sentiment_trend": session_context["sentiment_trend"]
+                },
+                timestamp=datetime.now().isoformat(),
+                session_id=session_id,
+                persona_used=current_persona["name"]
+            )
+            
+            return response
+            
+        except Exception as e:
+            logger.error(f"Chat processing error: {e}")
+            
+            # Log error performance
+            if request_id:
+                latency = time.time() - start_time
+                self.analytics_logger.log_performance_metrics(
+                    request_id, "ERROR", latency, False, error_message=str(e)
+                )
+            
+            return ChatResponse(
+                response=f"I encountered an error processing your request: {str(e)}",
+                handler="ERROR",
+                reasoning="Exception occurred during processing",
+                metadata={"error": str(e), "timestamp": datetime.now().isoformat()},
+                timestamp=datetime.now().isoformat(),
+                session_id=request.session_id or "unknown",
+                persona_used=self.personality_system.get_current_persona()["name"]
+            )
         
     async def classify_task(self, message: str, context: Optional[Dict] = None) -> TaskRoute:
         """
@@ -236,108 +425,556 @@ Respond in JSON format:
             logger.error(f"Kimi fallback error: {e}")
             return "All AI services are currently unavailable. Please try again later."
 
-    async def process_message(self, message: str, context: Optional[Dict] = None, session_id: Optional[str] = None) -> ChatResponse:
-        """
-        Main message processing pipeline
-        """
-        try:
-            # Step 1: Classify the task
-            route = await self.classify_task(message, context)
-            logger.info(f"🎯 Task classified: {route.handler} ({route.confidence:.2f}) - {route.reasoning}")
-            
-            # Step 2: Route to appropriate handler
-            if route.handler == "DOLPHIN":
-                response_text = await self.handle_dolphin_request(message, context)
-            elif route.handler == "OPENROUTER":
-                response_text = await self.handle_openrouter_request(message, context)
-            elif route.handler == "N8N":
-                response_text = await self.handle_n8n_request(message, context)
-            elif route.handler == "KIMI_K2":
-                response_text = await self.handle_kimi_fallback(message, context)
-            else:
-                response_text = await self.handle_dolphin_request(message, context)
-            
-            # Step 3: Build response
-            response = ChatResponse(
-                response=response_text,
-                handler=route.handler,
-                reasoning=route.reasoning,
-                metadata={
-                    "task_type": route.task_type,
-                    "confidence": route.confidence,
-                    "session_id": session_id,
-                    "processing_time": datetime.now().isoformat()
-                },
-                timestamp=datetime.now().isoformat()
-            )
-            
-            # Store session data
-            if session_id:
-                if session_id not in self.session_data:
-                    self.session_data[session_id] = []
-                self.session_data[session_id].append({
-                    "message": message,
-                    "response": response_text,
-                    "handler": route.handler,
-                    "timestamp": datetime.now().isoformat()
-                })
-            
-            return response
-            
-        except Exception as e:
-            logger.error(f"❌ Message processing error: {e}")
-            return ChatResponse(
-                response=f"I encountered an error processing your request: {str(e)}",
-                handler="ERROR",
-                reasoning="Exception occurred during processing",
-                metadata={"error": str(e)},
-                timestamp=datetime.now().isoformat()
-            )
-
-# Global orchestrator instance
+# Initialize enhanced orchestrator
 orchestrator = DolphinOrchestrator()
 
+# Enhanced API endpoints
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat_endpoint(request: ChatRequest):
-    """Main chat endpoint"""
-    return await orchestrator.process_message(
-        message=request.message,
-        context=request.context,
-        session_id=request.session_id
-    )
+    """Enhanced chat endpoint with personality, memory, and analytics"""
+    return await orchestrator.process_chat_request(request)
 
 @app.get("/api/status")
 async def status_endpoint():
-    """Health check and system status"""
+    """Enhanced status endpoint with system health metrics"""
+    try:
+        # Test Ollama connection
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"{orchestrator.ollama_url}/api/tags") as response:
+                ollama_status = response.status == 200
+    except:
+        ollama_status = False
+    
+    # Get system analytics
+    analytics = orchestrator.analytics_logger.get_real_time_stats()
+    memory_summary = orchestrator.memory_system.get_memory_summary()
+    
     return {
         "status": "running",
         "timestamp": datetime.now().isoformat(),
-        "services": {
-            "ollama": orchestrator.ollama_url,
-            "openrouter_configured": bool(orchestrator.openrouter_key),
-            "n8n": orchestrator.n8n_url
-        },
-        "active_sessions": len(orchestrator.session_data)
+        "backend_status": {
+            "services": {
+                "ollama": ollama_status,
+                "openrouter_configured": bool(orchestrator.openrouter_key),
+                "n8n": False  # TODO: Add actual n8n health check
+            },
+            "analytics": analytics,
+            "memory": memory_summary,
+            "personality": {
+                "current_persona": orchestrator.personality_system.current_persona,
+                "available_personas": list(orchestrator.personality_system.personas.keys())
+            }
+        }
     }
 
-@app.get("/api/sessions/{session_id}")
-async def get_session(session_id: str):
-    """Get session history"""
-    if session_id in orchestrator.session_data:
-        return {"session_id": session_id, "history": orchestrator.session_data[session_id]}
-    else:
-        raise HTTPException(status_code=404, detail="Session not found")
+@app.get("/api/handlers")
+async def handlers_endpoint():
+    """Get available AI handlers and their capabilities"""
+    return {
+        "handlers": [
+            {
+                "name": "DOLPHIN",
+                "description": "Local conversation and general tasks",
+                "icon": "🐬",
+                "status": "available"
+            },
+            {
+                "name": "OPENROUTER", 
+                "description": "Cloud AI for complex coding tasks",
+                "icon": "☁️",
+                "status": "available" if orchestrator.openrouter_key else "unavailable"
+            },
+            {
+                "name": "N8N",
+                "description": "Workflow automation and utilities", 
+                "icon": "🔧",
+                "status": "development"
+            },
+            {
+                "name": "KIMI_K2",
+                "description": "Analytics and fallback processing",
+                "icon": "📊", 
+                "status": "available"
+            }
+        ]
+    }
 
-@app.delete("/api/sessions/{session_id}")
-async def clear_session(session_id: str):
-    """Clear session history"""
-    if session_id in orchestrator.session_data:
-        del orchestrator.session_data[session_id]
-        return {"message": "Session cleared"}
+# Personality System Endpoints
+@app.get("/api/personas")
+async def get_personas():
+    """Get all available personas"""
+    return {
+        "current_persona": orchestrator.personality_system.current_persona,
+        "personas": orchestrator.personality_system.get_personas()
+    }
+
+@app.post("/api/personas/{persona_id}")
+async def set_persona(persona_id: str):
+    """Set active persona"""
+    success = orchestrator.personality_system.set_persona(persona_id)
+    if success:
+        return {"success": True, "persona": persona_id}
     else:
-        raise HTTPException(status_code=404, detail="Session not found")
+        raise HTTPException(status_code=404, detail="Persona not found")
+
+@app.post("/api/personas/create")
+async def create_persona(persona_data: Dict[str, Any]):
+    """Create a custom persona"""
+    persona_id = persona_data.get("id")
+    if not persona_id:
+        raise HTTPException(status_code=400, detail="Persona ID required")
+    
+    success = orchestrator.personality_system.create_custom_persona(persona_id, persona_data)
+    if success:
+        return {"success": True, "persona_id": persona_id}
+    else:
+        raise HTTPException(status_code=400, detail="Failed to create persona")
+
+# Memory System Endpoints  
+@app.get("/api/memory/session/{session_id}")
+async def get_session_memory(session_id: str):
+    """Get session memory and context"""
+    context = orchestrator.memory_system.get_session_context(session_id)
+    return {"session_id": session_id, "context": context}
+
+@app.get("/api/memory/longterm")
+async def get_longterm_memory():
+    """Get long-term memory summary"""
+    return orchestrator.memory_system.long_term_memory
+
+@app.post("/api/memory/longterm/goal")
+async def add_goal(goal_data: Dict[str, Any]):
+    """Add a new goal to long-term memory"""
+    goal_text = goal_data.get("text")
+    priority = goal_data.get("priority", "medium")
+    
+    if not goal_text:
+        raise HTTPException(status_code=400, detail="Goal text required")
+    
+    goal_id = orchestrator.memory_system.add_goal(goal_text, priority)
+    return {"success": True, "goal_id": goal_id}
+
+@app.post("/api/memory/flush")
+async def flush_memory():
+    """Flush short-term memory"""
+    success = orchestrator.memory_system.flush_short_term()
+    return {"success": success}
+
+@app.delete("/api/memory/session/{session_id}")
+async def close_session(session_id: str):
+    """Close and archive a session"""
+    orchestrator.memory_system.close_session(session_id)
+    return {"success": True, "session_id": session_id}
+
+# Analytics and Logging Endpoints
+@app.get("/api/analytics/realtime")
+async def get_realtime_analytics():
+    """Get real-time system analytics"""
+    return orchestrator.analytics_logger.get_real_time_stats()
+
+@app.get("/api/analytics/daily")
+async def get_daily_analytics(days: int = 7):
+    """Get daily analytics for past N days"""
+    return orchestrator.analytics_logger.get_daily_analytics(days)
+
+@app.get("/api/analytics/performance")
+async def get_performance_report():
+    """Get handler performance report"""
+    return orchestrator.analytics_logger.get_handler_performance_report()
+
+@app.get("/api/logs/search")
+async def search_logs(query: str, log_type: str = "routing", hours: int = 24, limit: int = 50):
+    """Search through system logs"""
+    results = orchestrator.analytics_logger.search_logs(query, log_type, hours, limit)
+    return {"query": query, "results": results, "count": len(results)}
+
+@app.get("/api/logs/export")
+async def export_analytics():
+    """Export comprehensive analytics"""
+    export_path = orchestrator.analytics_logger.export_analytics()
+    return {"export_path": export_path}
+
+# System Management Endpoints
+@app.post("/api/system/cleanup")
+async def cleanup_system(days_to_keep: int = 30):
+    """Clean up old logs and data"""
+    cleaned = orchestrator.analytics_logger.cleanup_old_logs(days_to_keep)
+    return {"cleaned_entries": cleaned}
+
+@app.get("/api/system/health")
+async def system_health():
+    """Comprehensive system health check"""
+    analytics = orchestrator.analytics_logger.get_real_time_stats()
+    memory = orchestrator.memory_system.get_memory_summary()
+    persona = orchestrator.personality_system.get_current_persona()
+    
+    # Calculate health score
+    health_factors = []
+    
+    # Handler availability
+    if analytics.get("handler_details"):
+        avg_success_rate = sum(h.get("success_rate", 0) for h in analytics["handler_details"].values()) / len(analytics["handler_details"])
+        health_factors.append(avg_success_rate)
+    
+    # Memory usage (simple heuristic)
+    active_sessions = memory["short_term"]["active_sessions"]
+    memory_health = max(0, 1.0 - (active_sessions / 50))  # Assume 50+ sessions is heavy
+    health_factors.append(memory_health)
+    
+    # System responsiveness (based on latency)
+    avg_latency = analytics.get("performance", {}).get("avg_latency_seconds", 0)
+    latency_health = max(0, 1.0 - (avg_latency / 10))  # Assume 10s+ is poor
+    health_factors.append(latency_health)
+    
+    overall_health = sum(health_factors) / len(health_factors) if health_factors else 0.5
+    
+    if overall_health >= 0.8:
+        health_status = "excellent"
+    elif overall_health >= 0.6:
+        health_status = "good"
+    elif overall_health >= 0.4:
+        health_status = "fair"
+    else:
+        health_status = "poor"
+    
+    return {
+        "health_score": round(overall_health, 3),
+        "health_status": health_status,
+        "timestamp": datetime.now().isoformat(),
+        "components": {
+            "analytics": analytics,
+            "memory": memory,
+            "personality": {
+                "current": persona["name"],
+                "icon": persona["icon"]
+            }
+        }
+    }
+
+# Startup event to initialize advanced features
+@app.on_event("startup")
+async def startup_event():
+    """Initialize advanced features on startup"""
+    await orchestrator.initialize_advanced_features()
+
+# =============================================================================
+# ADVANCED FEATURES API ENDPOINTS v2.1
+# =============================================================================
+
+# Reflection Engine Endpoints
+@app.get("/api/reflection/summary")
+async def get_reflection_summary():
+    """Get reflection engine summary and statistics"""
+    if not orchestrator.reflection_engine:
+        raise HTTPException(status_code=503, detail="Reflection engine not available")
+    return orchestrator.reflection_engine.get_reflection_summary()
+
+@app.post("/api/reflection/enable")
+async def enable_reflection_engine():
+    """Enable background reflection engine"""
+    if not orchestrator.reflection_engine:
+        raise HTTPException(status_code=503, detail="Reflection engine not available")
+    
+    if not orchestrator.reflection_engine.is_running:
+        asyncio.create_task(orchestrator.reflection_engine.start_background_reflection())
+    
+    return {"status": "enabled", "is_running": orchestrator.reflection_engine.is_running}
+
+@app.post("/api/reflection/disable")
+async def disable_reflection_engine():
+    """Disable background reflection engine"""
+    if not orchestrator.reflection_engine:
+        raise HTTPException(status_code=503, detail="Reflection engine not available")
+    
+    orchestrator.reflection_engine.stop_background_reflection()
+    return {"status": "disabled"}
+
+# Connectivity Management Endpoints
+@app.get("/api/connectivity/status")
+async def get_connectivity_status():
+    """Get current connectivity status and service health"""
+    if not orchestrator.connectivity_manager:
+        raise HTTPException(status_code=503, detail="Connectivity manager not available")
+    return orchestrator.connectivity_manager.get_status_summary()
+
+@app.get("/api/connectivity/routing-adjustments")
+async def get_routing_adjustments():
+    """Get routing adjustments based on connectivity"""
+    if not orchestrator.connectivity_manager:
+        raise HTTPException(status_code=503, detail="Connectivity manager not available")
+    return orchestrator.connectivity_manager.get_routing_adjustments()
+
+@app.post("/api/connectivity/force-offline")
+async def force_offline_mode(enabled: bool = True):
+    """Force offline mode on/off"""
+    if not orchestrator.connectivity_manager:
+        raise HTTPException(status_code=503, detail="Connectivity manager not available")
+    
+    orchestrator.connectivity_manager.force_offline_mode(enabled)
+    return {"forced_offline": enabled, "current_mode": orchestrator.connectivity_manager.current_mode.value}
+
+@app.post("/api/connectivity/check-services")
+async def manual_service_check(service_id: Optional[str] = None):
+    """Manually trigger service connectivity check"""
+    if not orchestrator.connectivity_manager:
+        raise HTTPException(status_code=503, detail="Connectivity manager not available")
+    
+    result = await orchestrator.connectivity_manager.manual_service_check(service_id)
+    return result
+
+@app.get("/api/connectivity/notification")
+async def get_connectivity_notification():
+    """Get UI notification about connectivity status"""
+    if not orchestrator.connectivity_manager:
+        return None
+    return orchestrator.connectivity_manager.get_ui_notification()
+
+# Private Memory Endpoints
+@app.post("/api/private-memory/unlock")
+async def unlock_private_memory(password: str = "default_dev_password"):
+    """Unlock private memory with password"""
+    if not orchestrator.private_memory_manager:
+        raise HTTPException(status_code=503, detail="Private memory manager not available")
+    
+    success = orchestrator.private_memory_manager.unlock_private_memories(password)
+    if success:
+        return {"status": "unlocked", "message": "Private memories are now accessible"}
+    else:
+        raise HTTPException(status_code=401, detail="Invalid password")
+
+@app.post("/api/private-memory/lock")
+async def lock_private_memory():
+    """Lock private memory"""
+    if not orchestrator.private_memory_manager:
+        raise HTTPException(status_code=503, detail="Private memory manager not available")
+    
+    orchestrator.private_memory_manager.lock_private_memories()
+    return {"status": "locked", "message": "Private memories are now locked"}
+
+@app.get("/api/private-memory/status")
+async def get_private_memory_status():
+    """Get private memory system status"""
+    if not orchestrator.private_memory_manager:
+        raise HTTPException(status_code=503, detail="Private memory manager not available")
+    return orchestrator.private_memory_manager.get_status()
+
+@app.get("/api/private-memory/preview")
+async def get_private_memory_preview():
+    """Get non-sensitive preview of private memories"""
+    if not orchestrator.private_memory_manager:
+        raise HTTPException(status_code=503, detail="Private memory manager not available")
+    return orchestrator.private_memory_manager.get_private_memory_preview()
+
+@app.post("/api/private-memory/add")
+async def add_private_memory(request: dict):
+    """Add a new private memory entry"""
+    if not orchestrator.private_memory_manager:
+        raise HTTPException(status_code=503, detail="Private memory manager not available")
+    
+    if not orchestrator.private_memory_manager.is_unlocked:
+        raise HTTPException(status_code=403, detail="Private memories are locked")
+    
+    entry_id = orchestrator.private_memory_manager.add_private_memory(
+        content=request.get("content", ""),
+        tags=request.get("tags", []),
+        category=request.get("category", "private"),
+        session_id=request.get("session_id", "default"),
+        access_level=request.get("access_level", "private"),
+        metadata=request.get("metadata", {})
+    )
+    
+    return {"entry_id": entry_id, "status": "added"}
+
+@app.get("/api/private-memory/{entry_id}")
+async def get_private_memory(entry_id: str):
+    """Get a specific private memory entry"""
+    if not orchestrator.private_memory_manager:
+        raise HTTPException(status_code=503, detail="Private memory manager not available")
+    
+    if not orchestrator.private_memory_manager.is_unlocked:
+        raise HTTPException(status_code=403, detail="Private memories are locked")
+    
+    memory = orchestrator.private_memory_manager.get_private_memory(entry_id)
+    if not memory:
+        raise HTTPException(status_code=404, detail="Private memory not found")
+    
+    return memory
+
+@app.get("/api/private-memory/search")
+async def search_private_memories(query: Optional[str] = None, category: Optional[str] = None, limit: int = 10):
+    """Search private memories"""
+    if not orchestrator.private_memory_manager:
+        raise HTTPException(status_code=503, detail="Private memory manager not available")
+    
+    if not orchestrator.private_memory_manager.is_unlocked:
+        raise HTTPException(status_code=403, detail="Private memories are locked")
+    
+    results = orchestrator.private_memory_manager.search_private_memories(
+        query=query, category=category, limit=limit
+    )
+    return {"results": results, "count": len(results)}
+
+# Persona Instruction Management Endpoints
+@app.get("/api/personas/manifestos")
+async def list_persona_manifestos():
+    """List all available persona manifestos"""
+    if not orchestrator.persona_instruction_manager:
+        raise HTTPException(status_code=503, detail="Persona instruction manager not available")
+    return orchestrator.persona_instruction_manager.list_manifestos()
+
+@app.get("/api/personas/manifesto/{persona_id}")
+async def get_persona_manifesto(persona_id: str):
+    """Get a specific persona manifesto"""
+    if not orchestrator.persona_instruction_manager:
+        raise HTTPException(status_code=503, detail="Persona instruction manager not available")
+    
+    manifesto = orchestrator.persona_instruction_manager.get_manifesto(persona_id)
+    if not manifesto:
+        raise HTTPException(status_code=404, detail="Persona manifesto not found")
+    
+    return manifesto.to_dict()
+
+@app.post("/api/personas/activate/{persona_id}")
+async def activate_persona_manifesto(persona_id: str):
+    """Activate a specific persona manifesto"""
+    if not orchestrator.persona_instruction_manager:
+        raise HTTPException(status_code=503, detail="Persona instruction manager not available")
+    
+    success = orchestrator.persona_instruction_manager.activate_persona(persona_id)
+    if success:
+        return {"status": "activated", "persona_id": persona_id}
+    else:
+        raise HTTPException(status_code=404, detail="Persona manifesto not found")
+
+@app.get("/api/personas/active-instructions")
+async def get_active_persona_instructions():
+    """Get instruction set for currently active persona"""
+    if not orchestrator.persona_instruction_manager:
+        raise HTTPException(status_code=503, detail="Persona instruction manager not available")
+    
+    instructions = orchestrator.persona_instruction_manager.get_active_instructions()
+    if not instructions:
+        return {"message": "No persona currently active", "instructions": None}
+    
+    return instructions
+
+@app.put("/api/personas/manifesto/{persona_id}")
+async def update_persona_manifesto(persona_id: str, updates: dict):
+    """Update an existing persona manifesto"""
+    if not orchestrator.persona_instruction_manager:
+        raise HTTPException(status_code=503, detail="Persona instruction manager not available")
+    
+    success = orchestrator.persona_instruction_manager.update_manifesto(persona_id, updates)
+    if success:
+        return {"status": "updated", "persona_id": persona_id}
+    else:
+        raise HTTPException(status_code=404, detail="Persona manifesto not found")
+
+# Mirror Mode Endpoints
+@app.get("/api/mirror-mode/status")
+async def get_mirror_mode_status():
+    """Get mirror mode status and statistics"""
+    if not orchestrator.mirror_mode_manager:
+        raise HTTPException(status_code=503, detail="Mirror mode manager not available")
+    return orchestrator.mirror_mode_manager.get_mirror_statistics()
+
+@app.post("/api/mirror-mode/enable")
+async def enable_mirror_mode(intensity: float = 0.7, enabled_types: Optional[List[str]] = None):
+    """Enable mirror mode with specified settings"""
+    if not orchestrator.mirror_mode_manager:
+        raise HTTPException(status_code=503, detail="Mirror mode manager not available")
+    
+    orchestrator.mirror_mode_manager.enable_mirror_mode(intensity, enabled_types)
+    return {"status": "enabled", "intensity": intensity, "enabled_types": enabled_types}
+
+@app.post("/api/mirror-mode/disable")
+async def disable_mirror_mode():
+    """Disable mirror mode"""
+    if not orchestrator.mirror_mode_manager:
+        raise HTTPException(status_code=503, detail="Mirror mode manager not available")
+    
+    orchestrator.mirror_mode_manager.disable_mirror_mode()
+    return {"status": "disabled"}
+
+@app.get("/api/mirror-mode/session/{session_id}")
+async def get_session_reflections(session_id: str):
+    """Get all mirror reflections for a specific session"""
+    if not orchestrator.mirror_mode_manager:
+        raise HTTPException(status_code=503, detail="Mirror mode manager not available")
+    
+    reflections = orchestrator.mirror_mode_manager.get_session_reflections(session_id)
+    return {"session_id": session_id, "reflections": reflections, "count": len(reflections)}
+
+@app.delete("/api/mirror-mode/history")
+async def clear_mirror_history(session_id: Optional[str] = None):
+    """Clear mirror mode reflection history"""
+    if not orchestrator.mirror_mode_manager:
+        raise HTTPException(status_code=503, detail="Mirror mode manager not available")
+    
+    orchestrator.mirror_mode_manager.clear_reflection_history(session_id)
+    return {"status": "cleared", "session_id": session_id}
+
+# System Metrics Endpoints
+@app.get("/api/metrics/realtime")
+async def get_realtime_metrics():
+    """Get real-time system metrics"""
+    if not orchestrator.metrics_collector:
+        raise HTTPException(status_code=503, detail="Metrics collector not available")
+    return orchestrator.metrics_collector.get_realtime_status()
+
+@app.get("/api/metrics/models")
+async def get_model_usage_metrics():
+    """Get detailed model usage statistics"""
+    if not orchestrator.metrics_collector:
+        raise HTTPException(status_code=503, detail="Metrics collector not available")
+    return orchestrator.metrics_collector.get_model_usage_report()
+
+@app.get("/api/metrics/features")
+async def get_feature_usage_metrics():
+    """Get feature usage statistics"""
+    if not orchestrator.metrics_collector:
+        raise HTTPException(status_code=503, detail="Metrics collector not available")
+    return orchestrator.metrics_collector.get_feature_usage_report()
+
+@app.get("/api/metrics/historical")
+async def get_historical_metrics(period: str = "hour", limit: int = 24):
+    """Get historical metrics data"""
+    if not orchestrator.metrics_collector:
+        raise HTTPException(status_code=503, detail="Metrics collector not available")
+    
+    if period not in ["minute", "hour", "day"]:
+        raise HTTPException(status_code=400, detail="Period must be 'minute', 'hour', or 'day'")
+    
+    return {
+        "period": period,
+        "limit": limit,
+        "data": orchestrator.metrics_collector.get_historical_data(period, limit)
+    }
+
+@app.get("/api/metrics/export")
+async def export_system_metrics():
+    """Export comprehensive system metrics"""
+    if not orchestrator.metrics_collector:
+        raise HTTPException(status_code=503, detail="Metrics collector not available")
+    
+    return {
+        "export_data": orchestrator.metrics_collector.export_metrics(),
+        "export_timestamp": datetime.now().isoformat()
+    }
+
+@app.get("/api/metrics/health")
+async def get_metrics_health_check():
+    """Get system health check from metrics"""
+    if not orchestrator.metrics_collector:
+        raise HTTPException(status_code=503, detail="Metrics collector not available")
+    return orchestrator.metrics_collector.get_health_check()
+
+# =============================================================================
+# END ADVANCED FEATURES API ENDPOINTS
+# =============================================================================
 
 if __name__ == "__main__":
     port = int(os.getenv('DOLPHIN_PORT', 8000))
-    logger.info(f"🐬 Starting Dolphin Backend on port {port}")
+    logger.info(f"🐬 Starting Enhanced Dolphin Backend on port {port}")
+    logger.info("Features: Personality System, Memory Management, Analytics Logging")
     uvicorn.run(app, host="0.0.0.0", port=port)
