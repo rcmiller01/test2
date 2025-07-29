@@ -44,6 +44,51 @@
       ],
       "persona_used": "companion",
       "status": "active"
+    },
+    "test_openrouter": {
+      "session_id": "test_openrouter",
+      "created_at": "2025-07-28T22:01:46.363790",
+      "messages": [
+        {
+          "timestamp": "2025-07-28T22:01:46.364702",
+          "role": "user",
+          "content": "Write a Python function to calculate fibonacci numbers",
+          "handler": null,
+          "sentiment_score": 0.0,
+          "emotion_tags": [],
+          "metadata": {
+            "persona": "Technical Expert",
+            "request_id": "1753754503724_3889"
+          }
+        },
+        {
+          "timestamp": "2025-07-28T22:01:46.365155",
+          "role": "assistant",
+          "content": "All AI services are currently unavailable. Please try again later.",
+          "handler": "OPENROUTER",
+          "sentiment_score": 0.0,
+          "emotion_tags": [],
+          "metadata": {
+            "reasoning": "Keyword-based fallback",
+            "request_id": "1753754503724_3889"
+          }
+        }
+      ],
+      "context": {},
+      "sentiment_history": [
+        {
+          "timestamp": "2025-07-28T22:01:46.364702",
+          "score": 0.0,
+          "tags": []
+        },
+        {
+          "timestamp": "2025-07-28T22:01:46.365155",
+          "score": 0.0,
+          "tags": []
+        }
+      ],
+      "persona_used": "companion",
+      "status": "active"
     }
   },
   "recent_interactions": [
@@ -60,8 +105,22 @@
       "role": "assistant",
       "preview": "I'm having trouble accessing my local processing. Error: Cannot connect to host localhost:11434 ssl:...",
       "sentiment": 0.0
+    },
+    {
+      "session_id": "test_openrouter",
+      "timestamp": "2025-07-28T22:01:46.364702",
+      "role": "user",
+      "preview": "Write a Python function to calculate fibonacci numbers",
+      "sentiment": 0.0
+    },
+    {
+      "session_id": "test_openrouter",
+      "timestamp": "2025-07-28T22:01:46.365155",
+      "role": "assistant",
+      "preview": "All AI services are currently unavailable. Please try again later.",
+      "sentiment": 0.0
     }
   ],
   "current_context": {},
-  "last_updated": "2025-07-28T21:36:01.300194"
+  "last_updated": "2025-07-28T22:01:46.365161"
 }

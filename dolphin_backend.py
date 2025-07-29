@@ -21,6 +21,7 @@ Usage:
 import asyncio
 import json
 import logging
+import os
 import time
 from datetime import datetime
 from typing import Dict, Any, Optional, List
@@ -28,6 +29,13 @@ from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    print("Warning: python-dotenv not installed. Using system environment variables only.")
 import aiohttp
 import uvicorn
 import os
