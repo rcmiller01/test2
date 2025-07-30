@@ -33,6 +33,31 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+MCP_HOST = os.getenv("MCP_HOST", "http://localhost:8000")
+
+
+async def route_to_mcp(task_request: Dict[str, Any]) -> Dict[str, Any]:
+    """Send a structured task to the MCP server and return the response."""
+    start = time.time()
+    try:
+        timeout = aiohttp.ClientTimeout(total=10)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.post(
+                f"{MCP_HOST}/api/mcp/route-task", json=task_request
+            ) as resp:
+                resp.raise_for_status()
+                data = await resp.json()
+                elapsed = int((time.time() - start) * 1000)
+                logger.info(
+                    f"MCP response: request_id={task_request.get('request_id')}, "
+                    f"intent_type={task_request.get('intent_type')}, "
+                    f"time_ms={elapsed}"
+                )
+                return data
+    except Exception as e:
+        logger.error(f"Error routing to MCP: {e}")
+        return {"success": False, "error": str(e)}
+
 class DolphinOrchestrator:
     """Dolphin orchestrator with personality, memory and analytics"""
 
@@ -170,10 +195,30 @@ class DolphinOrchestrator:
             formatted_message = self.personality_system.format_prompt_with_persona(
                 request.message, enhanced_context
             )
+            intent_type = route.get("intent_type") or route.get("task_type")
 
-            if route.get("task_type") in {"reminder", "calendar", "todo", "workflow"}:
-                response_text = await self.handle_n8n_request(formatted_message, enhanced_context, task_type=route["task_type"])
-            elif route["handler"] == "OPENROUTER":
+            if route["handler"].lower() in ("utility", "agent"):
+                task_payload = {
+                    "intent_type": intent_type,
+                    "payload": {
+                        "message": request.message,
+                        "context": enhanced_context,
+                    },
+                    "source": "dolphin",
+                    "request_id": request_id,
+                }
+                logger.info(f"Routed to MCP: intent_type={intent_type}")
+                mcp_start = time.time()
+                mcp_result = await route_to_mcp(task_payload)
+                mcp_latency = time.time() - mcp_start
+                self.analytics_logger.log_performance_metrics(
+                    request_id, "MCP", mcp_latency, mcp_result.get("success", False)
+                )
+                if mcp_result.get("success"):
+                    return mcp_result
+                logger.warning("MCP server unavailable, falling back to local handler")
+
+            if route["handler"] == "OPENROUTER":
                 response_text = await self.handle_openrouter_request(formatted_message, enhanced_context)
             elif route["handler"] == "N8N":
                 response_text = await self.handle_n8n_request(formatted_message, enhanced_context)
@@ -351,5 +396,7 @@ class DolphinOrchestrator:
             return "All AI services are currently unavailable. Please try again later."
 
 # Singleton orchestrator
+orchestrator = DolphinOrchestrator()
+
 orchestrator = DolphinOrchestrator()
 

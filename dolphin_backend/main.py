@@ -2,7 +2,7 @@ from fastapi import FastAPI
 import os
 from fastapi.middleware.cors import CORSMiddleware
 
-from .orchestrator import orchestrator
+from .orchestrator import orchestrator, route_to_mcp
 from .routes import chat, memory, quantization, analytics, persona
 
 app = FastAPI(title="Dolphin AI Backend", version="2.1")
@@ -23,6 +23,21 @@ app.include_router(analytics.router)
 app.include_router(persona.router)
 
 
+@app.post("/api/internal/test-mcp")
+async def test_mcp_bridge():
+    task = {
+        "intent_type": "reminder",
+        "payload": {
+            "message": "Run reflection pass",
+            "datetime": "2025-08-01T08:00:00Z"
+        },
+        "source": "dolphin",
+        "request_id": "test_123"
+    }
+    response = await route_to_mcp(task)
+    return response
+
+
 @app.on_event("startup")
 async def startup_event():
     await orchestrator.preference_vote_store.initialize()
@@ -31,3 +46,4 @@ async def startup_event():
 if __name__ == "__main__":
     port = int(os.getenv('DOLPHIN_PORT', 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
+
