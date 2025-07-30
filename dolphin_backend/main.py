@@ -14,13 +14,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Register routers
+
 app.include_router(chat.router)
 app.include_router(memory.router)
 app.include_router(quantization.router)
 app.include_router(analytics.router)
 app.include_router(persona.router)
 
-if __name__ == '__main__':
-    import uvicorn
+
+@app.on_event("startup")
+async def startup_event():
+    await orchestrator.preference_vote_store.initialize()
+    await orchestrator.initialize_advanced_features()
+
+if __name__ == "__main__":
     port = int(os.getenv('DOLPHIN_PORT', 8000))
-    uvicorn.run(app, host='0.0.0.0', port=port)
+    uvicorn.run(app, host="0.0.0.0", port=port)
