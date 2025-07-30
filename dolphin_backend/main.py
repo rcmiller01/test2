@@ -1,6 +1,12 @@
 from fastapi import FastAPI
 import os
 from fastapi.middleware.cors import CORSMiddleware
+import logging
+import uvicorn
+
+from .mcp_bridge import route_to_mcp
+
+logger = logging.getLogger(__name__)
 
 from .orchestrator import orchestrator
 from .routes import chat, memory, quantization, analytics, persona
@@ -13,6 +19,23 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ---------------------------------------------------------------------------
+# Internal MCP bridge route for testing
+# ---------------------------------------------------------------------------
+
+@app.post("/api/internal/test-mcp")
+async def test_mcp_bridge():
+    task = {
+        "intent_type": "reminder",
+        "payload": {
+            "message": "Run reflection pass",
+            "datetime": "2025-08-01T08:00:00Z",
+        },
+        "source": "dolphin",
+        "request_id": "test_123",
+    }
+    return await route_to_mcp(task)
 
 # Register routers
 

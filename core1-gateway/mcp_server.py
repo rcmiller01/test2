@@ -26,7 +26,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from agent_registry import registry_manager
+from pathlib import Path
 
 # Configure logging
 logging.basicConfig(
@@ -43,9 +43,49 @@ logger = logging.getLogger(__name__)
 # DYNAMIC AGENT REGISTRY - Loaded from agents/registry.json
 # ============================================================================
 
-# The agent registry is now managed by the AgentRegistryManager
-# and loaded dynamically from agents/registry.json
-# This allows hot-swappable agent definitions without server restarts
+# Path to the external registry file
+REGISTRY_FILE = Path(__file__).parent / "agents" / "registry.json"
+
+# In-memory registry loaded from file
+AGENT_REGISTRY: Dict[str, Dict[str, Any]] = {}
+
+def load_agent_registry() -> Dict[str, Dict[str, Any]]:
+    """Load agent definitions from the registry.json file."""
+    global AGENT_REGISTRY
+    try:
+        with open(REGISTRY_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        if not isinstance(data, dict):
+            raise ValueError("Registry must be a JSON object")
+
+        # Basic validation - ensure each agent has a type
+        for name, cfg in data.items():
+            if "type" not in cfg:
+                raise ValueError(f"Agent '{name}' missing required 'type' field")
+
+        AGENT_REGISTRY = data
+        logger.info(
+            "Loaded %d agents from %s: %s",
+            len(AGENT_REGISTRY),
+            REGISTRY_FILE,
+            ", ".join(AGENT_REGISTRY.keys()),
+        )
+    except Exception as e:
+        logger.error("Failed to load agent registry: %s", e)
+        AGENT_REGISTRY = {
+            "default": {
+                "type": "local",
+                "description": "Fallback agent",
+                "timeout": 5,
+            }
+        }
+        logger.info("Loaded fallback agent registry")
+
+    return AGENT_REGISTRY
+
+# Load registry on module import
+load_agent_registry()
 
 # ============================================================================
 # PYDANTIC MODELS - Request/Response schemas
@@ -180,7 +220,10 @@ async def ping_all_agents() -> List[AgentStatus]:
     Returns:
         List of AgentStatus objects for all agents
     """
-    enabled_agents = registry_manager.get_enabled_agents()
+    enabled_agents = {
+        name: cfg for name, cfg in AGENT_REGISTRY.items()
+        if cfg.get("enabled", True)
+    }
     tasks = []
     
     for agent_name, agent_config in enabled_agents.items():
@@ -295,24 +338,12 @@ async def lifespan(app: FastAPI):
     """Application lifespan manager"""
     logger.info("MCP Server starting up...")
     
-    # Initialize the agent registry manager
-    try:
-        await registry_manager.initialize(enable_file_watching=True)
-        logger.info("Agent registry manager initialized successfully")
-    except Exception as e:
-        logger.error(f"Failed to initialize agent registry manager: {e}")
-        raise
-    
+    # Load agent registry from file
+    load_agent_registry()
+
     yield
-    
+
     logger.info("MCP Server shutting down...")
-    
-    # Shutdown the agent registry manager
-    try:
-        await registry_manager.shutdown()
-        logger.info("Agent registry manager shutdown successfully")
-    except Exception as e:
-        logger.error(f"Error shutting down agent registry manager: {e}")
 
 app = FastAPI(
     title="MCP Server - Master Control Program",
@@ -349,26 +380,28 @@ async def route_task(task: TaskRequest, background_tasks: BackgroundTasks) -> Ta
     
     try:
         # Validate intent type
-        enabled_agents = registry_manager.get_enabled_agents()
-        if task.intent_type not in enabled_agents:
+        if task.intent_type not in AGENT_REGISTRY:
             metrics.failed_requests += 1
             raise HTTPException(
                 status_code=400,
-                detail=f"Unknown intent type: {task.intent_type}. Available intents: {list(enabled_agents.keys())}"
+                detail=f"Unknown intent type: {task.intent_type}. Available intents: {list(AGENT_REGISTRY.keys())}"
             )
-        
-        agent_config = enabled_agents[task.intent_type]
+
+        agent_config = AGENT_REGISTRY[task.intent_type]
         agent_type = agent_config["type"]
         timeout = agent_config.get("timeout", 30)
         
         # Dispatch to appropriate agent type
         result = None
-        if agent_type == "n8n":
-            result = await dispatch_to_n8n(agent_config["webhook"], task.payload, timeout)
-        elif agent_type == "openrouter":
-            result = await dispatch_to_openrouter(agent_config["url"], task.payload, timeout)
+        endpoint = agent_config.get("endpoint")
+        handler = agent_config.get("handler", task.intent_type)
+
+        if agent_type == "n8n" and endpoint:
+            result = await dispatch_to_n8n(endpoint, task.payload, timeout)
+        elif agent_type == "openrouter" and endpoint:
+            result = await dispatch_to_openrouter(endpoint, task.payload, timeout)
         elif agent_type == "local":
-            result = await handle_local_task(agent_config["handler"], task.intent_type, task.payload)
+            result = await handle_local_task(handler, task.intent_type, task.payload)
         else:
             raise ValueError(f"Unknown agent type: {agent_type}")
         
@@ -437,24 +470,12 @@ async def get_agent_registry() -> Dict[str, Any]:
     
     Returns information about all registered agents and their configurations.
     """
-    enabled_agents = registry_manager.get_enabled_agents()
-    all_agents = registry_manager.agents
-    
+    enabled_agents = {n: c for n, c in AGENT_REGISTRY.items() if c.get("enabled", True)}
+
     return {
-        "total_agents": len(all_agents),
+        "total_agents": len(AGENT_REGISTRY),
         "enabled_agents": len(enabled_agents),
-        "registry_info": registry_manager.get_registry_info(),
-        "agents": {
-            name: {
-                "type": config["type"],
-                "enabled": config.get("enabled", True),
-                "description": config.get("description", "No description available"),
-                "timeout": config.get("timeout", 30),
-                "capabilities": config.get("capabilities", []),
-                "priority": config.get("priority", 5)
-            }
-            for name, config in all_agents.items()
-        }
+        "agents": AGENT_REGISTRY,
     }
 
 @app.get("/api/mcp/health")
@@ -475,18 +496,18 @@ async def get_agents_by_capability(capability: Optional[str] = None) -> Dict[str
         capability: Optional capability to filter by
     """
     if capability:
-        agents = registry_manager.get_agents_by_capability(capability)
+        agents = [name for name, cfg in AGENT_REGISTRY.items()
+                  if capability in cfg.get('capabilities', [])]
         return {
             "capability": capability,
             "agents": agents,
             "count": len(agents)
         }
     else:
-        # Return all unique capabilities
         all_capabilities = set()
-        for agent_config in registry_manager.get_enabled_agents().values():
-            all_capabilities.update(agent_config.get('capabilities', []))
-        
+        for cfg in AGENT_REGISTRY.values():
+            all_capabilities.update(cfg.get('capabilities', []))
+
         return {
             "all_capabilities": sorted(list(all_capabilities)),
             "total_capabilities": len(all_capabilities)
@@ -495,42 +516,41 @@ async def get_agents_by_capability(capability: Optional[str] = None) -> Dict[str
 @app.get("/api/mcp/agents/{agent_name}")
 async def get_agent_details(agent_name: str) -> Dict[str, Any]:
     """Get detailed information about a specific agent"""
-    agent_config = registry_manager.get_agent_config(agent_name)
+    agent_config = AGENT_REGISTRY.get(agent_name)
     if not agent_config:
         raise HTTPException(status_code=404, detail=f"Agent not found: {agent_name}")
-    
-    health_status = registry_manager.get_agent_health(agent_name)
-    
+
     return {
         "name": agent_name,
         "config": agent_config,
-        "health": health_status,
-        "enabled": registry_manager.is_agent_enabled(agent_name)
+        "enabled": agent_config.get("enabled", True)
     }
 
 @app.post("/api/mcp/agents/{agent_name}/enable")
 async def enable_agent(agent_name: str) -> Dict[str, Any]:
     """Enable a specific agent at runtime"""
-    if not registry_manager.get_agent_config(agent_name):
+    agent_config = AGENT_REGISTRY.get(agent_name)
+    if not agent_config:
         raise HTTPException(status_code=404, detail=f"Agent not found: {agent_name}")
-    
-    success = await registry_manager.enable_agent(agent_name)
+
+    agent_config["enabled"] = True
     return {
         "agent": agent_name,
-        "enabled": success,
+        "enabled": True,
         "timestamp": datetime.now().isoformat()
     }
 
 @app.post("/api/mcp/agents/{agent_name}/disable")
 async def disable_agent(agent_name: str) -> Dict[str, Any]:
     """Disable a specific agent at runtime"""
-    if not registry_manager.get_agent_config(agent_name):
+    agent_config = AGENT_REGISTRY.get(agent_name)
+    if not agent_config:
         raise HTTPException(status_code=404, detail=f"Agent not found: {agent_name}")
-    
-    success = await registry_manager.disable_agent(agent_name)
+
+    agent_config["enabled"] = False
     return {
         "agent": agent_name,
-        "disabled": success,
+        "disabled": True,
         "timestamp": datetime.now().isoformat()
     }
 
@@ -538,11 +558,11 @@ async def disable_agent(agent_name: str) -> Dict[str, Any]:
 async def reload_registry() -> Dict[str, Any]:
     """Manually reload the agent registry"""
     try:
-        await registry_manager.reload_registry()
+        load_agent_registry()
         return {
             "success": True,
             "message": "Registry reloaded successfully",
-            "registry_info": registry_manager.get_registry_info(),
+            "total_agents": len(AGENT_REGISTRY),
             "timestamp": datetime.now().isoformat()
         }
     except Exception as e:
@@ -551,7 +571,10 @@ async def reload_registry() -> Dict[str, Any]:
 @app.get("/api/mcp/registry/info")
 async def get_registry_info() -> Dict[str, Any]:
     """Get registry metadata and statistics"""
-    return registry_manager.get_registry_info()
+    return {
+        "total_agents": len(AGENT_REGISTRY),
+        "agent_names": list(AGENT_REGISTRY.keys())
+    }
 
 # ============================================================================
 # FUTURE PROOFING STUBS

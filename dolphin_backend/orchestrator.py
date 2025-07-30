@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Dict, Any, Optional, List
 
 import aiohttp
+from .mcp_bridge import route_to_mcp
 
 from personality_system import PersonalitySystem
 from memory_system import MemorySystem
@@ -167,15 +168,32 @@ class DolphinOrchestrator:
                 request.message, enhanced_context
             )
 
+            if route.get("task_type") in {"utility", "agent"}:
+                task_request = {
+                    "intent_type": route.get("task_type"),
+                    "payload": {"message": request.message, **(request.context or {})},
+                    "source": "dolphin",
+                    "request_id": request_id,
+                }
+                mcp_start = time.time()
+                mcp_response = await route_to_mcp(task_request)
+                logger.info(
+                    "Routed to MCP: intent_type=%s request_id=%s time_ms=%d",
+                    task_request["intent_type"],
+                    request_id,
+                    int((time.time() - mcp_start) * 1000),
+                )
+                return mcp_response
+
             if route["handler"] == "OPENROUTER":
                 response_text = await self.handle_openrouter_request(formatted_message, enhanced_context)
             elif route["handler"] == "N8N":
                 response_text = await self.handle_n8n_request(formatted_message, enhanced_context)
             elif route["handler"] == "KIMI_K2":
                 response_text = await self.handle_kimi_fallback(formatted_message, enhanced_context)
-
             else:
                 response_text = await self.handle_dolphin_request(formatted_message, enhanced_context)
+
             response_text = apply_persona_filter(response_text, current_persona["name"])
 
             self.memory_system.add_message(
