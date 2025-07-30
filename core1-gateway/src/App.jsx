@@ -24,6 +24,8 @@ export default function App() {
   const [analytics, setAnalytics] = useState(null);
   const [memoryStatus, setMemoryStatus] = useState(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [mcpStatus, setMcpStatus] = useState(null);
+  const [mcpResponse, setMcpResponse] = useState(null);
 
   // Check backend status and load initial data
   useEffect(() => {
@@ -64,6 +66,18 @@ export default function App() {
     }, 30000); // Update every 30 seconds
     
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        const res = await axios.get(`${import.meta.env.VITE_GATEWAY_URL}/api/mcp/status`);
+        setMcpStatus(res.data);
+      } catch (err) {
+        setMcpStatus({ status: 'unreachable' });
+      }
+    };
+    fetchStatus();
   }, []);
 
   const handlePersonaChange = async (personaId) => {
@@ -171,6 +185,15 @@ export default function App() {
       alert(`Analytics exported to: ${res.data.export_path}`);
     } catch (err) {
       setError('Failed to export analytics');
+    }
+  };
+
+  const testReminder = async () => {
+    try {
+      const res = await axios.post(`${import.meta.env.VITE_GATEWAY_URL}/api/internal/test-mcp`);
+      setMcpResponse(res.data);
+    } catch (err) {
+      setMcpResponse({ error: err.message });
     }
   };
 
@@ -469,6 +492,19 @@ export default function App() {
                   📊 Analytics: {status.backend_status.analytics ? '✅' : '❌'}
                 </div>
               </div>
+            )}
+          </div>
+
+          <div className="mcp-section">
+            <h3>MCP Server Status:</h3>
+            <p>{mcpStatus ? mcpStatus.status : 'Loading...'}</p>
+
+            <button onClick={testReminder}>Test Reminder Task</button>
+
+            {mcpResponse && (
+              <pre className="mcp-response">
+                {JSON.stringify(mcpResponse, null, 2)}
+              </pre>
             )}
           </div>
         </div>
