@@ -1,56 +1,37 @@
-"""n8n agent for routing utility tasks via webhook workflows."""
-
-import logging
 from typing import Dict, Any
-import requests
+import aiohttp
+import logging
 
+logger = logging.getLogger(__name__)
 
 class N8nAgent:
-    """Route tasks to n8n workflows registered by task type."""
+    """Simple agent to trigger n8n workflows via webhooks."""
 
-    def __init__(self) -> None:
-        self._registry: Dict[str, str] = {}
-        self.logger = logging.getLogger(__name__)
-        if not self.logger.handlers:
-            log_file = "logs/agent_n8n.log"
-            handler = logging.FileHandler(log_file)
-            formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-            handler.setFormatter(formatter)
-            self.logger.addHandler(handler)
-            self.logger.setLevel(logging.INFO)
+    def __init__(self, base_url: str = "http://localhost:5678") -> None:
+        self.base_url = base_url.rstrip('/')
+        # default workflow mapping
+        self.workflow_routes: Dict[str, str] = {
+            "create_reminder": f"{self.base_url}/webhook/create-reminder"
+        }
 
-    def register_workflow(self, task_type: str, url: str) -> None:
-        """Register an n8n webhook URL for a task type."""
-        self._registry[task_type] = url
-        self.logger.info(f"Registered workflow for {task_type}: {url}")
+    def register_workflow(self, name: str, url: str) -> None:
+        self.workflow_routes[name] = url
 
-    def execute(self, task_type: str, payload: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute a registered workflow with payload.
-
-        Args:
-            task_type: Name of the task to execute.
-            payload: Data to send to the workflow webhook.
-
-        Returns:
-            Response dictionary containing status and optional data.
-        """
-        url = self._registry.get(task_type)
+    async def execute(self, workflow: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute a workflow and return JSON response."""
+        url = self.workflow_routes.get(workflow)
         if not url:
-            msg = f"No workflow registered for task type: {task_type}"
-            self.logger.error(msg)
-            return {"status": "error", "summary": msg}
-
+            raise ValueError(f"Unknown workflow: {workflow}")
         try:
-            response = requests.post(url, json=payload, timeout=10)
-            response.raise_for_status()
-            data = response.json() if response.content else {}
-            summary = data.get("message", "task executed")
-            result = {"status": "success", "summary": summary, "data": data}
-            self.logger.info(f"Executed {task_type} via {url}")
-            return result
-        except requests.RequestException as exc:
-            self.logger.error(f"HTTP error for {task_type}: {exc}")
-            return {"status": "error", "summary": str(exc)}
-        except Exception as exc:  # Fallback for unexpected errors
-            self.logger.error(f"Unhandled error for {task_type}: {exc}")
-            return {"status": "error", "summary": str(exc)}
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url, json=payload) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        return {"success": True, "data": data}
+                    else:
+                        text = await resp.text()
+                        logger.error("n8n workflow %s failed: %s", workflow, text)
+                        return {"success": False, "error": f"HTTP {resp.status}"}
+        except Exception as e:
+            logger.error("n8n request error: %s", e)
+            return {"success": False, "error": str(e)}
