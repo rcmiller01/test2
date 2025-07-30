@@ -1,10 +1,13 @@
 from fastapi import APIRouter, HTTPException
 from datetime import datetime
+
 from typing import Optional
+
 
 from ..orchestrator import orchestrator
 
 router = APIRouter()
+
 
 @router.get("/api/analytics/realtime")
 async def get_realtime_analytics():

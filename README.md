@@ -4,6 +4,7 @@
 
 A sophisticated AI orchestration platform that intelligently routes conversations between local and cloud AI models based on task complexity, user preferences, and system availability.
 
+For detailed guides and architecture docs, see the `docs/` directory.
 ## 🌟 Features
 
 ### 🎭 **Personality System**

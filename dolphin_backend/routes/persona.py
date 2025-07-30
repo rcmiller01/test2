@@ -1,9 +1,12 @@
+
 import re
+
 from fastapi import APIRouter, HTTPException
 from typing import Dict, Any
 from ..orchestrator import orchestrator
 
 router = APIRouter()
+
 _VALID_ID = re.compile(r'^[\w-]{1,50}$')
 
 @router.get("/api/personas")

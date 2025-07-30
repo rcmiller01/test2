@@ -18,6 +18,7 @@ async def status_endpoint():
         async with aiohttp.ClientSession() as session:
             async with session.get(f"{orchestrator.ollama_url}/api/tags") as response:
                 ollama_status = response.status == 200
+
     except Exception:
         ollama_status = False
     analytics = orchestrator.analytics_logger.get_real_time_stats()
@@ -70,3 +71,4 @@ async def handlers_endpoint():
             }
         ]
     }
+
