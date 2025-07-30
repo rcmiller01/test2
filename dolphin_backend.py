@@ -1283,6 +1283,167 @@ async def quant_performance():
             detail=f"Failed to get performance analytics: {str(e)}"
         )
 
+# Model Management Endpoints
+@app.get("/api/model/current")
+async def get_baseline_model():
+    """Get current baseline model information"""
+    try:
+        from judge_model_quality import get_current_baseline_info
+        baseline_info = get_current_baseline_info()
+        
+        # Add additional runtime information
+        if baseline_info.get("baseline_path") and baseline_info.get("exists", False):
+            from pathlib import Path
+            model_path = Path(baseline_info["baseline_path"])
+            
+            baseline_info.update({
+                "runtime_info": {
+                    "accessible": model_path.exists(),
+                    "size_bytes": model_path.stat().st_size if model_path.exists() else 0,
+                    "last_modified": model_path.stat().st_mtime if model_path.exists() else 0
+                },
+                "api_timestamp": datetime.now().isoformat()
+            })
+        
+        return baseline_info
+        
+    except ImportError:
+        raise HTTPException(
+            status_code=503,
+            detail="Model judging system not available"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get baseline model info: {str(e)}"
+        )
+
+@app.get("/api/model/history")
+async def get_model_replacement_history():
+    """Get history of model replacements"""
+    try:
+        from pathlib import Path
+        import json
+        
+        log_file = Path("data/model_replacements.json")
+        if not log_file.exists():
+            return {
+                "replacements": [],
+                "total_replacements": 0,
+                "last_replacement": None
+            }
+        
+        with open(log_file, 'r') as f:
+            data = json.load(f)
+        
+        replacements = data.get("replacements", [])
+        
+        return {
+            "replacements": replacements[-20:],  # Last 20 replacements
+            "total_replacements": len(replacements),
+            "last_replacement": replacements[-1] if replacements else None,
+            "query_timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get replacement history: {str(e)}"
+        )
+
+@app.post("/api/model/compare")
+async def compare_models_endpoint(request: dict):
+    """Compare two models and get replacement recommendation"""
+    try:
+        from judge_model_quality import compare_models
+        
+        candidate_path = request.get("candidate_path")
+        baseline_path = request.get("baseline_path")
+        
+        if not candidate_path:
+            raise HTTPException(status_code=400, detail="candidate_path is required")
+        
+        # Auto-detect baseline if not provided
+        if not baseline_path:
+            from judge_model_quality import get_current_baseline_info
+            baseline_info = get_current_baseline_info()
+            baseline_path = baseline_info.get("baseline_path")
+            
+            if not baseline_path:
+                raise HTTPException(status_code=400, detail="No baseline model configured and none provided")
+        
+        comparison_result = compare_models(candidate_path, baseline_path)
+        
+        return {
+            "comparison": comparison_result,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except ImportError:
+        raise HTTPException(
+            status_code=503,
+            detail="Model judging system not available"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Model comparison failed: {str(e)}"
+        )
+
+@app.post("/api/model/replace")
+async def manual_model_replacement(request: dict):
+    """Manually trigger model replacement (admin endpoint)"""
+    try:
+        from judge_model_quality import swap_out_baseline
+        
+        new_model_path = request.get("new_model_path")
+        force_replace = request.get("force_replace", False)
+        
+        if not new_model_path:
+            raise HTTPException(status_code=400, detail="new_model_path is required")
+        
+        from pathlib import Path
+        if not Path(new_model_path).exists():
+            raise HTTPException(status_code=404, detail="Model file not found")
+        
+        # If not forcing, do quality check first
+        if not force_replace:
+            from judge_model_quality import compare_models, get_current_baseline_info
+            
+            baseline_info = get_current_baseline_info()
+            baseline_path = baseline_info.get("baseline_path")
+            
+            if baseline_path and Path(baseline_path).exists():
+                comparison = compare_models(new_model_path, baseline_path)
+                if not comparison.get("replacement_recommended", False):
+                    return {
+                        "status": "rejected",
+                        "message": "Model quality does not meet replacement criteria",
+                        "comparison": comparison,
+                        "suggestion": "Use force_replace=true to override quality checks"
+                    }
+        
+        # Perform replacement
+        swap_out_baseline(new_model_path)
+        
+        return {
+            "status": "success",
+            "message": "Baseline model replaced successfully",
+            "new_baseline": new_model_path,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except ImportError:
+        raise HTTPException(
+            status_code=503,
+            detail="Model judging system not available"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Model replacement failed: {str(e)}"
+        )
+
 # Connectivity Management Endpoints
 @app.get("/api/connectivity/status")
 async def get_connectivity_status():

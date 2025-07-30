@@ -29,6 +29,17 @@ except ImportError as e:
     logging.warning(f"Quantization tracking not available: {e}")
     TRACKING_AVAILABLE = False
 
+# Import model judging system
+try:
+    from judge_model_quality import (
+        compare_models, swap_out_baseline, archive_old_model,
+        get_current_baseline_info, judge_and_replace_if_better
+    )
+    JUDGING_AVAILABLE = True
+except ImportError as e:
+    logging.warning(f"Model judging system not available: {e}")
+    JUDGING_AVAILABLE = False
+
 # Fix Windows console encoding
 if sys.platform == 'win32':
     try:
@@ -452,6 +463,66 @@ class AutopilotBootloader:
                     f"emotional={emotional_score:.3f}, token={token_quality:.3f}, "
                     f"passed={passed_threshold}, duration={duration_seconds:.1f}s"
                 )
+                
+                # Perform model quality judging and conditional replacement
+                if JUDGING_AVAILABLE and model_path and passed_threshold:
+                    self.logger.info(f"🧪 Starting model quality evaluation for {model_path}")
+                    
+                    try:
+                        # Get current baseline info
+                        baseline_info = get_current_baseline_info()
+                        baseline_path = baseline_info.get("baseline_path", "")
+                        
+                        if baseline_path and Path(baseline_path).exists():
+                            # Compare the new model against baseline
+                            self.logger.info(f"🔍 Comparing against baseline: {baseline_path}")
+                            comparison_result = compare_models(model_path, baseline_path)
+                            
+                            if comparison_result["replacement_recommended"]:
+                                self.logger.info(
+                                    f"🎯 Model quality improvement detected! "
+                                    f"Emotional gain: {comparison_result['emotionality_gain']:+.3f}, "
+                                    f"Fluency gain: {comparison_result['fluency_gain']:+.3f}, "
+                                    f"Confidence: {comparison_result['confidence_score']:.1%}"
+                                )
+                                
+                                # Perform the replacement
+                                try:
+                                    swap_out_baseline(model_path)
+                                    self.logger.info("🎉 New core model accepted and baseline updated!")
+                                    
+                                    # Log successful replacement
+                                    self._log_model_replacement(loop_id, model_path, baseline_path, comparison_result)
+                                    
+                                except Exception as e:
+                                    self.logger.error(f"❌ Failed to replace baseline model: {e}")
+                                    
+                            else:
+                                self.logger.info(
+                                    f"📋 Model quality assessment: replacement not recommended "
+                                    f"(emotional: {comparison_result['emotionality_gain']:+.3f}, "
+                                    f"fluency: {comparison_result['fluency_gain']:+.3f}, "
+                                    f"confidence: {comparison_result['confidence_score']:.1%})"
+                                )
+                        else:
+                            # No baseline exists, set this as the first baseline
+                            if emotional_score > 0.7 and token_quality > 0.65:  # Basic quality threshold
+                                self.logger.info(f"🆕 No baseline model found, setting new baseline: {model_path}")
+                                swap_out_baseline(model_path)
+                                self.logger.info("✅ Initial baseline model established!")
+                            else:
+                                self.logger.info(f"📋 Model quality too low to establish as baseline")
+                                
+                    except Exception as e:
+                        self.logger.error(f"❌ Error during model quality evaluation: {e}")
+                else:
+                    if not JUDGING_AVAILABLE:
+                        self.logger.debug("Model judging system not available")
+                    elif not model_path:
+                        self.logger.debug("No model path available for judging")
+                    elif not passed_threshold:
+                        self.logger.debug("Model did not pass quality threshold, skipping judging")
+                        
             else:
                 self.logger.error(f"Failed to save tracking result for {loop_id}")
                 
@@ -488,6 +559,52 @@ class AutopilotBootloader:
             self.logger.warning(f"Error finding model files: {e}")
             return None
     
+    def _log_model_replacement(self, loop_id: str, new_model_path: str, old_baseline_path: str, comparison_result: Dict[str, Any]):
+        """Log model replacement event with detailed metrics"""
+        try:
+            replacement_log = {
+                "event": "model_replacement",
+                "timestamp": datetime.now().isoformat(),
+                "loop_id": loop_id,
+                "new_model": {
+                    "path": new_model_path,
+                    "name": Path(new_model_path).name,
+                    "size_mb": Path(new_model_path).stat().st_size / (1024 * 1024) if Path(new_model_path).exists() else 0
+                },
+                "old_baseline": {
+                    "path": old_baseline_path,
+                    "name": Path(old_baseline_path).name if old_baseline_path else "none"
+                },
+                "quality_gains": {
+                    "emotionality": comparison_result.get("emotionality_gain", 0),
+                    "fluency": comparison_result.get("fluency_gain", 0),
+                    "size_reduction": comparison_result.get("size_reduction", 0),
+                    "speed_improvement": comparison_result.get("speed_improvement", 0),
+                    "confidence": comparison_result.get("confidence_score", 0)
+                }
+            }
+            
+            # Save to replacement log file
+            log_file = Path("data/model_replacements.json")
+            log_file.parent.mkdir(exist_ok=True)
+            
+            # Load existing log or create new
+            if log_file.exists():
+                with open(log_file, 'r') as f:
+                    replacements = json.load(f)
+            else:
+                replacements = {"replacements": []}
+            
+            replacements["replacements"].append(replacement_log)
+            
+            with open(log_file, 'w') as f:
+                json.dump(replacements, f, indent=2)
+            
+            self.logger.info(f"📝 Model replacement logged to {log_file}")
+            
+        except Exception as e:
+            self.logger.error(f"Failed to log model replacement: {e}")
+
     def update_status(self, metrics: SystemMetrics):
         """Update bootloader status file"""
         try:
