@@ -18,9 +18,12 @@ async def status_endpoint():
         async with aiohttp.ClientSession() as session:
             async with session.get(f"{orchestrator.ollama_url}/api/tags") as response:
                 ollama_status = response.status == 200
+            async with session.get(f"{orchestrator.n8n_url}/healthz") as n8n_resp:
+                n8n_status = n8n_resp.status == 200
 
     except Exception:
         ollama_status = False
+        n8n_status = False
     analytics = orchestrator.analytics_logger.get_real_time_stats()
     memory_summary = orchestrator.memory_system.get_memory_summary()
     return {
@@ -30,7 +33,7 @@ async def status_endpoint():
             "services": {
                 "ollama": ollama_status,
                 "openrouter_configured": bool(orchestrator.openrouter_key),
-                "n8n": False
+                "n8n": n8n_status
             },
             "analytics": analytics,
             "memory": memory_summary,
@@ -61,7 +64,7 @@ async def handlers_endpoint():
                 "name": "N8N",
                 "description": "Workflow automation and utilities",
                 "icon": "🔧",
-                "status": "development"
+                "status": "available" if orchestrator.n8n_url else "unavailable"
             },
             {
                 "name": "KIMI_K2",

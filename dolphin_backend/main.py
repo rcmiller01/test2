@@ -8,7 +8,7 @@ from .mcp_bridge import route_to_mcp
 
 logger = logging.getLogger(__name__)
 
-from .orchestrator import orchestrator
+from .orchestrator import orchestrator, route_to_mcp
 from .routes import chat, memory, quantization, analytics, persona
 
 app = FastAPI(title="Dolphin AI Backend", version="2.1")
@@ -44,6 +44,21 @@ app.include_router(memory.router)
 app.include_router(quantization.router)
 app.include_router(analytics.router)
 app.include_router(persona.router)
+
+
+@app.post("/api/internal/test-mcp")
+async def test_mcp_bridge():
+    task = {
+        "intent_type": "reminder",
+        "payload": {
+            "message": "Run reflection pass",
+            "datetime": "2025-08-01T08:00:00Z"
+        },
+        "source": "dolphin",
+        "request_id": "test_123"
+    }
+    response = await route_to_mcp(task)
+    return response
 
 
 @app.on_event("startup")
