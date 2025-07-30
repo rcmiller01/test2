@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import n8nIcon from './assets/n8n.svg';
 
 import EmotionEval from './EmotionEval.jsx';
 
@@ -17,6 +18,7 @@ export default function App() {
   const [error, setError] = useState('');
   const [sessionId, setSessionId] = useState(null);
   const [handlers, setHandlers] = useState([]);
+  const [sessionHandlers, setSessionHandlers] = useState([]);
   
   // Enhanced state for new features
   const [personas, setPersonas] = useState([]);
@@ -116,6 +118,9 @@ export default function App() {
       };
       
       setMessages(prev => [...prev, aiMessage]);
+      setSessionHandlers(prev =>
+        prev.includes(aiMessage.handler) ? prev : [...prev, aiMessage.handler]
+      );
       
       // Update session ID if not set
       if (!sessionId && response.session_id) {
@@ -182,18 +187,22 @@ export default function App() {
   };
 
   const getHandlerIcon = (handler) => {
+    const h = (handler || '').toUpperCase();
     const iconMap = {
       'DOLPHIN': '🐬',
       'OPENROUTER': '☁️',
-      'N8N': '🔧',
       'KIMI_K2': '📊',
       'SYSTEM': '⚙️',
       'ERROR': '❌'
     };
-    return iconMap[handler] || '🤖';
+    if (h === 'N8N') {
+      return <img src={n8nIcon} alt="Utility" className="inline-block w-4 h-4 mr-1" />;
+    }
+    return iconMap[h] || '🤖';
   };
 
   const getHandlerColor = (handler) => {
+    const h = (handler || '').toUpperCase();
     const colorMap = {
       'DOLPHIN': 'bg-blue-600',
       'OPENROUTER': 'bg-green-600',
@@ -202,12 +211,31 @@ export default function App() {
       'SYSTEM': 'bg-gray-600',
       'ERROR': 'bg-red-600'
     };
-    return colorMap[handler] || 'bg-gray-600';
+    return colorMap[h] || 'bg-gray-600';
   };
 
   const getPersonaIcon = (personaId) => {
     const persona = personas.find(([id]) => id === personaId)?.[1];
     return persona?.icon || '🤖';
+  };
+
+  const renderN8nStatus = (msg) => {
+    const meta = msg.metadata || {};
+    const status = meta.status || meta.workflow_status;
+    const successFlag =
+      typeof meta.success === 'boolean'
+        ? meta.success
+        : /success|completed/i.test(status || '');
+    if (!status && typeof meta.success !== 'boolean') return null;
+    const baseClass = successFlag
+      ? 'bg-green-900 text-green-300'
+      : 'bg-red-900 text-red-300';
+    const text = successFlag
+      ? 'Success'
+      : status || 'Failed';
+    return (
+      <span className={`ml-2 px-2 py-1 rounded text-xs ${baseClass}`}>{text}</span>
+    );
   };
 
   return (
@@ -234,6 +262,13 @@ export default function App() {
             {sessionId && (
               <div className="text-xs text-gray-400">
                 Session: {sessionId.slice(-8)}
+              </div>
+            )}
+            {sessionHandlers.length > 0 && (
+              <div className="flex space-x-1 text-xs" title="Handlers used this session">
+                {sessionHandlers.map((h, i) => (
+                  <span key={i}>{getHandlerIcon(h)}</span>
+                ))}
               </div>
             )}
             <button
@@ -363,9 +398,14 @@ export default function App() {
             messages.map((msg, idx) => (
               <div
                 key={idx}
+                title={
+                  msg.handler && msg.handler.toUpperCase() === 'N8N'
+                    ? 'Task routed to N8n Automation Agent'
+                    : undefined
+                }
                 className={`p-3 rounded-lg ${
-                  msg.role === 'user' 
-                    ? 'bg-blue-600 ml-8' 
+                  msg.role === 'user'
+                    ? 'bg-blue-600 ml-8'
                     : `${getHandlerColor(msg.handler)} mr-8`
                 }`}
               >
@@ -388,9 +428,15 @@ export default function App() {
                     💭 {msg.reasoning}
                   </div>
                 )}
+                {msg.handler && msg.handler.toUpperCase() === 'N8N' && (
+                  <div className="mt-2 flex items-center">
+                    <span className="text-xs bg-gray-900 px-2 py-1 rounded" title="Task routed to N8n Automation Agent">Utility Action</span>
+                    {renderN8nStatus(msg)}
+                  </div>
+                )}
                 {msg.metadata && showAdvanced && (
                   <div className="text-xs mt-2 opacity-60">
-                    📊 Confidence: {msg.metadata.confidence?.toFixed(2)} | 
+                    📊 Confidence: {msg.metadata.confidence?.toFixed(2)} |
                     Latency: {msg.metadata.latency_seconds}s
                     {msg.metadata.sentiment_trend && ` | Sentiment: ${msg.metadata.sentiment_trend.toFixed(2)}`}
                   </div>
