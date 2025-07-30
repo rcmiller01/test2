@@ -124,7 +124,10 @@ export default function App() {
       };
 
       setMessages(prev => [...prev, aiMessage]);
-      setSessionHandlers(prev => [...prev, { handler: response.handler, timestamp: response.timestamp }]);
+
+      setSessionHandlers(prev =>
+        prev.includes(aiMessage.handler) ? prev : [...prev, aiMessage.handler]
+      );
       
       // Update session ID if not set
       if (!sessionId && response.session_id) {
@@ -191,22 +194,24 @@ export default function App() {
   };
 
   const getHandlerIcon = (handler) => {
-    if (!handler) return '🤖';
-    const key = handler.toUpperCase();
+
+    const h = (handler || '').toUpperCase();
     const iconMap = {
       'DOLPHIN': '🐬',
       'OPENROUTER': '☁️',
-      'N8N': <img src={n8nIcon} alt="N8n" className="inline w-4 h-4" />,
       'KIMI_K2': '📊',
       'SYSTEM': '⚙️',
       'ERROR': '❌'
     };
-    return iconMap[key] || '🤖';
+
+    if (h === 'N8N') {
+      return <img src={n8nIcon} alt="Utility" className="inline-block w-4 h-4 mr-1" />;
+    }
+    return iconMap[h] || '🤖';
   };
 
   const getHandlerColor = (handler) => {
-    if (!handler) return 'bg-gray-600';
-    const key = handler.toUpperCase();
+    const h = (handler || '').toUpperCase();
     const colorMap = {
       'DOLPHIN': 'bg-blue-600',
       'OPENROUTER': 'bg-green-600',
@@ -215,12 +220,33 @@ export default function App() {
       'SYSTEM': 'bg-gray-600',
       'ERROR': 'bg-red-600'
     };
-    return colorMap[key] || 'bg-gray-600';
+
+    return colorMap[h] || 'bg-gray-600';
+
   };
 
   const getPersonaIcon = (personaId) => {
     const persona = personas.find(([id]) => id === personaId)?.[1];
     return persona?.icon || '🤖';
+  };
+
+  const renderN8nStatus = (msg) => {
+    const meta = msg.metadata || {};
+    const status = meta.status || meta.workflow_status;
+    const successFlag =
+      typeof meta.success === 'boolean'
+        ? meta.success
+        : /success|completed/i.test(status || '');
+    if (!status && typeof meta.success !== 'boolean') return null;
+    const baseClass = successFlag
+      ? 'bg-green-900 text-green-300'
+      : 'bg-red-900 text-red-300';
+    const text = successFlag
+      ? 'Success'
+      : status || 'Failed';
+    return (
+      <span className={`ml-2 px-2 py-1 rounded text-xs ${baseClass}`}>{text}</span>
+    );
   };
 
   return (
@@ -255,6 +281,13 @@ export default function App() {
             {sessionId && (
               <div className="text-xs text-gray-400">
                 Session: {sessionId.slice(-8)}
+              </div>
+            )}
+            {sessionHandlers.length > 0 && (
+              <div className="flex space-x-1 text-xs" title="Handlers used this session">
+                {sessionHandlers.map((h, i) => (
+                  <span key={i}>{getHandlerIcon(h)}</span>
+                ))}
               </div>
             )}
             <button
@@ -384,9 +417,14 @@ export default function App() {
             messages.map((msg, idx) => (
               <div
                 key={idx}
+                title={
+                  msg.handler && msg.handler.toUpperCase() === 'N8N'
+                    ? 'Task routed to N8n Automation Agent'
+                    : undefined
+                }
                 className={`p-3 rounded-lg ${
-                  msg.role === 'user' 
-                    ? 'bg-blue-600 ml-8' 
+                  msg.role === 'user'
+                    ? 'bg-blue-600 ml-8'
                     : `${getHandlerColor(msg.handler)} mr-8`
                 }`}
               >
@@ -414,6 +452,12 @@ export default function App() {
                 {msg.reasoning && (
                   <div className="text-xs mt-2 opacity-80 italic">
                     💭 {msg.reasoning}
+                  </div>
+                )}
+                {msg.handler && msg.handler.toUpperCase() === 'N8N' && (
+                  <div className="mt-2 flex items-center">
+                    <span className="text-xs bg-gray-900 px-2 py-1 rounded" title="Task routed to N8n Automation Agent">Utility Action</span>
+                    {renderN8nStatus(msg)}
                   </div>
                 )}
                 {msg.metadata && showAdvanced && (
