@@ -26,6 +26,8 @@ export default function App() {
   const [analytics, setAnalytics] = useState(null);
   const [memoryStatus, setMemoryStatus] = useState(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [mcpStatus, setMcpStatus] = useState(null);
+  const [mcpResponse, setMcpResponse] = useState(null);
 
   // Check backend status and load initial data
   useEffect(() => {
@@ -69,11 +71,16 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (sessionHandlers.length > 0) {
-      sessionStorage.setItem('sessionHandlers', JSON.stringify(sessionHandlers));
-    }
-  }, [sessionHandlers]);
-
+    const fetchStatus = async () => {
+      try {
+        const res = await axios.get(`${import.meta.env.VITE_GATEWAY_URL}/api/mcp/status`);
+        setMcpStatus(res.data);
+      } catch (err) {
+        setMcpStatus({ status: 'unreachable' });
+      }
+    };
+    fetchStatus();
+  }, []);
   const handlePersonaChange = async (personaId) => {
     try {
       await axios.post(`${API_BASE}/api/personas/${personaId}`);
@@ -183,6 +190,15 @@ export default function App() {
       alert(`Analytics exported to: ${res.data.export_path}`);
     } catch (err) {
       setError('Failed to export analytics');
+    }
+  };
+
+  const testReminder = async () => {
+    try {
+      const res = await axios.post(`${import.meta.env.VITE_GATEWAY_URL}/api/internal/test-mcp`);
+      setMcpResponse(res.data);
+    } catch (err) {
+      setMcpResponse({ error: err.message });
     }
   };
 
@@ -559,6 +575,19 @@ export default function App() {
                   ⚙️ N8n: {status.backend_status.services?.n8n ? '✅' : '❌'}
                 </div>
               </div>
+            )}
+          </div>
+
+          <div className="mcp-section">
+            <h3>MCP Server Status:</h3>
+            <p>{mcpStatus ? mcpStatus.status : 'Loading...'}</p>
+
+            <button onClick={testReminder}>Test Reminder Task</button>
+
+            {mcpResponse && (
+              <pre className="mcp-response">
+                {JSON.stringify(mcpResponse, null, 2)}
+              </pre>
             )}
           </div>
         </div>
