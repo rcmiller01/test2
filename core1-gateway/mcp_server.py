@@ -26,6 +26,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
+from agent_registry import registry_manager
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -38,65 +40,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ============================================================================
-# AGENT REGISTRY - Central mapping of intent types to agent endpoints
+# DYNAMIC AGENT REGISTRY - Loaded from agents/registry.json
 # ============================================================================
 
-AGENT_REGISTRY = {
-    "reminder": {
-        "type": "n8n",
-        "webhook": "http://localhost:5678/webhook/create-reminder",
-        "timeout": 30,
-        "description": "Creates reminders and scheduling tasks via n8n workflow"
-    },
-    "calendar_event": {
-        "type": "n8n", 
-        "webhook": "http://localhost:5678/webhook/create-calendar-event",
-        "timeout": 30,
-        "description": "Creates calendar events via n8n workflow"
-    },
-    "email_send": {
-        "type": "n8n",
-        "webhook": "http://localhost:5678/webhook/send-email",
-        "timeout": 45,
-        "description": "Sends emails via n8n workflow"
-    },
-    "coding_request": {
-        "type": "openrouter",
-        "url": "http://localhost:4000/api/route-code",
-        "timeout": 120,
-        "description": "Routes coding requests to OpenRouter API"
-    },
-    "ai_chat": {
-        "type": "openrouter",
-        "url": "http://localhost:4000/api/chat",
-        "timeout": 60,
-        "description": "General AI chat requests via OpenRouter"
-    },
-    "file_search": {
-        "type": "local",
-        "handler": "file_system",
-        "timeout": 15,
-        "description": "Local file system search operations"
-    },
-    "file_read": {
-        "type": "local",
-        "handler": "file_system", 
-        "timeout": 10,
-        "description": "Local file reading operations"
-    },
-    "file_write": {
-        "type": "local",
-        "handler": "file_system",
-        "timeout": 15,
-        "description": "Local file writing operations"
-    },
-    "system_status": {
-        "type": "local",
-        "handler": "system_monitor",
-        "timeout": 5,
-        "description": "System health and status monitoring"
-    }
-}
+# The agent registry is now managed by the AgentRegistryManager
+# and loaded dynamically from agents/registry.json
+# This allows hot-swappable agent definitions without server restarts
 
 # ============================================================================
 # PYDANTIC MODELS - Request/Response schemas
@@ -231,18 +180,23 @@ async def ping_all_agents() -> List[AgentStatus]:
     Returns:
         List of AgentStatus objects for all agents
     """
+    enabled_agents = registry_manager.get_enabled_agents()
     tasks = []
-    for agent_name, agent_config in AGENT_REGISTRY.items():
+    
+    for agent_name, agent_config in enabled_agents.items():
         task = ping_agent(agent_name, agent_config)
         tasks.append(task)
     
     results = await asyncio.gather(*tasks, return_exceptions=True)
     
     agent_statuses = []
+    agent_names = list(enabled_agents.keys())
+    agent_configs = list(enabled_agents.values())
+    
     for i, result in enumerate(results):
         if isinstance(result, Exception):
-            agent_name = list(AGENT_REGISTRY.keys())[i]
-            agent_config = list(AGENT_REGISTRY.values())[i]
+            agent_name = agent_names[i]
+            agent_config = agent_configs[i]
             agent_statuses.append(AgentStatus(
                 agent_name=agent_name,
                 type=agent_config["type"],
@@ -340,8 +294,25 @@ async def handle_system_monitor_task(intent_type: str, payload: Dict[str, Any]) 
 async def lifespan(app: FastAPI):
     """Application lifespan manager"""
     logger.info("MCP Server starting up...")
+    
+    # Initialize the agent registry manager
+    try:
+        await registry_manager.initialize(enable_file_watching=True)
+        logger.info("Agent registry manager initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize agent registry manager: {e}")
+        raise
+    
     yield
+    
     logger.info("MCP Server shutting down...")
+    
+    # Shutdown the agent registry manager
+    try:
+        await registry_manager.shutdown()
+        logger.info("Agent registry manager shutdown successfully")
+    except Exception as e:
+        logger.error(f"Error shutting down agent registry manager: {e}")
 
 app = FastAPI(
     title="MCP Server - Master Control Program",
@@ -378,14 +349,15 @@ async def route_task(task: TaskRequest, background_tasks: BackgroundTasks) -> Ta
     
     try:
         # Validate intent type
-        if task.intent_type not in AGENT_REGISTRY:
+        enabled_agents = registry_manager.get_enabled_agents()
+        if task.intent_type not in enabled_agents:
             metrics.failed_requests += 1
             raise HTTPException(
                 status_code=400,
-                detail=f"Unknown intent type: {task.intent_type}. Available intents: {list(AGENT_REGISTRY.keys())}"
+                detail=f"Unknown intent type: {task.intent_type}. Available intents: {list(enabled_agents.keys())}"
             )
         
-        agent_config = AGENT_REGISTRY[task.intent_type]
+        agent_config = enabled_agents[task.intent_type]
         agent_type = agent_config["type"]
         timeout = agent_config.get("timeout", 30)
         
@@ -465,15 +437,23 @@ async def get_agent_registry() -> Dict[str, Any]:
     
     Returns information about all registered agents and their configurations.
     """
+    enabled_agents = registry_manager.get_enabled_agents()
+    all_agents = registry_manager.agents
+    
     return {
-        "total_agents": len(AGENT_REGISTRY),
+        "total_agents": len(all_agents),
+        "enabled_agents": len(enabled_agents),
+        "registry_info": registry_manager.get_registry_info(),
         "agents": {
             name: {
                 "type": config["type"],
+                "enabled": config.get("enabled", True),
                 "description": config.get("description", "No description available"),
-                "timeout": config.get("timeout", 30)
+                "timeout": config.get("timeout", 30),
+                "capabilities": config.get("capabilities", []),
+                "priority": config.get("priority", 5)
             }
-            for name, config in AGENT_REGISTRY.items()
+            for name, config in all_agents.items()
         }
     }
 
@@ -485,6 +465,93 @@ async def health_check() -> Dict[str, Any]:
         "timestamp": datetime.now().isoformat(),
         "uptime_seconds": int(time.time() - metrics.start_time)
     }
+
+@app.get("/api/mcp/agents/capabilities")
+async def get_agents_by_capability(capability: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Get agents by capability or list all capabilities
+    
+    Args:
+        capability: Optional capability to filter by
+    """
+    if capability:
+        agents = registry_manager.get_agents_by_capability(capability)
+        return {
+            "capability": capability,
+            "agents": agents,
+            "count": len(agents)
+        }
+    else:
+        # Return all unique capabilities
+        all_capabilities = set()
+        for agent_config in registry_manager.get_enabled_agents().values():
+            all_capabilities.update(agent_config.get('capabilities', []))
+        
+        return {
+            "all_capabilities": sorted(list(all_capabilities)),
+            "total_capabilities": len(all_capabilities)
+        }
+
+@app.get("/api/mcp/agents/{agent_name}")
+async def get_agent_details(agent_name: str) -> Dict[str, Any]:
+    """Get detailed information about a specific agent"""
+    agent_config = registry_manager.get_agent_config(agent_name)
+    if not agent_config:
+        raise HTTPException(status_code=404, detail=f"Agent not found: {agent_name}")
+    
+    health_status = registry_manager.get_agent_health(agent_name)
+    
+    return {
+        "name": agent_name,
+        "config": agent_config,
+        "health": health_status,
+        "enabled": registry_manager.is_agent_enabled(agent_name)
+    }
+
+@app.post("/api/mcp/agents/{agent_name}/enable")
+async def enable_agent(agent_name: str) -> Dict[str, Any]:
+    """Enable a specific agent at runtime"""
+    if not registry_manager.get_agent_config(agent_name):
+        raise HTTPException(status_code=404, detail=f"Agent not found: {agent_name}")
+    
+    success = await registry_manager.enable_agent(agent_name)
+    return {
+        "agent": agent_name,
+        "enabled": success,
+        "timestamp": datetime.now().isoformat()
+    }
+
+@app.post("/api/mcp/agents/{agent_name}/disable")
+async def disable_agent(agent_name: str) -> Dict[str, Any]:
+    """Disable a specific agent at runtime"""
+    if not registry_manager.get_agent_config(agent_name):
+        raise HTTPException(status_code=404, detail=f"Agent not found: {agent_name}")
+    
+    success = await registry_manager.disable_agent(agent_name)
+    return {
+        "agent": agent_name,
+        "disabled": success,
+        "timestamp": datetime.now().isoformat()
+    }
+
+@app.post("/api/mcp/registry/reload")
+async def reload_registry() -> Dict[str, Any]:
+    """Manually reload the agent registry"""
+    try:
+        await registry_manager.reload_registry()
+        return {
+            "success": True,
+            "message": "Registry reloaded successfully",
+            "registry_info": registry_manager.get_registry_info(),
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to reload registry: {str(e)}")
+
+@app.get("/api/mcp/registry/info")
+async def get_registry_info() -> Dict[str, Any]:
+    """Get registry metadata and statistics"""
+    return registry_manager.get_registry_info()
 
 # ============================================================================
 # FUTURE PROOFING STUBS
