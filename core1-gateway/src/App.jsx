@@ -68,6 +68,12 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    if (sessionHandlers.length > 0) {
+      sessionStorage.setItem('sessionHandlers', JSON.stringify(sessionHandlers));
+    }
+  }, [sessionHandlers]);
+
   const handlePersonaChange = async (personaId) => {
     try {
       await axios.post(`${API_BASE}/api/personas/${personaId}`);
@@ -107,8 +113,8 @@ export default function App() {
       });
       
       const response = res.data;
-      const aiMessage = { 
-        role: 'assistant', 
+      const aiMessage = {
+        role: 'assistant',
         content: response.response,
         handler: response.handler,
         reasoning: response.reasoning,
@@ -116,8 +122,9 @@ export default function App() {
         metadata: response.metadata,
         timestamp: response.timestamp
       };
-      
+
       setMessages(prev => [...prev, aiMessage]);
+
       setSessionHandlers(prev =>
         prev.includes(aiMessage.handler) ? prev : [...prev, aiMessage.handler]
       );
@@ -187,6 +194,7 @@ export default function App() {
   };
 
   const getHandlerIcon = (handler) => {
+
     const h = (handler || '').toUpperCase();
     const iconMap = {
       'DOLPHIN': '🐬',
@@ -195,6 +203,7 @@ export default function App() {
       'SYSTEM': '⚙️',
       'ERROR': '❌'
     };
+
     if (h === 'N8N') {
       return <img src={n8nIcon} alt="Utility" className="inline-block w-4 h-4 mr-1" />;
     }
@@ -211,7 +220,9 @@ export default function App() {
       'SYSTEM': 'bg-gray-600',
       'ERROR': 'bg-red-600'
     };
+
     return colorMap[h] || 'bg-gray-600';
+
   };
 
   const getPersonaIcon = (personaId) => {
@@ -249,14 +260,22 @@ export default function App() {
           </div>
           <div className="flex items-center space-x-4">
             {status && (
-              <div className="text-sm">
+              <div className="text-sm flex items-center space-x-2">
                 <span className={`inline-block w-2 h-2 rounded-full mr-2 ${
                   status.status === 'running' ? 'bg-green-500' : 'bg-red-500'
                 }`}></span>
-                {status.backend_status?.services?.openrouter_configured 
-                  ? '☁️ Cloud Ready' 
-                  : '🖥️ Local Only'
-                }
+                {status.backend_status?.services?.openrouter_configured
+                  ? '☁️ Cloud Ready'
+                  : '🖥️ Local Only'}
+                {status.backend_status?.services?.n8n !== undefined && (
+                  <span title="N8n Automation Agent">
+                    {status.backend_status.services.n8n ? (
+                      <img src={n8nIcon} className="inline w-4 h-4 ml-1" alt="n8n" />
+                    ) : (
+                      '❌'
+                    )}
+                  </span>
+                )}
               </div>
             )}
             {sessionId && (
@@ -410,11 +429,18 @@ export default function App() {
                 }`}
               >
                 <div className="font-semibold mb-1 flex items-center justify-between">
-                  <span>
-                    {msg.role === 'user' 
-                      ? '👤 You' 
-                      : `${getHandlerIcon(msg.handler)} ${msg.handler || 'AI'}${msg.persona_used ? ` (${msg.persona_used})` : ''}`
-                    }
+                  <span className="flex items-center" title={msg.handler && msg.handler.toLowerCase() === 'n8n' ? 'Task routed to N8n Automation Agent' : undefined}>
+                    {msg.role === 'user' ? (
+                      '👤 You'
+                    ) : (
+                      <>
+                        <span className="mr-1">{getHandlerIcon(msg.handler)}</span>
+                        {msg.handler || 'AI'}{msg.persona_used ? ` (${msg.persona_used})` : ''}
+                        {msg.handler && msg.handler.toLowerCase() === 'n8n' && (
+                          <span className="ml-2 px-2 py-0.5 text-xs rounded bg-black/30">Utility Action</span>
+                        )}
+                      </>
+                    )}
                   </span>
                   {msg.timestamp && (
                     <span className="text-xs opacity-70">
@@ -439,6 +465,21 @@ export default function App() {
                     📊 Confidence: {msg.metadata.confidence?.toFixed(2)} |
                     Latency: {msg.metadata.latency_seconds}s
                     {msg.metadata.sentiment_trend && ` | Sentiment: ${msg.metadata.sentiment_trend.toFixed(2)}`}
+                  </div>
+                )}
+                {msg.handler && msg.handler.toLowerCase() === 'n8n' && (
+                  msg.metadata?.status || msg.metadata?.success !== undefined) && (
+                  <div className={`text-xs mt-2 font-semibold ${
+                    msg.metadata.status === 'completed' || msg.metadata.success
+                      ? 'text-green-300'
+                      : 'text-red-300'
+                  }`}>
+                    {msg.metadata.status
+                      ? msg.metadata.status
+                      : msg.metadata.success
+                      ? 'success'
+                      : 'failed'}
+                    {msg.metadata.error && ` - ${msg.metadata.error}`}
                   </div>
                 )}
               </div>
@@ -513,6 +554,9 @@ export default function App() {
                 </div>
                 <div>
                   📊 Analytics: {status.backend_status.analytics ? '✅' : '❌'}
+                </div>
+                <div>
+                  ⚙️ N8n: {status.backend_status.services?.n8n ? '✅' : '❌'}
                 </div>
               </div>
             )}
