@@ -15,6 +15,7 @@ from utils.preference_vote_store import PreferenceVoteStore
 from handler_registry import handler_registry, HandlerState
 from fallback_personas import get as get_fallback_persona
 from judge_agent import JudgeAgent
+from agents.n8n_agent import N8nAgent
 
 # Advanced features
 
@@ -40,6 +41,9 @@ class DolphinOrchestrator:
         self.ollama_url = os.getenv('OLLAMA_URL', 'http://localhost:11434')
         self.openrouter_key = os.getenv('OPENROUTER_KEY')
         self.n8n_url = os.getenv('N8N_URL', 'http://localhost:5678')
+
+        # External agents
+        self.n8n_agent = N8nAgent(self.n8n_url)
 
 
         # Model configuration
@@ -167,7 +171,9 @@ class DolphinOrchestrator:
                 request.message, enhanced_context
             )
 
-            if route["handler"] == "OPENROUTER":
+            if route.get("task_type") in {"reminder", "calendar", "todo", "workflow"}:
+                response_text = await self.handle_n8n_request(formatted_message, enhanced_context, task_type=route["task_type"])
+            elif route["handler"] == "OPENROUTER":
                 response_text = await self.handle_openrouter_request(formatted_message, enhanced_context)
             elif route["handler"] == "N8N":
                 response_text = await self.handle_n8n_request(formatted_message, enhanced_context)
@@ -300,13 +306,27 @@ class DolphinOrchestrator:
             logger.error(f"OpenRouter request error: {e}")
             return f"OpenRouter service unavailable. Error: {str(e)}"
 
-    async def handle_n8n_request(self, message: str, context: Optional[Dict] = None) -> str:
+    async def handle_n8n_request(self, message: str, context: Optional[Dict] = None, task_type: str = "workflow") -> str:
+        """Send utility tasks to the n8n agent and fallback on failure."""
+        payload = {"message": message, "context": context or {}}
         try:
-            # TODO: Implement actual n8n webhook calls
-            return "Utility handler not implemented"
-
+            result = await self.n8n_agent.execute(task_type, payload)
+            self.analytics_logger.log_custom_event(
+                "n8n_task",
+                {"task_type": task_type, "success": result.get("success", False)}
+            )
+            if result.get("success"):
+                data = result.get("data", {})
+                # n8n workflows may return {'message': 'text'} or generic data
+                return data.get("message") or str(data)
+            # Fallback to OpenRouter if configured
+            if self.openrouter_key:
+                return await self.handle_openrouter_request(message, context)
+            return result.get("error", "Utility task failed")
         except Exception as e:
             logger.error(f"n8n request error: {e}")
+            if self.openrouter_key:
+                return await self.handle_openrouter_request(message, context)
             return f"Utility service temporarily unavailable. Error: {str(e)}"
 
     async def handle_kimi_fallback(self, message: str, context: Optional[Dict] = None) -> str:
@@ -331,4 +351,5 @@ class DolphinOrchestrator:
             return "All AI services are currently unavailable. Please try again later."
 
 # Singleton orchestrator
+orchestrator = DolphinOrchestrator()
 
