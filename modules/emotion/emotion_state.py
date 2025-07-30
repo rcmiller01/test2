@@ -5,6 +5,8 @@ import time
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
 
+from core.emotion.anchor_centering import emotional_watchdog
+
 class EmotionState:
     def __init__(self):
         # Core emotions
@@ -84,6 +86,8 @@ class EmotionState:
         
         self.last_update = current_time
         self._update_relationship_context()
+        emotional_watchdog(self.emotions)
+        emotional_watchdog(self.romantic_emotions)
         
     def update_from_biometrics(self, bpm: int, hrv: int, context: str = "general"):
         """Update emotions based on biometric data"""
@@ -111,6 +115,8 @@ class EmotionState:
         
         self.last_update = current_time
         self._update_relationship_context()
+        emotional_watchdog(self.emotions)
+        emotional_watchdog(self.romantic_emotions)
         
     def _apply_decay(self, current_time: datetime):
         """Apply emotion decay over time"""
