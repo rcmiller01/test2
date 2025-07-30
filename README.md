@@ -505,3 +505,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Built with ❤️ for the future of AI interaction**
 
 *Dolphin AI Orchestrator v2.0 - Where personality meets intelligence*
+
+Additional documentation can be found in the docs/ directory.
