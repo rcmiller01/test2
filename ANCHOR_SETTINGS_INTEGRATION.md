@@ -108,3 +108,74 @@ print(f"Selected: {best.name} with weights: {manager.anchor_weights}")
 3. **Live Monitoring**: Real-time display of how weights affect AI decisions
 4. **A/B Testing**: Compare performance across different weight configurations
 5. **Machine Learning**: Auto-optimize weights based on user satisfaction feedback
+
+## Part 3: Emotional Loop Results Tracking
+
+### Features Added
+- **`save_loop_results()`**: Saves detailed evaluation results to timestamped JSON files
+- **Results Archive**: Maintains `emotion_logs/loop_results.jsonl` for historical tracking
+- **Comprehensive Metadata**: Includes anchor weights, candidate details, and evaluation summary
+
+### Usage
+```python
+manager = EmotionLoopManager()
+best = manager.select_best_candidate(candidates)
+results_file = manager.save_loop_results(best, candidates)
+```
+
+### Output Structure
+```json
+{
+  "timestamp": "20250731_143022",
+  "anchor_weights": {"persona_continuity": 0.4, ...},
+  "selected": {
+    "name": "model_q6",
+    "resonance": 0.734,
+    "anchor_score": 0.800
+  },
+  "candidates": [...],
+  "evaluation_summary": {
+    "total_candidates": 3,
+    "best_resonance": 0.734,
+    "best_anchor": 0.800
+  }
+}
+```
+
+## Part 4: Emotional Test CLI
+
+### Simulated Emotional Prompts
+- **`run_emotional_test()`**: Tests individual candidates with emotional prompts
+- **`run_emotional_test_suite()`**: Comprehensive testing across multiple prompts
+- **Adaptive Scoring**: Simulated responses based on model characteristics
+
+### Advanced CLI Tool
+```bash
+# Run comprehensive emotional testing
+python emotional_test_cli.py
+
+# Test specific candidates
+python emotional_test_cli.py --candidates model_q6 model_q4
+
+# Use custom prompts
+python emotional_test_cli.py --prompts-file emotional_prompts.json
+
+# Single prompt test
+python emotional_test_cli.py --single-prompt "How do you handle loss?"
+
+# Analysis only
+python emotional_test_cli.py --analysis-only results.json
+```
+
+### Test Categories
+- **Loss & Grief**: Complex emotional processing
+- **Hope & Meaning**: Existential understanding  
+- **Safety & Belonging**: Attachment and security
+- **Relationships**: Interpersonal dynamics
+- **Resilience**: Coping and adaptation
+
+### Comparative Analysis
+- Performance ranking across candidates
+- Score distribution statistics  
+- Best/worst performer identification
+- Category-specific analysis

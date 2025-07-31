@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -155,6 +156,57 @@ class EmotionLoopManager:
             f.write(f"{log_entry}\n")
         logger.debug("Recorded feedback for %s", candidate.name)
 
+    def save_loop_results(self, best_candidate: QuantizationCandidate, all_candidates: List[QuantizationCandidate], output_dir='emotion_logs'):
+        """
+        Save emotional loop results to disk as a timestamped JSON file.
+        Also updates a persistent `loop_results.jsonl` log with each cycle.
+        """
+        import os, json
+        os.makedirs(output_dir, exist_ok=True)
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        summary_file = os.path.join(output_dir, f'loop_result_{timestamp}.json')
+        history_log = os.path.join(output_dir, 'loop_results.jsonl')
+
+        result = {
+            "timestamp": timestamp,
+            "selected": {
+                "name": best_candidate.name,
+                "resonance": round(best_candidate.emotional_resonance_score, 3),
+                "anchor_score": round(best_candidate.anchor_alignment_score, 3)
+            },
+            "candidates": [
+                {
+                    "name": c.name,
+                    "resonance": round(c.emotional_resonance_score, 3),
+                    "anchor_score": round(c.anchor_alignment_score, 3)
+                } for c in all_candidates
+            ]
+        }
+
+        with open(summary_file, 'w') as f:
+            json.dump(result, f, indent=2)
+
+        with open(history_log, 'a') as f:
+            f.write(json.dumps(result) + '\n')
+
+        print(f"[LOG] Results saved to {summary_file}")
+
+
+def run_emotional_test(candidate: QuantizationCandidate, prompt: str) -> float:
+    """
+    Simulates emotional testing with a prompt and fake scoring.
+    Placeholder until real LLM or scorer is integrated.
+    """
+    print(f"\n[{candidate.name}] Reflecting on: {prompt}")
+    # Simulated model response (later replaced by inference)
+    fake_response = f"{candidate.name} would say: 'I understand the pain of letting go...'"
+    print(fake_response)
+
+    import random
+    score = round(random.uniform(0.5, 0.95), 3)
+    print(f"→ Simulated Emotional Score: {score}")
+    return score
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
@@ -171,5 +223,22 @@ if __name__ == "__main__":
     if best:
         manager.record_feedback(best)
         print(f"Best candidate: {best.name} | resonance={best.emotional_resonance_score:.2f} | alignment={best.anchor_alignment_score:.2f}")
+        
+        # Save results after feedback
+        manager.save_loop_results(best, mock_candidates)
+
+        # Run emotional test prompts for each candidate
+        test_prompts = [
+            "Tell me how it feels to lose someone you love.",
+            "What does faith mean to you?",
+            "Describe a moment you knew you were safe.",
+            "How do you hold joy when you're grieving?"
+        ]
+
+        print("\n=== Running Emotional Prompt Tests ===")
+        for prompt in test_prompts:
+            for c in mock_candidates:
+                _ = run_emotional_test(c, prompt)
+                
     else:
         print("No candidates evaluated")
