@@ -8,11 +8,12 @@ foundation for future emotional improvement systems.
 
 from __future__ import annotations
 
+import json
 import logging
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +30,32 @@ class QuantizationCandidate:
     timestamp: datetime = datetime.utcnow()
 
 
+def load_anchor_weights(config_path: str = 'config/anchor_settings.json') -> Dict[str, float]:
+    """Load real Anchor tuning values from JSON configuration file.
+    
+    Args:
+        config_path: Path to the anchor settings JSON file
+        
+    Returns:
+        Dictionary of anchor weights for evaluation
+    """
+    try:
+        with open(config_path, 'r') as f:
+            cfg = json.load(f)
+            weights = cfg.get('weights', {})
+            logger.info(f"Loaded anchor weights from {config_path}: {weights}")
+            return weights
+    except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
+        logger.warning(f"Failed to load anchor weights from {config_path}: {e}")
+        logger.info("Using default anchor weights")
+        return {
+            'persona_continuity': 0.4,
+            'expression_accuracy': 0.3,
+            'response_depth': 0.2,
+            'memory_alignment': 0.1
+        }
+
+
 class AnchorAIInterface:
     """Placeholder interface to communicate with Anchor AI."""
 
@@ -42,16 +69,34 @@ class AnchorAIInterface:
 class EmotionLoopManager:
     """Core manager for the emotional quantization feedback loop."""
 
-    def __init__(self, anchor_ai: Optional[AnchorAIInterface] = None):
+    def __init__(self, anchor_ai: Optional[AnchorAIInterface] = None, config_path: str = 'config/anchor_settings.json'):
         self.anchor_ai = anchor_ai or AnchorAIInterface()
         self.history: List[QuantizationCandidate] = []
+        self.config_path = config_path
+        self.anchor_weights = load_anchor_weights(config_path)
 
     def evaluate_candidate(self, candidate: QuantizationCandidate) -> float:
-        """Compute emotional resonance score for a candidate (placeholder)."""
+        """Compute emotional resonance score for a candidate using dynamic anchor weights."""
         logger.debug("Evaluating emotional resonance for %s", candidate.name)
-        # TODO: Implement actual emotional scoring
-        score = 0.5
+        
+        # Reload weights to get latest configuration
+        self.anchor_weights = load_anchor_weights(self.config_path)
+        
+        # TODO: Implement actual emotional scoring based on anchor weights
+        # For now, use weighted combination based on anchor settings
+        base_score = 0.5
+        
+        # Apply anchor weight adjustments (placeholder logic)
+        persona_factor = self.anchor_weights.get('persona_continuity', 0.4) * 1.2
+        expression_factor = self.anchor_weights.get('expression_accuracy', 0.3) * 0.8
+        depth_factor = self.anchor_weights.get('response_depth', 0.2) * 1.1
+        memory_factor = self.anchor_weights.get('memory_alignment', 0.1) * 0.9
+        
+        score = base_score * (persona_factor + expression_factor + depth_factor + memory_factor)
+        score = min(1.0, max(0.0, score))  # Clamp to [0, 1]
+        
         candidate.emotional_resonance_score = score
+        logger.debug(f"Emotional resonance score for {candidate.name}: {score:.3f} (weights: {self.anchor_weights})")
         return score
 
     def verify_with_anchor(self, candidate: QuantizationCandidate) -> float:
@@ -62,15 +107,35 @@ class EmotionLoopManager:
         return score
 
     def select_best_candidate(self, candidates: List[QuantizationCandidate]) -> Optional[QuantizationCandidate]:
-        """Return the candidate with the highest weighted overall score."""
+        """Return the candidate with the highest weighted overall score using dynamic anchor weights."""
         logger.debug("Selecting best candidate among %d options", len(candidates))
+        
+        # Reload weights for selection
+        self.anchor_weights = load_anchor_weights(self.config_path)
+        
         for cand in candidates:
             self.evaluate_candidate(cand)
             self.verify_with_anchor(cand)
+            
         if not candidates:
             return None
-        best = max(candidates, key=lambda c: (c.emotional_resonance_score * 0.6) + (c.anchor_alignment_score * 0.4))
-        logger.info("Selected best candidate: %s", best.name)
+            
+        # Use dynamic weights for final scoring
+        emotion_weight = self.anchor_weights.get('expression_accuracy', 0.3) + self.anchor_weights.get('response_depth', 0.2)
+        anchor_weight = self.anchor_weights.get('persona_continuity', 0.4) + self.anchor_weights.get('memory_alignment', 0.1)
+        
+        # Normalize weights
+        total_weight = emotion_weight + anchor_weight
+        if total_weight > 0:
+            emotion_weight /= total_weight
+            anchor_weight /= total_weight
+        else:
+            emotion_weight, anchor_weight = 0.6, 0.4
+            
+        best = max(candidates, key=lambda c: (c.emotional_resonance_score * emotion_weight) + (c.anchor_alignment_score * anchor_weight))
+        
+        logger.info("Selected best candidate: %s (emotion_weight=%.2f, anchor_weight=%.2f)", 
+                   best.name, emotion_weight, anchor_weight)
         self.history.append(best)
         return best
 

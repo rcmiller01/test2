@@ -1,0 +1,11 @@
+{
+  "weights": {
+    "persona_continuity": 0.4,
+    "expression_accuracy": 0.3,
+    "response_depth": 0.2,
+    "memory_alignment": 0.1
+  },
+  "signature": "Emberveil-01",
+  "locked": false,
+  "last_updated": null
+}

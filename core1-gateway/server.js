@@ -16,7 +16,7 @@ app.use(cors({ origin: ALLOWED_ORIGINS.split(',') }));
 app.use(express.json());
 
 // Anchor settings storage
-const ANCHOR_SETTINGS_PATH = './anchor_settings.json';
+const ANCHOR_SETTINGS_PATH = '../config/anchor_settings.json';
 let anchorSettings = loadAnchorSettings();
 
 /**
