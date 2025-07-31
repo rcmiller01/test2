@@ -1,109 +1,96 @@
-import { useState, useEffect } from 'react';
+// File: /src/components/settings/AnchorSettingsPanel.jsx
+
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import './AnchorSettingsPanel.css'; // optional styling
 
-const API_BASE = import.meta.env.VITE_GATEWAY_URL || 'http://localhost:5000';
+const defaultSettings = {
+  weights: {
+    persona_continuity: 0.4,
+    expression_accuracy: 0.3,
+    response_depth: 0.2,
+    memory_alignment: 0.1
+  },
+  signature: 'Emberveil-01',
+  locked: false
+};
 
-/**
- * AnchorSettingsPanel - Configure Anchor AI emotional evaluation weights.
- */
-export default function AnchorSettingsPanel() {
-  const [settings, setSettings] = useState(null);
-  const [warning, setWarning] = useState('');
+const AnchorSettingsPanel = () => {
+  const [settings, setSettings] = useState(defaultSettings);
+  const [loading, setLoading] = useState(true);
+  const [lastSaved, setLastSaved] = useState(null);
 
-  // Fetch settings on mount
   useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await axios.get(`${API_BASE}/api/anchor/settings`);
+    axios.get('/api/anchor/settings')
+      .then(res => {
         setSettings(res.data);
-      } catch (err) {
-        setWarning('Failed to load settings');
-      }
-    };
-    load();
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, []);
 
-  // Save settings whenever they change (debounced)
-  useEffect(() => {
-    if (!settings) return;
-    const timeout = setTimeout(async () => {
-      try {
-        await axios.post(`${API_BASE}/api/anchor/settings`, settings);
-      } catch (err) {
-        setWarning('Failed to save settings');
-      }
-    }, 500);
-    return () => clearTimeout(timeout);
-  }, [settings]);
-
-  const updateWeight = (key, value) => {
-    const newSettings = {
-      ...settings,
-      weights: { ...settings.weights, [key]: value }
-    };
-    const sum =
-      newSettings.weights.persona_continuity +
-      newSettings.weights.expression_accuracy +
-      newSettings.weights.response_depth +
-      newSettings.weights.memory_alignment;
-    setWarning(Math.abs(sum - 1) > 0.01 ? 'Weights should sum to 1.0' : '');
-    setSettings(newSettings);
+  const handleWeightChange = (key, value) => {
+    const newWeights = { ...settings.weights, [key]: parseFloat(value) };
+    setSettings(prev => ({ ...prev, weights: newWeights }));
   };
 
-  if (!settings) {
-    return <div className="text-sm">Loading anchor settings...</div>;
-  }
+  const handleSave = () => {
+    axios.post('/api/anchor/settings', settings)
+      .then(() => setLastSaved(new Date().toLocaleString()));
+  };
+
+  const totalWeight = Object.values(settings.weights).reduce((a, b) => a + b, 0);
+
+  if (loading) return <div>Loading Anchor AI settings...</div>;
 
   return (
-    <div className="space-y-4 bg-gray-800 p-4 rounded-lg">
-      <h4 className="font-medium">⚓ Anchor Settings</h4>
+    <div className="anchor-settings">
+      <h2>🧭 Anchor AI Emotional Scoring Settings</h2>
 
-      <div className="space-y-3">
-        {Object.entries(settings.weights).map(([key, val]) => (
-          <div key={key} className="text-sm">
-            <label className="block mb-1 capitalize">
-              {key.replace('_', ' ')}: {val.toFixed(2)}
-            </label>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={val}
-              onChange={e => updateWeight(key, parseFloat(e.target.value))}
-              className="w-full"
-            />
-          </div>
-        ))}
-      </div>
+      {Object.entries(settings.weights).map(([key, val]) => (
+        <div key={key} className="slider-group">
+          <label>{key.replace('_', ' ')}: {val.toFixed(2)}</label>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value={val}
+            onChange={e => handleWeightChange(key, e.target.value)}
+          />
+        </div>
+      ))}
 
-      <div className="text-sm">
-        <label className="block mb-1">Signature</label>
-        <input
-          type="text"
+      <p style={{ color: totalWeight !== 1 ? 'red' : 'green' }}>
+        Total Weight: {totalWeight.toFixed(2)} {totalWeight !== 1 && "(should be 1.00)"}
+      </p>
+
+      <div className="field">
+        <label>Signature:</label>
+        <select
           value={settings.signature}
-          onChange={e => setSettings({ ...settings, signature: e.target.value })}
-          className="w-full p-1 rounded bg-gray-700"
-        />
+          onChange={e => setSettings(prev => ({ ...prev, signature: e.target.value }))}
+        >
+          <option>Emberveil-01</option>
+          <option>Ashveil-02</option>
+          <option>Skylace-03</option>
+          <option>Custom...</option>
+        </select>
       </div>
 
-      <div className="flex items-center space-x-2 text-sm">
+      <div className="field">
+        <label>Anchor Override Lock:</label>
         <input
-          id="locked"
           type="checkbox"
           checked={settings.locked}
-          onChange={e => setSettings({ ...settings, locked: e.target.checked })}
+          onChange={e => setSettings(prev => ({ ...prev, locked: e.target.checked }))}
         />
-        <label htmlFor="locked">Anchor Override Lock</label>
       </div>
 
-      {warning && <div className="text-red-400 text-xs">{warning}</div>}
-
-      {settings.last_updated && (
-        <div className="text-xs text-gray-400">
-          Last updated: {new Date(settings.last_updated).toLocaleString()}
-        </div>
-      )}
+      <button onClick={handleSave} disabled={totalWeight !== 1}>Save Settings</button>
+      {lastSaved && <p className="last-saved">Last updated: {lastSaved}</p>}
     </div>
   );
-}
+};
+
+export default AnchorSettingsPanel;
