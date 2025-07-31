@@ -62,6 +62,55 @@ class AnchorAIInterface:
     def __init__(self, config_path: str = 'config/anchor_settings.json'):
         self.config_path = config_path
         self.anchor_weights = load_anchor_weights(config_path)
+    
+    def parse_reflection_insights(self, insights_path='emotion_logs/anchor_insights.json'):
+        """
+        Parses reflection insights to calculate a penalty score if sacred emotions have drifted.
+        
+        Args:
+            insights_path: Path to the anchor insights JSON file
+            
+        Returns:
+            float: Penalty score (0.0 to 0.3) based on emotional drift
+        """
+        try:
+            # Handle relative paths
+            if not os.path.isabs(insights_path):
+                script_dir = os.path.dirname(os.path.abspath(__file__))
+                insights_path = os.path.join(script_dir, insights_path)
+                
+            with open(insights_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                summary = data.get("summary", {})
+        except (FileNotFoundError, json.JSONDecodeError, Exception) as e:
+            logger.debug(f"Could not read reflection insights from {insights_path}: {e}")
+            return 0.0  # If file doesn't exist or can't be read, assume no penalty
+
+        penalty = 0.0
+        drift_count = 0
+        
+        for seed_key, values in summary.items():
+            drift_score = values.get("drift_score", 0.0)
+            violations = values.get("violations", 0)
+            mentions = values.get("mentions", 0)
+            
+            if violations > 0 and mentions > 0:
+                # Apply stronger penalty for sacred emotions
+                emotion_weight = 1.0
+                if seed_key.lower() in ['faith', 'love', 'compassion', 'hope']:
+                    emotion_weight = 1.5  # Sacred emotions get higher penalty weight
+                
+                penalty += drift_score * 0.1 * emotion_weight  # Adjust scaling factor as needed
+                drift_count += 1
+                
+                logger.info(f"[AnchorAI] Emotional drift detected for '{seed_key}': "
+                          f"{drift_score:.3f} drift, {violations}/{mentions} violations")
+
+        if drift_count > 0:
+            logger.warning(f"[AnchorAI] Total emotional drift penalty: {penalty:.3f} "
+                         f"across {drift_count} emotions")
+
+        return round(min(penalty, 0.3), 3)  # Cap penalty at 30%
         
     def score_alignment(self, candidate: QuantizationCandidate) -> float:
         """Return alignment score based on real anchor configuration."""
@@ -84,11 +133,20 @@ class AnchorAIInterface:
             persona_influence + expression_influence + depth_influence + memory_influence
         )
         
-        # Clamp to valid range
-        alignment_score = min(1.0, max(0.0, alignment_score))
+        # Apply drift penalty from reflection insights
+        drift_penalty = self.parse_reflection_insights()
+        final_score = max(0.0, alignment_score - drift_penalty)
         
-        logger.debug(f"Anchor alignment score for {candidate.name}: {alignment_score:.3f}")
-        return alignment_score
+        # Clamp to valid range
+        final_score = min(1.0, max(0.0, final_score))
+        
+        if drift_penalty > 0:
+            logger.info(f"[AnchorAI] {candidate.name} - Base score: {alignment_score:.3f}, "
+                       f"Drift penalty: {drift_penalty:.3f}, Final score: {final_score:.3f}")
+        else:
+            logger.debug(f"Anchor alignment score for {candidate.name}: {final_score:.3f}")
+        
+        return final_score
 
 
 class EmotionLoopManager:
