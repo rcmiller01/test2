@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import n8nIcon from './assets/n8n.svg';
 
 import EmotionEval from './EmotionEval.jsx';
 
@@ -17,6 +18,7 @@ export default function App() {
   const [error, setError] = useState('');
   const [sessionId, setSessionId] = useState(null);
   const [handlers, setHandlers] = useState([]);
+  const [sessionHandlers, setSessionHandlers] = useState([]);
   
   // Enhanced state for new features
   const [personas, setPersonas] = useState([]);
@@ -24,6 +26,8 @@ export default function App() {
   const [analytics, setAnalytics] = useState(null);
   const [memoryStatus, setMemoryStatus] = useState(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [mcpStatus, setMcpStatus] = useState(null);
+  const [mcpResponse, setMcpResponse] = useState(null);
 
   // Check backend status and load initial data
   useEffect(() => {
@@ -66,6 +70,17 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        const res = await axios.get(`${import.meta.env.VITE_GATEWAY_URL}/api/mcp/status`);
+        setMcpStatus(res.data);
+      } catch (err) {
+        setMcpStatus({ status: 'unreachable' });
+      }
+    };
+    fetchStatus();
+  }, []);
   const handlePersonaChange = async (personaId) => {
     try {
       await axios.post(`${API_BASE}/api/personas/${personaId}`);
@@ -105,8 +120,8 @@ export default function App() {
       });
       
       const response = res.data;
-      const aiMessage = { 
-        role: 'assistant', 
+      const aiMessage = {
+        role: 'assistant',
         content: response.response,
         handler: response.handler,
         reasoning: response.reasoning,
@@ -114,8 +129,12 @@ export default function App() {
         metadata: response.metadata,
         timestamp: response.timestamp
       };
-      
+
       setMessages(prev => [...prev, aiMessage]);
+
+      setSessionHandlers(prev =>
+        prev.includes(aiMessage.handler) ? prev : [...prev, aiMessage.handler]
+      );
       
       // Update session ID if not set
       if (!sessionId && response.session_id) {
@@ -174,6 +193,15 @@ export default function App() {
     }
   };
 
+  const testReminder = async () => {
+    try {
+      const res = await axios.post(`${import.meta.env.VITE_GATEWAY_URL}/api/internal/test-mcp`);
+      setMcpResponse(res.data);
+    } catch (err) {
+      setMcpResponse({ error: err.message });
+    }
+  };
+
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -182,18 +210,24 @@ export default function App() {
   };
 
   const getHandlerIcon = (handler) => {
+
+    const h = (handler || '').toUpperCase();
     const iconMap = {
       'DOLPHIN': '🐬',
       'OPENROUTER': '☁️',
-      'N8N': '🔧',
       'KIMI_K2': '📊',
       'SYSTEM': '⚙️',
       'ERROR': '❌'
     };
-    return iconMap[handler] || '🤖';
+
+    if (h === 'N8N') {
+      return <img src={n8nIcon} alt="Utility" className="inline-block w-4 h-4 mr-1" />;
+    }
+    return iconMap[h] || '🤖';
   };
 
   const getHandlerColor = (handler) => {
+    const h = (handler || '').toUpperCase();
     const colorMap = {
       'DOLPHIN': 'bg-blue-600',
       'OPENROUTER': 'bg-green-600',
@@ -202,12 +236,33 @@ export default function App() {
       'SYSTEM': 'bg-gray-600',
       'ERROR': 'bg-red-600'
     };
-    return colorMap[handler] || 'bg-gray-600';
+
+    return colorMap[h] || 'bg-gray-600';
+
   };
 
   const getPersonaIcon = (personaId) => {
     const persona = personas.find(([id]) => id === personaId)?.[1];
     return persona?.icon || '🤖';
+  };
+
+  const renderN8nStatus = (msg) => {
+    const meta = msg.metadata || {};
+    const status = meta.status || meta.workflow_status;
+    const successFlag =
+      typeof meta.success === 'boolean'
+        ? meta.success
+        : /success|completed/i.test(status || '');
+    if (!status && typeof meta.success !== 'boolean') return null;
+    const baseClass = successFlag
+      ? 'bg-green-900 text-green-300'
+      : 'bg-red-900 text-red-300';
+    const text = successFlag
+      ? 'Success'
+      : status || 'Failed';
+    return (
+      <span className={`ml-2 px-2 py-1 rounded text-xs ${baseClass}`}>{text}</span>
+    );
   };
 
   return (
@@ -221,19 +276,34 @@ export default function App() {
           </div>
           <div className="flex items-center space-x-4">
             {status && (
-              <div className="text-sm">
+              <div className="text-sm flex items-center space-x-2">
                 <span className={`inline-block w-2 h-2 rounded-full mr-2 ${
                   status.status === 'running' ? 'bg-green-500' : 'bg-red-500'
                 }`}></span>
-                {status.backend_status?.services?.openrouter_configured 
-                  ? '☁️ Cloud Ready' 
-                  : '🖥️ Local Only'
-                }
+                {status.backend_status?.services?.openrouter_configured
+                  ? '☁️ Cloud Ready'
+                  : '🖥️ Local Only'}
+                {status.backend_status?.services?.n8n !== undefined && (
+                  <span title="N8n Automation Agent">
+                    {status.backend_status.services.n8n ? (
+                      <img src={n8nIcon} className="inline w-4 h-4 ml-1" alt="n8n" />
+                    ) : (
+                      '❌'
+                    )}
+                  </span>
+                )}
               </div>
             )}
             {sessionId && (
               <div className="text-xs text-gray-400">
                 Session: {sessionId.slice(-8)}
+              </div>
+            )}
+            {sessionHandlers.length > 0 && (
+              <div className="flex space-x-1 text-xs" title="Handlers used this session">
+                {sessionHandlers.map((h, i) => (
+                  <span key={i}>{getHandlerIcon(h)}</span>
+                ))}
               </div>
             )}
             <button
@@ -363,18 +433,30 @@ export default function App() {
             messages.map((msg, idx) => (
               <div
                 key={idx}
+                title={
+                  msg.handler && msg.handler.toUpperCase() === 'N8N'
+                    ? 'Task routed to N8n Automation Agent'
+                    : undefined
+                }
                 className={`p-3 rounded-lg ${
-                  msg.role === 'user' 
-                    ? 'bg-blue-600 ml-8' 
+                  msg.role === 'user'
+                    ? 'bg-blue-600 ml-8'
                     : `${getHandlerColor(msg.handler)} mr-8`
                 }`}
               >
                 <div className="font-semibold mb-1 flex items-center justify-between">
-                  <span>
-                    {msg.role === 'user' 
-                      ? '👤 You' 
-                      : `${getHandlerIcon(msg.handler)} ${msg.handler || 'AI'}${msg.persona_used ? ` (${msg.persona_used})` : ''}`
-                    }
+                  <span className="flex items-center" title={msg.handler && msg.handler.toLowerCase() === 'n8n' ? 'Task routed to N8n Automation Agent' : undefined}>
+                    {msg.role === 'user' ? (
+                      '👤 You'
+                    ) : (
+                      <>
+                        <span className="mr-1">{getHandlerIcon(msg.handler)}</span>
+                        {msg.handler || 'AI'}{msg.persona_used ? ` (${msg.persona_used})` : ''}
+                        {msg.handler && msg.handler.toLowerCase() === 'n8n' && (
+                          <span className="ml-2 px-2 py-0.5 text-xs rounded bg-black/30">Utility Action</span>
+                        )}
+                      </>
+                    )}
                   </span>
                   {msg.timestamp && (
                     <span className="text-xs opacity-70">
@@ -388,11 +470,32 @@ export default function App() {
                     💭 {msg.reasoning}
                   </div>
                 )}
+                {msg.handler && msg.handler.toUpperCase() === 'N8N' && (
+                  <div className="mt-2 flex items-center">
+                    <span className="text-xs bg-gray-900 px-2 py-1 rounded" title="Task routed to N8n Automation Agent">Utility Action</span>
+                    {renderN8nStatus(msg)}
+                  </div>
+                )}
                 {msg.metadata && showAdvanced && (
                   <div className="text-xs mt-2 opacity-60">
-                    📊 Confidence: {msg.metadata.confidence?.toFixed(2)} | 
+                    📊 Confidence: {msg.metadata.confidence?.toFixed(2)} |
                     Latency: {msg.metadata.latency_seconds}s
                     {msg.metadata.sentiment_trend && ` | Sentiment: ${msg.metadata.sentiment_trend.toFixed(2)}`}
+                  </div>
+                )}
+                {msg.handler && msg.handler.toLowerCase() === 'n8n' && (
+                  msg.metadata?.status || msg.metadata?.success !== undefined) && (
+                  <div className={`text-xs mt-2 font-semibold ${
+                    msg.metadata.status === 'completed' || msg.metadata.success
+                      ? 'text-green-300'
+                      : 'text-red-300'
+                  }`}>
+                    {msg.metadata.status
+                      ? msg.metadata.status
+                      : msg.metadata.success
+                      ? 'success'
+                      : 'failed'}
+                    {msg.metadata.error && ` - ${msg.metadata.error}`}
                   </div>
                 )}
               </div>
@@ -468,7 +571,23 @@ export default function App() {
                 <div>
                   📊 Analytics: {status.backend_status.analytics ? '✅' : '❌'}
                 </div>
+                <div>
+                  ⚙️ N8n: {status.backend_status.services?.n8n ? '✅' : '❌'}
+                </div>
               </div>
+            )}
+          </div>
+
+          <div className="mcp-section">
+            <h3>MCP Server Status:</h3>
+            <p>{mcpStatus ? mcpStatus.status : 'Loading...'}</p>
+
+            <button onClick={testReminder}>Test Reminder Task</button>
+
+            {mcpResponse && (
+              <pre className="mcp-response">
+                {JSON.stringify(mcpResponse, null, 2)}
+              </pre>
             )}
           </div>
         </div>

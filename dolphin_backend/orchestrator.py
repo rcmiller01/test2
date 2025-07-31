@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Dict, Any, Optional, List
 
 import aiohttp
+from .mcp_bridge import route_to_mcp
 
 from personality_system import PersonalitySystem
 from memory_system import MemorySystem
@@ -15,6 +16,7 @@ from utils.preference_vote_store import PreferenceVoteStore
 from handler_registry import handler_registry, HandlerState
 from fallback_personas import get as get_fallback_persona
 from judge_agent import JudgeAgent
+from agents.n8n_agent import N8nAgent
 
 # Advanced features
 
@@ -32,6 +34,31 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+MCP_HOST = os.getenv("MCP_HOST", "http://localhost:8000")
+
+
+async def route_to_mcp(task_request: Dict[str, Any]) -> Dict[str, Any]:
+    """Send a structured task to the MCP server and return the response."""
+    start = time.time()
+    try:
+        timeout = aiohttp.ClientTimeout(total=10)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.post(
+                f"{MCP_HOST}/api/mcp/route-task", json=task_request
+            ) as resp:
+                resp.raise_for_status()
+                data = await resp.json()
+                elapsed = int((time.time() - start) * 1000)
+                logger.info(
+                    f"MCP response: request_id={task_request.get('request_id')}, "
+                    f"intent_type={task_request.get('intent_type')}, "
+                    f"time_ms={elapsed}"
+                )
+                return data
+    except Exception as e:
+        logger.error(f"Error routing to MCP: {e}")
+        return {"success": False, "error": str(e)}
+
 class DolphinOrchestrator:
     """Dolphin orchestrator with personality, memory and analytics"""
 
@@ -40,6 +67,9 @@ class DolphinOrchestrator:
         self.ollama_url = os.getenv('OLLAMA_URL', 'http://localhost:11434')
         self.openrouter_key = os.getenv('OPENROUTER_KEY')
         self.n8n_url = os.getenv('N8N_URL', 'http://localhost:5678')
+
+        # External agents
+        self.n8n_agent = N8nAgent(self.n8n_url)
 
 
         # Model configuration
@@ -166,6 +196,45 @@ class DolphinOrchestrator:
             formatted_message = self.personality_system.format_prompt_with_persona(
                 request.message, enhanced_context
             )
+            intent_type = route.get("intent_type") or route.get("task_type")
+
+            if route["handler"].lower() in ("utility", "agent"):
+                task_payload = {
+                    "intent_type": intent_type,
+                    "payload": {
+                        "message": request.message,
+                        "context": enhanced_context,
+                    },
+                    "source": "dolphin",
+                    "request_id": request_id,
+                }
+                logger.info(f"Routed to MCP: intent_type={intent_type}")
+                mcp_start = time.time()
+                mcp_result = await route_to_mcp(task_payload)
+                mcp_latency = time.time() - mcp_start
+                self.analytics_logger.log_performance_metrics(
+                    request_id, "MCP", mcp_latency, mcp_result.get("success", False)
+                )
+                if mcp_result.get("success"):
+                    return mcp_result
+                logger.warning("MCP server unavailable, falling back to local handler")
+
+            if route.get("task_type") in {"utility", "agent"}:
+                task_request = {
+                    "intent_type": route.get("task_type"),
+                    "payload": {"message": request.message, **(request.context or {})},
+                    "source": "dolphin",
+                    "request_id": request_id,
+                }
+                mcp_start = time.time()
+                mcp_response = await route_to_mcp(task_request)
+                logger.info(
+                    "Routed to MCP: intent_type=%s request_id=%s time_ms=%d",
+                    task_request["intent_type"],
+                    request_id,
+                    int((time.time() - mcp_start) * 1000),
+                )
+                return mcp_response
 
             if route["handler"] == "OPENROUTER":
                 response_text = await self.handle_openrouter_request(formatted_message, enhanced_context)
@@ -173,9 +242,9 @@ class DolphinOrchestrator:
                 response_text = await self.handle_n8n_request(formatted_message, enhanced_context)
             elif route["handler"] == "KIMI_K2":
                 response_text = await self.handle_kimi_fallback(formatted_message, enhanced_context)
-
             else:
                 response_text = await self.handle_dolphin_request(formatted_message, enhanced_context)
+
             response_text = apply_persona_filter(response_text, current_persona["name"])
 
             self.memory_system.add_message(
@@ -300,13 +369,27 @@ class DolphinOrchestrator:
             logger.error(f"OpenRouter request error: {e}")
             return f"OpenRouter service unavailable. Error: {str(e)}"
 
-    async def handle_n8n_request(self, message: str, context: Optional[Dict] = None) -> str:
+    async def handle_n8n_request(self, message: str, context: Optional[Dict] = None, task_type: str = "workflow") -> str:
+        """Send utility tasks to the n8n agent and fallback on failure."""
+        payload = {"message": message, "context": context or {}}
         try:
-            # TODO: Implement actual n8n webhook calls
-            return "Utility handler not implemented"
-
+            result = await self.n8n_agent.execute(task_type, payload)
+            self.analytics_logger.log_custom_event(
+                "n8n_task",
+                {"task_type": task_type, "success": result.get("success", False)}
+            )
+            if result.get("success"):
+                data = result.get("data", {})
+                # n8n workflows may return {'message': 'text'} or generic data
+                return data.get("message") or str(data)
+            # Fallback to OpenRouter if configured
+            if self.openrouter_key:
+                return await self.handle_openrouter_request(message, context)
+            return result.get("error", "Utility task failed")
         except Exception as e:
             logger.error(f"n8n request error: {e}")
+            if self.openrouter_key:
+                return await self.handle_openrouter_request(message, context)
             return f"Utility service temporarily unavailable. Error: {str(e)}"
 
     async def handle_kimi_fallback(self, message: str, context: Optional[Dict] = None) -> str:
@@ -331,4 +414,7 @@ class DolphinOrchestrator:
             return "All AI services are currently unavailable. Please try again later."
 
 # Singleton orchestrator
+orchestrator = DolphinOrchestrator()
+
+orchestrator = DolphinOrchestrator()
 
