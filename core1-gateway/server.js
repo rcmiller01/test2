@@ -15,42 +15,9 @@ app.use(cors({ origin: ALLOWED_ORIGINS.split(',') }));
 
 app.use(express.json());
 
-// Anchor settings storage
-const ANCHOR_SETTINGS_PATH = './anchor_settings.json';
-let anchorSettings = loadAnchorSettings();
-
-/**
- * Load anchor settings from disk or return defaults.
- */
-function loadAnchorSettings() {
-  try {
-    const data = fs.readFileSync(ANCHOR_SETTINGS_PATH, 'utf8');
-    return JSON.parse(data);
-  } catch {
-    return {
-      weights: {
-        persona_continuity: 0.4,
-        expression_accuracy: 0.3,
-        response_depth: 0.2,
-        memory_alignment: 0.1
-      },
-      signature: 'Emberveil-01',
-      locked: false,
-      last_updated: null
-    };
-  }
-}
-
-/**
- * Persist anchor settings to disk with timestamp.
- */
-function saveAnchorSettings(settings) {
-  anchorSettings = { ...settings, last_updated: new Date().toISOString() };
-  fs.writeFileSync(
-    ANCHOR_SETTINGS_PATH,
-    JSON.stringify(anchorSettings, null, 2)
-  );
-}
+// Anchor settings router
+const anchorRoutes = require('./api/routes/anchor');
+app.use('/api/anchor', anchorRoutes);
 
 // Enhanced session management
 let sessionCounter = 0;
@@ -61,19 +28,6 @@ function generateSessionId() {
   return `session_${Date.now()}_${++sessionCounter}`;
 }
 
-// Anchor settings API
-app.get('/api/anchor/settings', (req, res) => {
-  res.send(anchorSettings);
-});
-
-app.post('/api/anchor/settings', (req, res) => {
-  try {
-    saveAnchorSettings(req.body);
-    res.send({ success: true, settings: anchorSettings });
-  } catch (err) {
-    res.status(500).send({ error: 'Failed to save settings' });
-  }
-});
 
 // Enhanced chat endpoint with personality and memory support
 app.post('/api/chat', async (req, res) => {
