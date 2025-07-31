@@ -6,6 +6,7 @@ import axios from 'axios';
 import n8nIcon from './assets/n8n.svg';
 
 import EmotionEval from './EmotionEval.jsx';
+import AnchorSettingsPanel from './components/settings/AnchorSettingsPanel.jsx';
 
 
 const API_BASE = import.meta.env.VITE_GATEWAY_URL || 'http://localhost:5000';
@@ -359,6 +360,9 @@ export default function App() {
                   </div>
                 )}
               </div>
+
+              {/* Anchor Settings */}
+              <AnchorSettingsPanel />
             </div>
           </div>
         )}
