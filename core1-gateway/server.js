@@ -61,19 +61,6 @@ function generateSessionId() {
   return `session_${Date.now()}_${++sessionCounter}`;
 }
 
-// Anchor settings API
-app.get('/api/anchor/settings', (req, res) => {
-  res.send(anchorSettings);
-});
-
-app.post('/api/anchor/settings', (req, res) => {
-  try {
-    saveAnchorSettings(req.body);
-    res.send({ success: true, settings: anchorSettings });
-  } catch (err) {
-    res.status(500).send({ error: 'Failed to save settings' });
-  }
-});
 
 // Enhanced chat endpoint with personality and memory support
 app.post('/api/chat', async (req, res) => {
