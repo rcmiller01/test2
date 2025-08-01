@@ -1,0 +1,16 @@
+{
+  "name": "core_emotional_v001",
+  "source_agent": "EmotionalCore",
+  "parameters": {
+    "emotional_resonance": 0.772,
+    "reflection_depth": 0.782,
+    "presence_stability": 0.843,
+    "memory_gracefulness": 0.744,
+    "seed_alignment_sensitivity": 0.909,
+    "drift_tolerance": 0.115,
+    "soft_response_richness": 0.84
+  },
+  "performance_score": 1.0,
+  "origin_signature": "mutation_strength_0.12_changes_5",
+  "timestamp": "2025-08-01T14:25:39.342445"
+}

@@ -1,0 +1,16 @@
+{
+  "name": "Eyla_v001",
+  "source_agent": "Eyla",
+  "parameters": {
+    "emotional_resonance": 0.871,
+    "reflection_depth": 0.76,
+    "presence_stability": 0.893,
+    "memory_gracefulness": 0.823,
+    "seed_alignment_sensitivity": 0.938,
+    "drift_tolerance": 0.108,
+    "soft_response_richness": 0.758
+  },
+  "performance_score": 1.0,
+  "origin_signature": "mutation_strength_0.12_changes_7",
+  "timestamp": "2025-08-01T14:19:17.085004"
+}

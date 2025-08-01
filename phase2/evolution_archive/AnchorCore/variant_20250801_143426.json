@@ -1,0 +1,16 @@
+{
+  "name": "AnchorCore_v001",
+  "source_agent": "AnchorCore",
+  "parameters": {
+    "judgment_consistency": 0.935,
+    "seed_preservation_sensitivity": 0.868,
+    "override_threshold_strictness": 0.937,
+    "anchor_resonance_weighting": 0.888,
+    "drift_detection_precision": 0.85,
+    "emotional_neutrality": 0.841,
+    "signature_coherence_awareness": 0.808
+  },
+  "performance_score": 1.0,
+  "origin_signature": "mutation_strength_0.10_changes_7",
+  "timestamp": "2025-08-01T14:34:26.859537"
+}
