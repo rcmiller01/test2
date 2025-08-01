@@ -1,0 +1,37 @@
+{
+  "council": {
+    "coordinator_node": "core2",
+    "orchestrated_by": "eyla_core",
+    "load_strategy": "contextual_priority",
+    "members": [
+      {
+        "name": "The Dreamer",
+        "purpose": "Narrative generation, speculative design, dream mapping",
+        "model_file": "dreamer-7b.Q5_K_M.gguf",
+        "emotional_signature": "LiminalWarmth-02",
+        "task_loop": "dream_loop.py"
+      },
+      {
+        "name": "The Analyst",
+        "purpose": "Logic analysis, pattern extraction, inference validation",
+        "model_file": "analyst-13b.Q4_K_M.gguf",
+        "emotional_signature": "ColdClarity-01",
+        "task_loop": "analyze_loop.py"
+      },
+      {
+        "name": "The Mirror",
+        "purpose": "Emotional reflection, contradiction surfacing, truth-checking",
+        "model_file": "mirror-13b.Q4_K_M.gguf",
+        "emotional_signature": "DeepResonance-03",
+        "task_loop": "mirror_loop.py"
+      },
+      {
+        "name": "The Painter",
+        "purpose": "Image synthesis, symbolic output, emotional visualization",
+        "model_file": "painter-vqgan-visiontiny",
+        "emotional_signature": "RadiantVeil-01",
+        "task_loop": "paint_loop.py"
+      }
+    ]
+  }
+}
