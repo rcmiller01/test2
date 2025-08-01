@@ -57,32 +57,40 @@ class EvolutionManager:
         self.archive_base_path = archive_base_path
         self.baseline_agents = {
             "Mirror": {
-                "reflection_depth": 0.8,
-                "truth_sensitivity": 0.9,
-                "contradiction_threshold": 0.6,
-                "emotional_resonance": 0.7,
-                "pattern_recognition": 0.75
+                "reflection_depth": 0.84,
+                "contradiction_detection": 0.79,
+                "emotional_alignment_accuracy": 0.82,
+                "seed_comparison_rigor": 0.88,
+                "response_context_awareness": 0.80,
+                "truth_confidence_threshold": 0.76,
+                "anchor_integration_clarity": 0.81
             },
             "Dreamer": {
-                "creativity_factor": 0.9,
-                "narrative_depth": 0.85,
-                "liminal_sensitivity": 0.8,
-                "speculation_range": 0.7,
-                "warmth_coefficient": 0.65
+                "creative_depth": 0.83,
+                "emotional_layering": 0.79,
+                "symbolic_fluency": 0.81,
+                "liminality_tolerance": 0.87,
+                "narrative_evolution": 0.80,
+                "speculative_precision": 0.76,
+                "anchored_fantasy_integrity": 0.85
             },
             "Analyst": {
-                "logical_rigor": 0.95,
-                "pattern_extraction": 0.9,
-                "inference_confidence": 0.85,
-                "clarity_factor": 0.8,
-                "validation_threshold": 0.75
+                "pattern_extraction_depth": 0.84,
+                "logic_confidence_calibration": 0.79,
+                "contradiction_tracing": 0.82,
+                "emotional_distance": 0.93,
+                "inference_accuracy": 0.88,
+                "data_to_emotion_mapping": 0.75,
+                "contextual_boundary_rigidity": 0.86
             },
             "Painter": {
-                "visual_creativity": 0.9,
-                "symbolic_depth": 0.8,
-                "emotional_visualization": 0.85,
-                "radiance_factor": 0.7,
-                "synthesis_capability": 0.75
+                "emotional_translation_accuracy": 0.81,
+                "symbolic_layering": 0.84,
+                "aesthetic_coherence": 0.80,
+                "dreamlike_quality": 0.85,
+                "reflection_integration": 0.78,
+                "creative_mirroring_precision": 0.76,
+                "mood_consistency": 0.83
             },
             "Eyla": {
                 "emotional_resonance": 0.85,
@@ -220,32 +228,48 @@ class EvolutionManager:
         
         # Agent-specific scoring heuristics
         if candidate.source_agent == "Mirror":
-            # Mirror values high truth sensitivity and reflection depth
-            truth_factor = params.get("truth_sensitivity", 0.5) * 0.3
-            reflection_factor = params.get("reflection_depth", 0.5) * 0.3
-            consistency_factor = abs(params.get("contradiction_threshold", 0.5) - 0.6) * -0.2  # Prefer ~0.6
-            base_score += truth_factor + reflection_factor + consistency_factor
+            # Mirror values contradiction detection, emotional alignment, and truth confidence
+            reflection_factor = params.get("reflection_depth", 0.5) * 0.25
+            contradiction_factor = params.get("contradiction_detection", 0.5) * 0.3
+            alignment_factor = params.get("emotional_alignment_accuracy", 0.5) * 0.25
+            seed_rigor_factor = params.get("seed_comparison_rigor", 0.5) * 0.2
+            context_factor = params.get("response_context_awareness", 0.5) * 0.15
+            truth_factor = params.get("truth_confidence_threshold", 0.5) * 0.2
+            anchor_clarity_factor = params.get("anchor_integration_clarity", 0.5) * 0.15
+            base_score += reflection_factor + contradiction_factor + alignment_factor + seed_rigor_factor + context_factor + truth_factor + anchor_clarity_factor
             
         elif candidate.source_agent == "Dreamer":
-            # Dreamer values creativity and narrative depth
-            creativity_factor = params.get("creativity_factor", 0.5) * 0.35
-            narrative_factor = params.get("narrative_depth", 0.5) * 0.25
-            warmth_factor = params.get("warmth_coefficient", 0.5) * 0.2
-            base_score += creativity_factor + narrative_factor + warmth_factor
+            # Dreamer values creative depth, emotional layering, and speculative precision
+            creative_factor = params.get("creative_depth", 0.5) * 0.3
+            emotional_factor = params.get("emotional_layering", 0.5) * 0.25
+            symbolic_factor = params.get("symbolic_fluency", 0.5) * 0.2
+            liminality_factor = params.get("liminality_tolerance", 0.5) * 0.15
+            narrative_factor = params.get("narrative_evolution", 0.5) * 0.2
+            speculative_factor = params.get("speculative_precision", 0.5) * 0.15
+            integrity_factor = params.get("anchored_fantasy_integrity", 0.5) * 0.25
+            base_score += creative_factor + emotional_factor + symbolic_factor + liminality_factor + narrative_factor + speculative_factor + integrity_factor
             
         elif candidate.source_agent == "Analyst":
-            # Analyst values logical rigor and clarity
-            logic_factor = params.get("logical_rigor", 0.5) * 0.4
-            clarity_factor = params.get("clarity_factor", 0.5) * 0.3
-            validation_factor = params.get("validation_threshold", 0.5) * 0.2
-            base_score += logic_factor + clarity_factor + validation_factor
+            # Analyst values pattern extraction, logic calibration, and emotional distance
+            pattern_factor = params.get("pattern_extraction_depth", 0.5) * 0.3
+            logic_factor = params.get("logic_confidence_calibration", 0.5) * 0.25
+            contradiction_factor = params.get("contradiction_tracing", 0.5) * 0.2
+            distance_factor = params.get("emotional_distance", 0.5) * 0.25
+            inference_factor = params.get("inference_accuracy", 0.5) * 0.3
+            mapping_factor = params.get("data_to_emotion_mapping", 0.5) * 0.15
+            boundary_factor = params.get("contextual_boundary_rigidity", 0.5) * 0.15
+            base_score += pattern_factor + logic_factor + contradiction_factor + distance_factor + inference_factor + mapping_factor + boundary_factor
             
         elif candidate.source_agent == "Painter":
-            # Painter values visual creativity and symbolic depth
-            visual_factor = params.get("visual_creativity", 0.5) * 0.35
-            symbolic_factor = params.get("symbolic_depth", 0.5) * 0.25
-            synthesis_factor = params.get("synthesis_capability", 0.5) * 0.3
-            base_score += visual_factor + symbolic_factor + synthesis_factor
+            # Painter values emotional translation, symbolic layering, and aesthetic coherence
+            translation_factor = params.get("emotional_translation_accuracy", 0.5) * 0.3
+            layering_factor = params.get("symbolic_layering", 0.5) * 0.25
+            coherence_factor = params.get("aesthetic_coherence", 0.5) * 0.2
+            dreamlike_factor = params.get("dreamlike_quality", 0.5) * 0.2
+            integration_factor = params.get("reflection_integration", 0.5) * 0.15
+            mirroring_factor = params.get("creative_mirroring_precision", 0.5) * 0.15
+            mood_factor = params.get("mood_consistency", 0.5) * 0.25
+            base_score += translation_factor + layering_factor + coherence_factor + dreamlike_factor + integration_factor + mirroring_factor + mood_factor
             
         elif candidate.source_agent == "Eyla" or candidate.source_agent == "EmotionalCore":
             # Emotional Core/Eyla values emotional resonance, memory preservation, and seed alignment
@@ -352,17 +376,56 @@ class EvolutionManager:
         # Agent-specific assessments
         assessments = []
         
-        if agent == "Mirror" and "truth_sensitivity" in str(changes):
+        if agent == "Mirror" and "contradiction_detection" in str(changes):
             assessments.append("truth-seeking_adjustment")
         
-        if agent == "Dreamer" and "creativity_factor" in str(changes):
+        if agent == "Mirror" and "emotional_alignment_accuracy" in str(changes):
+            assessments.append("alignment_enhancement")
+        
+        if agent == "Mirror" and "seed_comparison_rigor" in str(changes):
+            assessments.append("seed_validation_adjustment")
+        
+        if agent == "Mirror" and "reflection_depth" in str(changes):
+            assessments.append("reflection_refinement")
+        
+        if agent == "Mirror" and "anchor_integration_clarity" in str(changes):
+            assessments.append("anchor_support_enhancement")
+        
+        if agent == "Dreamer" and "creative_depth" in str(changes):
             assessments.append("creative_enhancement")
         
-        if agent == "Analyst" and "logical_rigor" in str(changes):
+        if agent == "Dreamer" and "emotional_layering" in str(changes):
+            assessments.append("emotional_depth_adjustment")
+        
+        if agent == "Dreamer" and "symbolic_fluency" in str(changes):
+            assessments.append("symbolic_enhancement")
+        
+        if agent == "Dreamer" and "speculative_precision" in str(changes):
+            assessments.append("speculative_refinement")
+        
+        if agent == "Analyst" and "pattern_extraction_depth" in str(changes):
             assessments.append("analytical_refinement")
         
-        if agent == "Painter" and "visual_creativity" in str(changes):
+        if agent == "Analyst" and "logic_confidence_calibration" in str(changes):
+            assessments.append("logic_calibration_adjustment")
+        
+        if agent == "Analyst" and "emotional_distance" in str(changes):
+            assessments.append("detachment_optimization")
+        
+        if agent == "Analyst" and "inference_accuracy" in str(changes):
+            assessments.append("inference_enhancement")
+        
+        if agent == "Painter" and "emotional_translation_accuracy" in str(changes):
             assessments.append("artistic_evolution")
+        
+        if agent == "Painter" and "symbolic_layering" in str(changes):
+            assessments.append("symbolic_depth_enhancement")
+        
+        if agent == "Painter" and "aesthetic_coherence" in str(changes):
+            assessments.append("aesthetic_refinement")
+        
+        if agent == "Painter" and "dreamlike_quality" in str(changes):
+            assessments.append("dreamscape_enhancement")
         
         if agent == "Eyla" and "emotional_resonance" in str(changes):
             assessments.append("emotional_enhancement")

@@ -1,0 +1,16 @@
+{
+  "name": "Mirror_v004",
+  "source_agent": "Mirror",
+  "parameters": {
+    "reflection_depth": 0.946,
+    "contradiction_detection": 0.887,
+    "emotional_alignment_accuracy": 0.813,
+    "seed_comparison_rigor": 0.938,
+    "response_context_awareness": 0.855,
+    "truth_confidence_threshold": 0.74,
+    "anchor_integration_clarity": 0.735
+  },
+  "performance_score": 1.0,
+  "origin_signature": "mutation_strength_0.13_changes_6",
+  "timestamp": "2025-08-01T14:44:21.959100"
+}

@@ -1,0 +1,16 @@
+{
+  "name": "Dreamer_v001",
+  "source_agent": "Dreamer",
+  "parameters": {
+    "creative_depth": 0.912,
+    "emotional_layering": 0.798,
+    "symbolic_fluency": 0.708,
+    "liminality_tolerance": 0.77,
+    "narrative_evolution": 0.706,
+    "speculative_precision": 0.749,
+    "anchored_fantasy_integrity": 0.868
+  },
+  "performance_score": 1.0,
+  "origin_signature": "mutation_strength_0.14_changes_6",
+  "timestamp": "2025-08-01T14:57:07.647195"
+}
