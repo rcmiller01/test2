@@ -1,0 +1,75 @@
+{
+  "name": "Emotional AI Utility Workflows",
+  "description": "Collection of N8N workflows for supporting the emotional AI system",
+  "version": "1.0",
+  "workflows": [
+    {
+      "name": "Email Management",
+      "file": "email_management.json",
+      "description": "Handle email reading, sending, and organization",
+      "triggers": ["email_request", "schedule"]
+    },
+    {
+      "name": "Calendar Management", 
+      "file": "calendar_management.json",
+      "description": "Manage calendar events, reminders, and scheduling",
+      "triggers": ["calendar_request", "time_trigger"]
+    },
+    {
+      "name": "Web Research",
+      "file": "web_research.json", 
+      "description": "Perform web searches and information gathering",
+      "triggers": ["research_request"]
+    },
+    {
+      "name": "File Operations",
+      "file": "file_operations.json",
+      "description": "Handle file management, organization, and processing",
+      "triggers": ["file_request"]
+    },
+    {
+      "name": "Emotional Profile Evaluation",
+      "file": "emotional_evaluation.json",
+      "description": "Evaluate emotional profiles and conversation quality",
+      "triggers": ["evaluation_request"]
+    },
+    {
+      "name": "Conversation Analytics",
+      "file": "conversation_analytics.json",
+      "description": "Analyze conversation patterns and emotional responses",
+      "triggers": ["analytics_request", "conversation_end"]
+    },
+    {
+      "name": "Mood Tracking",
+      "file": "mood_tracking.json",
+      "description": "Track user mood patterns and emotional state",
+      "triggers": ["mood_request", "schedule"]
+    },
+    {
+      "name": "Relationship Insights",
+      "file": "relationship_insights.json", 
+      "description": "Generate insights about relationship dynamics",
+      "triggers": ["insight_request", "weekly_trigger"]
+    }
+  ],
+  "setup_instructions": [
+    "1. Import each workflow JSON file into your N8N instance",
+    "2. Configure webhook URLs in the emotional AI core system",
+    "3. Set up authentication credentials for external services",
+    "4. Test each workflow with sample data",
+    "5. Enable webhooks and scheduled triggers as needed"
+  ],
+  "required_nodes": [
+    "HTTP Request",
+    "Webhook", 
+    "Set",
+    "Code",
+    "IF",
+    "Gmail",
+    "Google Calendar",
+    "HTTP Response",
+    "Schedule Trigger",
+    "Function",
+    "JSON"
+  ]
+}

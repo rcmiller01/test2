@@ -1,0 +1,12 @@
+{
+  "model_name": "emollama",
+  "model_size": "13b",
+  "base_temperature": 0.8,
+  "max_tokens": 2048,
+  "n8n_url": "http://localhost:5678",
+  "n8n_api_key": "key",
+  "openrouter_api_key": "x",
+  "nsfw_enabled": true,
+  "emotional_adaptation": true,
+  "utility_functions_enabled": true
+}

@@ -1,0 +1,14 @@
+{
+  "name": "Mirror_v001",
+  "source_agent": "Mirror",
+  "parameters": {
+    "reflection_depth": 0.861,
+    "truth_sensitivity": 0.933,
+    "contradiction_threshold": 0.575,
+    "emotional_resonance": 0.746,
+    "pattern_recognition": 0.815
+  },
+  "performance_score": 1.0,
+  "origin_signature": "mutation_strength_0.15_changes_5",
+  "timestamp": "2025-08-01T14:03:17.025706"
+}

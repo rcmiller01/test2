@@ -1,0 +1,7 @@
+{
+  "state_retention_hours": 168,
+  "memory_consolidation_threshold": 0.7,
+  "emotional_decay_rate": 0.01,
+  "transition_smoothing": 0.3,
+  "affect_reactor_sensitivity": 0.5
+}

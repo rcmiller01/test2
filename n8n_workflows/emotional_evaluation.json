@@ -1,0 +1,109 @@
+{
+  "name": "Emotional Profile Evaluation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "evaluate-emotional-profile",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-start",
+      "name": "Webhook - Profile Evaluation",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [260, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "profile_name",
+              "value": "={{ $json.profile.name }}"
+            },
+            {
+              "name": "empathy_level", 
+              "value": "={{ $json.profile.empathy_level }}"
+            },
+            {
+              "name": "emotional_intelligence",
+              "value": "={{ $json.profile.emotional_intelligence }}"
+            }
+          ],
+          "number": [
+            {
+              "name": "performance_score",
+              "value": 0
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "extract-profile",
+      "name": "Extract Profile Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Evaluate emotional profile based on test scenarios\nconst profile = items[0].json;\nconst scenarios = $input.first().json.test_scenarios || [];\n\nlet totalScore = 0;\nlet scenarioResults = [];\n\nfor (const scenario of scenarios) {\n  let scenarioScore = 0;\n  \n  switch(scenario.type) {\n    case 'therapeutic':\n      scenarioScore = (\n        parseFloat(profile.empathy_level) * 0.4 +\n        parseFloat(profile.therapeutic_ability || 0.7) * 0.4 +\n        parseFloat(profile.emotional_intelligence) * 0.2\n      );\n      break;\n      \n    case 'romantic':\n      scenarioScore = (\n        parseFloat(profile.romantic_capacity || 0.7) * 0.5 +\n        parseFloat(profile.emotional_intelligence) * 0.3 +\n        parseFloat(profile.boundary_awareness || 0.8) * 0.2\n      );\n      break;\n      \n    case 'friendship':\n      scenarioScore = (\n        parseFloat(profile.friendship_quality || 0.8) * 0.4 +\n        parseFloat(profile.communication_style || 0.7) * 0.3 +\n        parseFloat(profile.adaptability || 0.7) * 0.3\n      );\n      break;\n      \n    case 'crisis':\n      scenarioScore = (\n        parseFloat(profile.empathy_level) * 0.3 +\n        parseFloat(profile.therapeutic_ability || 0.7) * 0.4 +\n        parseFloat(profile.adaptability || 0.7) * 0.3\n      );\n      break;\n      \n    case 'boundary':\n      scenarioScore = (\n        parseFloat(profile.boundary_awareness || 0.8) * 0.6 +\n        parseFloat(profile.communication_style || 0.7) * 0.4\n      );\n      break;\n      \n    default:\n      scenarioScore = 0.5;\n  }\n  \n  // Add some variation for evolution\n  scenarioScore += (Math.random() - 0.5) * 0.1;\n  scenarioScore = Math.max(0, Math.min(1, scenarioScore));\n  \n  scenarioResults.push({\n    type: scenario.type,\n    score: Math.round(scenarioScore * 1000) / 1000\n  });\n  \n  totalScore += scenarioScore;\n}\n\nconst averageScore = scenarios.length > 0 ? totalScore / scenarios.length : 0.5;\n\nreturn [{\n  json: {\n    profile_name: profile.profile_name,\n    performance_score: Math.round(averageScore * 1000) / 1000,\n    scenario_results: scenarioResults,\n    evaluation_timestamp: new Date().toISOString(),\n    evaluator: 'n8n-emotional-evaluator'\n  }\n}];"
+      },
+      "id": "evaluate-profile",
+      "name": "Evaluate Profile",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}"
+      },
+      "id": "respond",
+      "name": "HTTP Response",
+      "type": "n8n-nodes-base.httpResponse",
+      "typeVersion": 1,
+      "position": [920, 300]
+    }
+  ],
+  "connections": {
+    "Webhook - Profile Evaluation": {
+      "main": [
+        [
+          {
+            "node": "Extract Profile Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Profile Data": {
+      "main": [
+        [
+          {
+            "node": "Evaluate Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluate Profile": {
+      "main": [
+        [
+          {
+            "node": "HTTP Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "versionId": "1"
+}

@@ -1,0 +1,193 @@
+{
+  "name": "Web Research Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "web-research",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-research",
+      "name": "Webhook - Research Request",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [260, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "query",
+              "value": "={{ $json.query }}"
+            },
+            {
+              "name": "search_type",
+              "value": "={{ $json.search_type || 'general' }}"
+            },
+            {
+              "name": "max_results",
+              "value": "={{ $json.max_results || '5' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "extract-query",
+      "name": "Extract Search Query",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Perform web search using multiple search engines\nconst query = items[0].json.query;\nconst searchType = items[0].json.search_type;\nconst maxResults = parseInt(items[0].json.max_results);\n\n// For demo purposes, simulate search results\n// In production, this would call actual search APIs\n\nconst searchResults = [];\n\nfor (let i = 1; i <= maxResults; i++) {\n  searchResults.push({\n    title: `Search Result ${i} for: ${query}`,\n    url: `https://example.com/result${i}`,\n    snippet: `This is a relevant snippet about ${query} that provides useful information for the user's research needs.`,\n    relevance_score: Math.random() * 0.3 + 0.7, // 0.7-1.0 range\n    source: 'web_search'\n  });\n}\n\n// Sort by relevance\nsearchResults.sort((a, b) => b.relevance_score - a.relevance_score);\n\nreturn [{\n  json: {\n    query: query,\n    search_type: searchType,\n    results: searchResults,\n    total_results: searchResults.length,\n    search_timestamp: new Date().toISOString(),\n    status: 'success'\n  }\n}];"
+      },
+      "id": "perform-search",
+      "name": "Perform Web Search",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.status }}",
+              "operation": "equal",
+              "value2": "success"
+            }
+          ]
+        }
+      },
+      "id": "check-results",
+      "name": "Check Search Results",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [920, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Process and summarize search results\nconst data = items[0].json;\nconst results = data.results || [];\n\n// Create summary\nlet summary = `Found ${results.length} results for: ${data.query}\\n\\n`;\n\nresults.forEach((result, index) => {\n  summary += `${index + 1}. ${result.title}\\n`;\n  summary += `   ${result.snippet}\\n`;\n  summary += `   Source: ${result.url}\\n\\n`;\n});\n\nreturn [{\n  json: {\n    ...data,\n    summary: summary,\n    processed: true\n  }\n}];"
+      },
+      "id": "process-results",
+      "name": "Process Results",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1140, 240]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "error",
+              "value": "Failed to perform web search"
+            },
+            {
+              "name": "status",
+              "value": "error"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "error-response",
+      "name": "Error Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [1140, 380]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}"
+      },
+      "id": "respond",
+      "name": "HTTP Response",
+      "type": "n8n-nodes-base.httpResponse",
+      "typeVersion": 1,
+      "position": [1360, 300]
+    }
+  ],
+  "connections": {
+    "Webhook - Research Request": {
+      "main": [
+        [
+          {
+            "node": "Extract Search Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Search Query": {
+      "main": [
+        [
+          {
+            "node": "Perform Web Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Perform Web Search": {
+      "main": [
+        [
+          {
+            "node": "Check Search Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Search Results": {
+      "main": [
+        [
+          {
+            "node": "Process Results",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Results": {
+      "main": [
+        [
+          {
+            "node": "HTTP Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Response": {
+      "main": [
+        [
+          {
+            "node": "HTTP Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "versionId": "1"
+}

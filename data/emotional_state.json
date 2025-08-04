@@ -1,0 +1,17 @@
+{
+  "current_state": {
+    "primary_emotion": "joy",
+    "intensity": 0.72312409,
+    "valence": 0.8601222700000001,
+    "arousal": 0.62235621,
+    "timestamp": "2025-08-03T22:20:58.248747"
+  },
+  "emotional_memories": {
+    "mem_1754274052_0": {
+      "importance_score": 0.7,
+      "created_at": "2025-08-03T22:20:52.609097",
+      "associated_content": "Integration test successful - user expressed satisfaction"
+    }
+  },
+  "last_updated": "2025-08-03T22:20:58.249068"
+}

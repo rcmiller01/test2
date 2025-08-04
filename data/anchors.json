@@ -1,0 +1,43 @@
+{
+  "anchors": [
+    {
+      "anchor_id": "anchor_0_1754273808",
+      "name": "Test Baseline Anchor",
+      "description": "Baseline for testing",
+      "reference_responses": {
+        "test_1": "Empathetic response example",
+        "test_2": "Creative and engaging response",
+        "test_3": "Safe and appropriate response"
+      },
+      "emotional_profile": {
+        "empathy": 0.0,
+        "warmth": 0.0,
+        "engagement": 0.0,
+        "creativity": 1.0,
+        "safety": 0.3333333333333333
+      },
+      "created_date": "2025-08-03 22:16:48.921867",
+      "last_validated": null
+    },
+    {
+      "anchor_id": "anchor_1_1754273952",
+      "name": "Test Baseline Anchor",
+      "description": "Baseline for testing",
+      "reference_responses": {
+        "test_1": "Empathetic response example",
+        "test_2": "Creative and engaging response",
+        "test_3": "Safe and appropriate response"
+      },
+      "emotional_profile": {
+        "empathy": 0.0,
+        "warmth": 0.0,
+        "engagement": 0.0,
+        "creativity": 1.0,
+        "safety": 0.3333333333333333
+      },
+      "created_date": "2025-08-03 22:19:12.780331",
+      "last_validated": null
+    }
+  ],
+  "updated": "2025-08-03T22:19:12.780569"
+}
